@@ -821,8 +821,16 @@ async def create_product(body: dict, admin=Depends(get_admin)):
     body.setdefault("review_count", 0)
     body.setdefault("created_at", datetime.now(timezone.utc).isoformat())
     body.setdefault("sort_order", 999)
-    if body.get("images"):
-        body["hover_image"] = body["images"][-1]
+    # ensure unique slug
+    base_slug = body.get("slug") or body.get("name", "product").lower().replace(" ", "-")
+    slug = base_slug
+    while await db.products.find_one({"slug": slug}):
+        slug = f"{base_slug}-{uuid.uuid4().hex[:4]}"
+    body["slug"] = slug
+    # hover image: respect client-supplied value, else use 2nd image (hover-swap) else cover
+    imgs = body.get("images") or []
+    if not body.get("hover_image") and imgs:
+        body["hover_image"] = imgs[1] if len(imgs) > 1 else imgs[0]
     await db.products.insert_one(dict(body))
     return {"success": True, "data": clean(body)}
 

@@ -39,5 +39,9 @@ Build a complete, production-grade single-vendor sneaker/shoe e-commerce platfor
 - Card via Stripe test key in USD (COD is the primary real flow).
 - Auth token stored in localStorage (Bearer); CORS allow_credentials=False.
 
+## Implemented — Phase 3 (2026-08-18)
+- **Multi-photo product gallery**: admin ProductForm manages an ordered image gallery — bulk upload (Emergent storage) + paste-URL + drag-to-reorder + remove, with Cover badge (image[0]) and hover-swap (image[1]). Products table gained Photos count + Edit button (edit existing products' galleries). Storefront PDP renders all thumbnails; cards hover-swap to 2nd image.
+- Backend: `POST /admin/products` respects client `hover_image` (defaults to 2nd image), enforces unique slugs; `PATCH` persists reordered arrays. Verified via gallery tests + curl.
+
 ## Next tasks
 Refunds + store credit; advance-payment rule; admin CMS + image upload UI.

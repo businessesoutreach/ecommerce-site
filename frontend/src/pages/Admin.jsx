@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { LayoutDashboard, Package, ShoppingCart, Ticket, Star, Users, LogOut, TrendingUp, AlertTriangle, Plus, Trash2, X, RotateCcw, DollarSign, Image as ImageIcon, Upload, MessageCircle } from "lucide-react";
@@ -136,18 +136,21 @@ function Orders() {
 function Products() {
   const [products, setProducts] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(null);
   const load = () => http.get("/admin/products").then(({ data }) => setProducts(data.data));
   useEffect(() => { load(); }, []);
   const del = async (id) => { if (!window.confirm("Delete product?")) return; await http.delete(`/admin/products/${id}`); toast.success("Deleted"); load(); };
+  const openNew = () => { setEditing(null); setShowForm(true); };
+  const openEdit = (p) => { setEditing(p); setShowForm(true); };
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="font-display text-3xl font-black uppercase tracking-tight">Products</h1>
-        <button onClick={() => setShowForm(true)} data-testid="admin-add-product-btn" className="bg-obsidian text-white font-display font-bold uppercase text-sm px-5 py-3 rounded-full flex items-center gap-2 hover:bg-fire transition-colors"><Plus size={16} /> Add Product</button>
+        <button onClick={openNew} data-testid="admin-add-product-btn" className="bg-obsidian text-white font-display font-bold uppercase text-sm px-5 py-3 rounded-full flex items-center gap-2 hover:bg-fire transition-colors"><Plus size={16} /> Add Product</button>
       </div>
       <div className="bg-white rounded-2xl border border-ink-200 overflow-x-auto" data-testid="admin-products-table">
         <table className="w-full text-sm">
-          <thead className="bg-ink-100 text-left"><tr>{["", "Name", "Category", "Price", "Flags", ""].map((h, i) => <th key={i} className="px-4 py-3 font-display font-bold uppercase text-xs">{h}</th>)}</tr></thead>
+          <thead className="bg-ink-100 text-left"><tr>{["", "Name", "Category", "Price", "Photos", "Flags", ""].map((h, i) => <th key={i} className="px-4 py-3 font-display font-bold uppercase text-xs">{h}</th>)}</tr></thead>
           <tbody>
             {products.map((p) => (
               <tr key={p.id} className="border-t border-ink-200">
@@ -155,37 +158,128 @@ function Products() {
                 <td className="px-4 py-3 font-display font-bold">{p.name}</td>
                 <td className="px-4 py-3 capitalize">{p.category_slug}</td>
                 <td className="px-4 py-3 font-mono font-bold">{fmt(p.base_price)}</td>
+                <td className="px-4 py-3"><span className="font-mono text-xs bg-ink-100 px-2 py-1 rounded">{(p.images || []).length} img</span></td>
                 <td className="px-4 py-3"><div className="flex gap-1 flex-wrap">{p.is_new_arrival && <span className="text-[10px] bg-ink-100 px-2 py-0.5 rounded">NEW</span>}{p.is_flash_sale && <span className="text-[10px] bg-fire/10 text-fire px-2 py-0.5 rounded">FLASH</span>}{p.is_best_seller && <span className="text-[10px] bg-ink-100 px-2 py-0.5 rounded">BEST</span>}</div></td>
-                <td className="px-4 py-3"><button onClick={() => del(p.id)} className="text-ink-400 hover:text-fire"><Trash2 size={16} /></button></td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => openEdit(p)} data-testid={`admin-edit-product-${p.id}`} className="text-xs font-bold uppercase border border-ink-200 px-3 py-1.5 rounded-full hover:border-obsidian">Edit</button>
+                    <button onClick={() => del(p.id)} className="text-ink-400 hover:text-fire"><Trash2 size={16} /></button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      {showForm && <ProductForm onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); load(); }} />}
+      {showForm && <ProductForm product={editing} onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); load(); }} />}
     </div>
   );
 }
 
-function ProductForm({ onClose, onSaved }) {
-  const [f, setF] = useState({ name: "", category_slug: "retro", brand_slug: "airvault", base_price: "", compare_at_price: "", description: "", image: "", is_new_arrival: true, is_best_seller: false, is_flash_sale: false });
+function MultiImageInput({ images, onChange }) {
+  const [busy, setBusy] = useState(false);
+  const [url, setUrl] = useState("");
+  const dragIdx = useRef(null);
+  const addFiles = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setBusy(true);
+    try {
+      const urls = [];
+      for (const file of files) urls.push(await uploadImage(file));
+      onChange([...images, ...urls]);
+      toast.success(`${urls.length} photo(s) added`);
+    } catch { toast.error("Upload failed"); }
+    setBusy(false);
+    e.target.value = "";
+  };
+  const addUrl = () => { if (url.trim()) { onChange([...images, url.trim()]); setUrl(""); } };
+  const remove = (i) => onChange(images.filter((_, idx) => idx !== i));
+  const reorder = (from, to) => {
+    if (from === to || from == null) return;
+    const next = [...images];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    onChange(next);
+  };
+  return (
+    <div data-testid="admin-product-gallery">
+      <div className="flex items-center justify-between mb-2">
+        <label className="font-display font-bold uppercase text-xs tracking-wide text-ink-500">Product Gallery <span className="text-ink-400 normal-case font-normal">· drag to reorder · first = cover</span></label>
+        <label data-testid="admin-product-gallery-upload" className="flex items-center gap-1.5 bg-obsidian text-white text-xs font-bold uppercase px-3 py-2 rounded-xl cursor-pointer hover:bg-fire transition-colors">
+          <Upload size={14} /> {busy ? "Uploading…" : "Upload"}
+          <input type="file" accept="image/*" multiple onChange={addFiles} className="hidden" />
+        </label>
+      </div>
+      {images.length > 0 ? (
+        <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 mb-2">
+          {images.map((im, i) => (
+            <div
+              key={`${im}-${i}`}
+              draggable
+              onDragStart={() => { dragIdx.current = i; }}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={() => { reorder(dragIdx.current, i); dragIdx.current = null; }}
+              data-testid={`admin-gallery-thumb-${i}`}
+              className="relative group aspect-square rounded-lg overflow-hidden border-2 border-ink-200 cursor-grab active:cursor-grabbing"
+            >
+              <img src={im} alt="" className="h-full w-full object-cover pointer-events-none" />
+              {i === 0 && <span className="absolute top-0.5 left-0.5 bg-fire text-white text-[8px] font-bold uppercase px-1 rounded">Cover</span>}
+              <button type="button" onClick={() => remove(i)} data-testid={`admin-gallery-remove-${i}`} className="absolute top-0.5 right-0.5 h-5 w-5 grid place-items-center rounded-full bg-obsidian/80 text-white sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"><X size={11} /></button>
+              <span className="absolute bottom-0.5 right-1 text-white text-[9px] font-mono font-bold drop-shadow">{i + 1}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-ink-400 text-xs mb-2 border border-dashed border-ink-200 rounded-lg py-4 text-center">No photos yet — upload or paste a URL below.</p>
+      )}
+      <div className="flex gap-2">
+        <input value={url} onChange={(e) => setUrl(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addUrl())} placeholder="Paste image URL…" className="flex-1 border border-ink-200 rounded-xl px-4 py-2 outline-none focus:border-obsidian text-sm" />
+        <button type="button" onClick={addUrl} className="border border-ink-200 text-xs font-bold uppercase px-3 rounded-xl hover:border-obsidian">Add</button>
+      </div>
+    </div>
+  );
+}
+
+function ProductForm({ product, onClose, onSaved }) {
+  const isEdit = !!product?.id;
+  const [f, setF] = useState({
+    name: product?.name || "", category_slug: product?.category_slug || "retro",
+    brand_slug: product?.brand_slug || "airvault", base_price: product?.base_price || "",
+    compare_at_price: product?.compare_at_price || "", description: product?.description || "",
+    is_new_arrival: product?.is_new_arrival ?? true, is_best_seller: product?.is_best_seller ?? false,
+    is_flash_sale: product?.is_flash_sale ?? false,
+  });
+  const [images, setImages] = useState(product?.images?.filter(Boolean) || []);
+  const [saving, setSaving] = useState(false);
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
   const save = async () => {
     if (!f.name || !f.base_price) return toast.error("Name and price required");
-    const slug = f.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-    await http.post("/admin/products", {
-      name: f.name, slug, category_slug: f.category_slug, brand_slug: f.brand_slug,
+    if (images.length === 0) return toast.error("Add at least one photo");
+    setSaving(true);
+    const payload = {
+      name: f.name, category_slug: f.category_slug, brand_slug: f.brand_slug,
       base_price: Number(f.base_price), compare_at_price: f.compare_at_price ? Number(f.compare_at_price) : null,
-      description: f.description || f.name, images: f.image ? [f.image] : ["https://images.unsplash.com/photo-1559050993-d4e4fbf11769?q=85&w=900"],
+      description: f.description || f.name, images, hover_image: images[1] || images[0],
       is_new_arrival: f.is_new_arrival, is_best_seller: f.is_best_seller, is_flash_sale: f.is_flash_sale,
-    });
-    toast.success("Product added");
-    onSaved();
+    };
+    try {
+      if (isEdit) {
+        await http.patch(`/admin/products/${product.id}`, payload);
+        toast.success("Product updated");
+      } else {
+        payload.slug = f.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now().toString(36).slice(-4);
+        await http.post("/admin/products", payload);
+        toast.success("Product added");
+      }
+      onSaved();
+    } catch (e) { toast.error(e.response?.data?.detail || "Save failed"); }
+    setSaving(false);
   };
   return (
     <div className="fixed inset-0 bg-obsidian/60 z-50 grid place-items-center p-5" onClick={onClose}>
       <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between mb-4"><h3 className="font-display font-black text-xl uppercase">Add Product</h3><button onClick={onClose}><X size={20} /></button></div>
+        <div className="flex justify-between mb-4"><h3 className="font-display font-black text-xl uppercase">{isEdit ? "Edit Product" : "Add Product"}</h3><button onClick={onClose}><X size={20} /></button></div>
         <div className="space-y-3">
           <input placeholder="Product name" value={f.name} onChange={set("name")} data-testid="admin-product-name" className="w-full border border-ink-200 rounded-xl px-4 py-2.5 outline-none focus:border-obsidian" />
           <div className="grid grid-cols-2 gap-3">
@@ -196,14 +290,14 @@ function ProductForm({ onClose, onSaved }) {
             <input placeholder="Price (Rs.)" type="number" value={f.base_price} onChange={set("base_price")} data-testid="admin-product-price" className="border border-ink-200 rounded-xl px-4 py-2.5 outline-none focus:border-obsidian" />
             <input placeholder="Compare price" type="number" value={f.compare_at_price} onChange={set("compare_at_price")} className="border border-ink-200 rounded-xl px-4 py-2.5 outline-none focus:border-obsidian" />
           </div>
-          <AdminImageInput value={f.image} onChange={(v) => setF({ ...f, image: v })} testid="admin-product-image-upload" />
+          <MultiImageInput images={images} onChange={setImages} />
           <textarea placeholder="Description" value={f.description} onChange={set("description")} rows={3} className="w-full border border-ink-200 rounded-xl px-4 py-2.5 outline-none focus:border-obsidian" />
           <div className="flex gap-4 text-sm">
             {[["is_new_arrival", "New"], ["is_best_seller", "Best Seller"], ["is_flash_sale", "Flash Sale"]].map(([k, l]) => (
               <label key={k} className="flex items-center gap-2"><input type="checkbox" checked={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.checked })} className="accent-fire" /> {l}</label>
             ))}
           </div>
-          <button onClick={save} data-testid="admin-product-save" className="w-full bg-obsidian text-white font-display font-bold uppercase py-3 rounded-full hover:bg-fire transition-colors">Save Product</button>
+          <button onClick={save} disabled={saving} data-testid="admin-product-save" className="w-full bg-obsidian text-white font-display font-bold uppercase py-3 rounded-full hover:bg-fire transition-colors disabled:opacity-60">{saving ? "Saving…" : isEdit ? "Update Product" : "Save Product"}</button>
         </div>
       </motion.div>
     </div>
