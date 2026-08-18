@@ -1,412 +1,488 @@
 {
-  "project_name": "SOLEKICKS PK - Premium Streetwear Footwear Experience",
+  "project_name": "SOLEKICKS PK - Premium Editorial Sneaker & Streetwear E-Commerce",
+  "version": "2.0.0-editorial-redesign",
   "app_type": "e-commerce",
-  "target_market": "Pakistan (Sneakerheads, Urban Streetwear, Runners, Gen-Z / Millennial Style Seekers, inspired by jutay.co / Kith / Bodega / SNKRS)",
   "design_philosophy": {
-    "archetype": "THE PERFORMANCE PRO x SWISS EDITORIAL STREETWEAR",
-    "core_principles": [
-      "Product as Kinetic Hero: Pure high-contrast canvas (#0A0A0A deep obsidian text/accents, #FAFAFA warm crisp studio background) allowing sneaker silhouettes and colorways to pop.",
-      "High Tension Typography: Heavy condensed grotesk sans (Syne / Archivo / Clash Display feeling with tracking-tighter) for impactful punchy headlines, paired with ultra-clean utilitarian mono/sans for specs, sizes, and pricing.",
-      "Motion-First Micro-Interactions: Every card, chip, button, drawer, and banner breathes with kinetic Framer Motion polish (image-swap on hover, quick-size chip select, bounce pulse on wishlist heart, slide-over cart drawer with haptic-feel feedback).",
-      "Streetwear Trust & Local Conversion: Transparent Cash on Delivery (COD), 7-Day Hassle-Free Pakistan Exchange, Fast Nationwide Dispatch (Karachi/Lahore/Islamabad 24-48h, rest 2-4 days), Authentic Grade Quality Seals, and photo customer reviews."
+    "concept": "Tactical Editorial Brutalism for Sneaker Culture",
+    "summary": "Transforms SOLEKICKS PK from a generic SaaS-like interface into a confident, high-contrast, editorial streetwear powerhouse. Eliminates all rounded-full pill buttons and rounded-2xl bubbly cards in favor of razor-sharp architectural geometry (0px to 2px radii), stark obsidian-and-white tonal tension, disciplined 8px spacing, and surgical red-orange (#FF3B30) kinetic accents used strictly for high-converting triggers.",
+    "emotional_archetype": "ARCHETYPE 2: THE PERFORMANCE PRO & HIGH-FASHION EDITORIAL",
+    "core_tenets": [
+      "Sharp & Architectural: 0px to 2px corner radius across all interactive elements and surfaces. Zero pill buttons.",
+      "High-Contrast Tension: Pure Obsidian (#0A0A0A) against Crisp White (#FAFAFA / #FFFFFF) with subtle 1px structural gridlines (#E5E7EB / #27272A).",
+      "Surgical Accent Trigger: Fire Red-Orange (#FF3B30) restricted to sale badges, primary cart actions, live stock urgency, and active nav states (< 5% surface area).",
+      "Editorial Grotesk Typography: Heavyweight condensed Archivo/Grotesk headings with tight letter-spacing, paired with ultra-legible Inter body and JetBrains Mono data/prices.",
+      "Tactile Motion: Smooth image swaps, subtle 1px border hover blooms, sliding canvas drawers, zero disruptive global transitions."
+    ],
+    "anti_patterns_strictly_forbidden": [
+      "NO rounded-full pill buttons or pill category chips",
+      "NO rounded-2xl or rounded-3xl bubbly container cards",
+      "NO soft colored drop shadows or neon glow halos",
+      "NO full-screen multi-color gradients",
+      "NO glassmorphism blur over text that hampers legibility",
+      "NO transition: all (breaks framer-motion transforms)",
+      "NO centered text in app container (.App { text-align: center; })"
     ]
   },
-  "typography": {
-    "font_family_recommendation": {
-      "headings": "'Plus Jakarta Sans', 'Cabinet Grotesk', 'Archivo', sans-serif",
-      "body": "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-      "mono_accent": "'JetBrains Mono', 'Space Mono', monospace"
-    },
-    "scale": {
-      "hero_h1": "text-4xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight leading-[1.05]",
-      "section_h2": "text-2xl sm:text-3xl lg:text-4xl font-extrabold uppercase tracking-tight leading-tight",
-      "card_h3": "text-base sm:text-lg font-bold tracking-tight text-neutral-900",
-      "subheading": "text-lg sm:text-xl font-medium text-neutral-600 leading-relaxed",
-      "body": "text-sm sm:text-base font-normal text-neutral-700 leading-relaxed",
-      "caption_badge": "text-xs font-bold uppercase tracking-[0.18em]"
-    },
-    "rules": [
-      "Never use Inter for primary H1/H2 headings. Use strong uppercase font-black with tracking-tighter for streetwear punchiness.",
-      "Price tags must display bold PKR currency formatting (e.g., 'Rs. 8,499') with slash through original price (e.g., 'Rs. 13,999') in muted red/gray.",
-      "Labels, category pills, and trust flags must use uppercase tracking-[0.15em] with text-[11px] or text-xs."
-    ]
-  },
-  "colors": {
+  "color_system": {
     "palette": {
-      "brand_obsidian": "#0A0A0A",
-      "brand_canvas_offwhite": "#FAFAFA",
-      "brand_surface_white": "#FFFFFF",
-      "brand_surface_subtle": "#F4F4F5",
-      "brand_accent_fire": "#FF3B30",
-      "brand_accent_fire_hover": "#E03126",
-      "brand_accent_fire_subtle": "#FFF1F0",
-      "brand_border_light": "#E5E7EB",
-      "brand_border_dark": "#27272A",
-      "text_primary": "#0A0A0A",
-      "text_secondary": "#52525B",
-      "text_muted": "#71717A",
-      "text_inverted": "#FAFAFA",
-      "badge_sale_bg": "#FF3B30",
-      "badge_sale_text": "#FFFFFF",
-      "badge_new_bg": "#0A0A0A",
-      "badge_new_text": "#FAFAFA",
-      "badge_stock_low": "#F59E0B"
+      "obsidian_primary": {
+        "hex": "#0A0A0A",
+        "tailwind_class": "bg-obsidian text-obsidian border-obsidian",
+        "usage": "Dominant near-black anchor for headers, primary buttons, footer, flash sale backdrops, heavy typography, and high-contrast frames."
+      },
+      "canvas_background": {
+        "hex": "#FAFAFA",
+        "tailwind_class": "bg-[#FAFAFA]",
+        "usage": "Crisp off-white foundational background providing clean editorial breathing room."
+      },
+      "surface_white": {
+        "hex": "#FFFFFF",
+        "tailwind_class": "bg-white",
+        "usage": "Product card containers, modal interiors, drawer sheets, and data surfaces."
+      },
+      "kinetic_fire_accent": {
+        "hex": "#FF3B30",
+        "hover": "#E03126",
+        "subtle": "#FFF1F0",
+        "tailwind_class": "bg-fire text-fire border-fire hover:bg-[#E03126]",
+        "usage": "STRICTLY SPARING: Discount/Sale badges, primary checkout & add-to-bag triggers, low stock urgency notices, active tab underlines, price emphasis."
+      },
+      "ink_borders_and_neutrals": {
+        "border_subtle_light": "#E5E7EB",
+        "border_subtle_dark": "#27272A",
+        "text_muted": "#6B7280",
+        "text_secondary": "#52525B",
+        "surface_muted": "#F4F4F5"
+      }
     },
-    "contrast_strategy": {
-      "cta_buttons": "Solid #0A0A0A with white text or Solid #FF3B30 with white text for High Impact actions.",
-      "hover_states": "Hover background changes must always explicitly set matching high-contrast text color (e.g., hover:bg-neutral-900 hover:text-white).",
-      "glassmorphism": "Used for sticky header: backdrop-blur-md bg-white/85 border-b border-neutral-200/80 (never pure transparent)."
+    "contrast_rules": {
+      "text_on_obsidian": "text-white (19.8:1 APCA rating)",
+      "text_on_canvas": "text-[#0A0A0A] (19.1:1 APCA rating)",
+      "fire_on_white": "text-[#FF3B30] on white for prices meets WCAG AA 4.5:1",
+      "white_on_fire": "text-white font-bold on #FF3B30 background for badges"
     }
   },
-  "image_urls": {
-    "hero_slides": [
-      {
-        "id": "hero-1",
-        "title": "STREET REVOLUTION // SS26 DROPS",
-        "subtitle": "High-heat streetwear silhouettes & retro re-issues engineered for urban dominance across Pakistan.",
-        "badge": "NEW SS26 ARRIVAL",
-        "cta_text": "SHOP NEW RELEASES",
-        "cta_link": "/collections/new-arrivals",
-        "image_url": "https://images.unsplash.com/photo-1615440321519-dda3d4b5ccab?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHw0fHxzdHJlZXR3ZWFyJTIwc25lYWtlciUyMHNob2VzfGVufDB8fHx8MTc4NzA1NjYyNXww&ixlib=rb-4.1.0&q=85",
-        "description": "Editorial street style sneaker close-up with bold red and white kicks"
-      },
-      {
-        "id": "hero-2",
-        "title": "RETRO LOWS & COURT MASTERS",
-        "subtitle": "Timeless terrace vibes, chunkier midsoles, and everyday luxury crafted for maximum comfort.",
-        "badge": "TRENDING NOW",
-        "cta_text": "EXPLORE RETRO KICKS",
-        "cta_link": "/collections/retro",
-        "image_url": "https://images.unsplash.com/photo-1670948516733-0220701ea0de?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzd8MHwxfHNlYXJjaHwzfHxzbmVha2VyJTIwY29sbGVjdGlvbiUyMGVkaXRvcmlhbHxlbnwwfHx8fDE3ODcwNTY2MjV8MA&ixlib=rb-4.1.0&q=85",
-        "description": "Streetwear sneaker enthusiast lifestyle collection shot"
-      },
-      {
-        "id": "hero-3",
-        "title": "MAX SPEED CLOUD RUNNERS",
-        "subtitle": "Engineered propulsion foam and hyper-breathable knit. Designed for the track, styled for the street.",
-        "badge": "PERFORMANCE GEAR",
-        "cta_text": "DISCOVER RUNNERS",
-        "cta_link": "/collections/runners",
-        "image_url": "https://images.unsplash.com/photo-1597892657493-6847b9640bac?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzV8MHwxfHNlYXJjaHwxfHxydW5uZXIlMjBhdGhsZXRpYyUyMHNob2VzfGVufDB8fHx8MTc4NzA1NjYyNXww&ixlib=rb-4.1.0&q=85",
-        "description": "High performance runner athlete wearing dynamic road sneakers"
-      }
-    ],
-    "category_tiles": [
-      {
-        "name": "RETRO & HIGH TOPS",
-        "tagline": "Grail-worthy silhouettes",
-        "item_count": "24 Models",
-        "image_url": "https://images.pexels.com/photos/4061385/pexels-photo-4061385.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
-        "category_key": "retro"
-      },
-      {
-        "name": "EVERYDAY STREETWEAR",
-        "tagline": "Clean low-tops & terrace classics",
-        "item_count": "38 Models",
-        "image_url": "https://images.unsplash.com/photo-1641997465126-c73cc4070337?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHwzfHxzdHJlZXR3ZWFyJTIwc25lYWtlciUyMHNob2VzfGVufDB8fHx8MTc4NzA1NjYyNXww&ixlib=rb-4.1.0&q=85",
-        "category_key": "streetwear"
-      },
-      {
-        "name": "PERFORMANCE RUNNERS",
-        "tagline": "Ultra-cushioned responsive foam",
-        "item_count": "19 Models",
-        "image_url": "https://images.unsplash.com/photo-1676041669566-fead69bd7007?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzV8MHwxfHNlYXJjaHwyfHxydW5uZXIlMjBhdGhsZXRpYyUyMHNob2VzfGVufDB8fHx8MTc4NzA1NjYyNXww&ixlib=rb-4.1.0&q=85",
-        "category_key": "runners"
-      },
-      {
-        "name": "RECOVERY SLIDES & FOAM",
-        "tagline": "Post-run cloud softness",
-        "item_count": "12 Models",
-        "image_url": "https://images.pexels.com/photos/18110858/pexels-photo-18110858.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
-        "category_key": "slides"
-      }
-    ],
-    "featured_products_media": [
-      {
-        "id": "prod-1",
-        "name": "AJ-4 Retro 'White Oreo' Premium",
-        "primary_image": "https://images.unsplash.com/photo-1640016713197-76fe85053279?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzd8MHwxfHNlYXJjaHwyfHxzbmVha2VyJTIwY29sbGVjdGlvbiUyMGVkaXRvcmlhbHxlbnwwfHx8fDE3ODcwNTY2MjV8MA&ixlib=rb-4.1.0&q=85",
-        "hover_image": "https://images.unsplash.com/photo-1612902377668-68ec50954ad9?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzd8MHwxfHNlYXJjaHwxfHxzbmVha2VyJTIwY29sbGVjdGlvbiUyMGVkaXRvcmlhbHxlbnwwfHx8fDE3ODcwNTY2MjV8MA&ixlib=rb-4.1.0&q=85",
-        "price": 8999,
-        "original_price": 14500,
-        "category": "Retro",
-        "rating": 4.9,
-        "reviews_count": 84
-      },
-      {
-        "id": "prod-2",
-        "name": "Dunk Low 'Coastline Blue' Edition",
-        "primary_image": "https://images.unsplash.com/photo-1595341888016-a392ef81b7de?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHwyfHxzdHJlZXR3ZWFyJTIwc25lYWtlciUyMHNob2VzfGVufDB8fHx8MTc4NzA1NjYyNXww&ixlib=rb-4.1.0&q=85",
-        "hover_image": "https://images.unsplash.com/photo-1560769629-975ec94e6a86?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHwxfHxzdHJlZXR3ZWFyJTIwc25lYWtlciUyMHNob2VzfGVufDB8fHx8MTc4NzA1NjYyNXww&ixlib=rb-4.1.0&q=85",
-        "price": 7499,
-        "original_price": 11999,
-        "category": "Streetwear",
-        "rating": 4.8,
-        "reviews_count": 126
-      },
-      {
-        "id": "prod-3",
-        "name": "CloudStratus Surge Pro Road Runner",
-        "primary_image": "https://images.unsplash.com/photo-1746206673199-5b75dcec1018?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzV8MHwxfHNlYXJjaHwzfHxydW5uZXIlMjBhdGhsZXRpYyUyMHNob2VzfGVufDB8fHx8MTc4NzA1NjYyNXww&ixlib=rb-4.1.0&q=85",
-        "hover_image": "https://images.unsplash.com/photo-1587587448924-b5a1db520d29?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzV8MHwxfHNlYXJjaHw0fHxydW5uZXIlMjBhdGhsZXRpYyUyMHNob2VzfGVufDB8fHx8MTc4NzA1NjYyNXww&ixlib=rb-4.1.0&q=85",
-        "price": 9250,
-        "original_price": 15000,
-        "category": "Runners",
-        "rating": 5.0,
-        "reviews_count": 62
-      },
-      {
-        "id": "prod-4",
-        "name": "Yeezy-Style Oasis Foam Slides",
-        "primary_image": "https://images.pexels.com/photos/18110858/pexels-photo-18110858.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
-        "hover_image": "https://images.pexels.com/photos/16350687/pexels-photo-16350687.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
-        "price": 3899,
-        "original_price": 5500,
-        "category": "Slides",
-        "rating": 4.7,
-        "reviews_count": 210
-      }
-    ],
-    "editorial_story_image": "https://images.pexels.com/photos/38209691/pexels-photo-38209691.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
-    "customer_review_avatars": [
-      {
-        "name": "Hamza Tariq (Lahore)",
-        "photo": "https://images.unsplash.com/photo-1615440321519-dda3d4b5ccab?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHw0fHxzdHJlZXR3ZWFyJTIwc25lYWtlciUyMHNob2VzfGVufDB8fHx8MTc4NzA1NjYyNXww&ixlib=rb-4.1.0&q=85",
-        "text": "Delivered in 2 days to DHA Lahore via COD! The cushioning on the Oreo 4s is insane. Exactly matches jutay quality.",
-        "verified": true,
-        "rating": 5
-      },
-      {
-        "name": "Zeeshan Malik (Karachi)",
-        "photo": "https://images.unsplash.com/photo-1641997465126-c73cc4070337?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHwzfHxzdHJlZXR3ZWFyJTIwc25lYWtlciUyMHNob2VzfGVufDB8fHx8MTc4NzA1NjYyNXww&ixlib=rb-4.1.0&q=85",
-        "text": "Size 43 fit true to chart. Exchange policy gave me full confidence to order. 10/10 streetwear staple.",
-        "verified": true,
-        "rating": 5
-      },
-      {
-        "name": "Ali Raza (Islamabad)",
-        "photo": "https://images.unsplash.com/photo-1595341888016-a392ef81b7de?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHwyfHxzdHJlZXR3ZWFyJTIwc25lYWtlciUyMHNob2VzfGVufDB8fHx8MTc4NzA1NjYyNXww&ixlib=rb-4.1.0&q=85",
-        "text": "Hands down best sneaker cop in Pakistan. The packaging with extra laces and sticker pack was top tier.",
-        "verified": true,
-        "rating": 5
-      }
-    ]
+  "corner_radius_scale": {
+    "philosophy": "Strict architectural precision. All previous rounded-full and rounded-2xl elements are replaced with 0px (rounded-none) or max 2px (rounded-sm) for a bespoke luxury streetwear look.",
+    "tokens": {
+      "cards_and_containers": "rounded-none or rounded-sm (0px - 2px)",
+      "buttons_and_cta": "rounded-none (0px)",
+      "badges_and_chips": "rounded-none (0px)",
+      "form_inputs_and_selects": "rounded-none (0px)",
+      "modals_and_drawers": "rounded-none (0px)",
+      "image_frames": "rounded-none (0px)",
+      "size_selector_buttons": "rounded-none (0px)",
+      "thumbnails": "rounded-none (0px)",
+      "admin_table_cards": "rounded-none border border-ink-200"
+    },
+    "migration_map": {
+      "rounded-full": "rounded-none",
+      "rounded-2xl": "rounded-none sm:rounded-sm",
+      "rounded-xl": "rounded-none",
+      "rounded-lg": "rounded-none sm:rounded-sm",
+      "rounded-md": "rounded-none"
+    }
   },
-  "layout_and_architecture": {
-    "header_and_navigation": {
-      "announcement_bar": {
-        "text": "⚡ FLASH DROP: 15% OFF ORDERS OVER RS. 9,999 | FREE SHIPPING NATIONWIDE ON PREPAID & COD ORDERS OVER RS. 5,000 | 7-DAY EXCHANGE",
-        "style": "bg-[#0A0A0A] text-white py-2 px-4 text-xs font-semibold uppercase tracking-wider flex items-center justify-between"
-      },
-      "sticky_header": {
-        "style": "sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-neutral-200 transition-all duration-300",
-        "desktop_elements": [
-          "Logo: SOLEKICKS [PK] with bold red dot badge",
-          "Mega-Menu Links: 'NEW RELEASES', 'STREETWEAR', 'RETRO & HIGH TOPS', 'RUNNERS', 'SLIDES', 'FLASH SALE'",
-          "Search bar with live instant preview dropdown",
-          "Wishlist Heart Icon with dynamic item count badge",
-          "Cart Icon with subtotal & item count badge trigger for Cart Drawer"
-        ],
-        "mobile_elements": [
-          "Hamburger menu with full-screen slide out categorized accordions",
-          "Center Brand Logo",
-          "Search & Cart quick triggers",
-          "Sticky Bottom Navigation bar for mobile with [Home, Shop, Search, Wishlist, Cart]"
-        ]
-      }
+  "typography_system": {
+    "google_fonts_embed": "https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700;800&display=swap",
+    "font_families": {
+      "display": "Archivo, -apple-system, sans-serif",
+      "body": "Inter, -apple-system, sans-serif",
+      "mono": "JetBrains Mono, monospace"
     },
-    "homepage_merchandising_flow": [
-      {
-        "section_name": "Hero Slider",
-        "description": "Full-bleed auto-rotating banner carousel with slide indicators, pause-on-hover, bold street captions, and direct category CTA buttons."
+    "scale_and_classes": {
+      "h1_hero": {
+        "classes": "font-display font-black text-4xl sm:text-5xl lg:text-6xl uppercase tracking-tighter leading-[0.92]",
+        "notes": "Ceiling at text-6xl (60px). Never use text-7xl/8xl. Tight letter-spacing creates high impact."
       },
-      {
-        "section_name": "Trust & Local Guarantees Ribbon",
-        "description": "4-pillar trust strip: 🚚 Fast Nationwide Delivery (COD Available), 🔄 7-Day Easy Exchange Policy, 👟 100% Quality & Fit Guarantee, 💬 24/7 WhatsApp & Live Support."
+      "h2_section": {
+        "classes": "font-display font-black text-2xl sm:text-3xl lg:text-4xl uppercase tracking-tight leading-none",
+        "notes": "Section titles like 'NEW ARRIVALS', 'FLASH DROP', 'FIND YOUR CATEGORY'."
       },
-      {
-        "section_name": "Category / Brand Banner Grid",
-        "description": "Asymmetric Bento grid showcasing 'Retro Highs', 'Streetwear Lows', 'Runners', and 'Cloud Slides' with hover zoom & item counts."
+      "h3_subsection": {
+        "classes": "font-display font-bold text-lg sm:text-xl uppercase tracking-tight",
+        "notes": "Card headings, modal titles, drawer headers."
       },
-      {
-        "section_name": "Flash Sale Drop with Live Countdown",
-        "description": "High-urgency section with active ticking countdown timer (Hours : Mins : Secs), animated fire badge, and exclusive discounted sneakers."
+      "h4_card_title": {
+        "classes": "font-display font-bold text-sm sm:text-base tracking-tight leading-snug",
+        "notes": "Product titles on cards and cart items."
       },
-      {
-        "section_name": "New Arrivals Grid",
-        "description": "Fresh releases featuring hover image swap, interactive inline size chips (EU 40, 41, 42, 43, 44, 45), 1-click add to cart, and wishlist toggle."
+      "overline_label": {
+        "classes": "font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.22em] font-bold text-ink-500",
+        "notes": "Eyebrows over headings, brand slug identifiers, SKU tags."
       },
-      {
-        "section_name": "Quick Shop By Size Grid",
-        "description": "Interactive size grid [EU 39, 40, 41, 42, 43, 44, 45, 46] that instantly filters and scrolls to matching in-stock models."
+      "price_regular": {
+        "classes": "font-mono font-bold text-base text-obsidian tracking-tight",
+        "notes": "Standard product prices formatted as Rs. XX,XXX."
       },
-      {
-        "section_name": "Best Sellers & Streetwear Essentials",
-        "description": "Curated most-wanted kicks with social proof tags ('🔥 48 bought in last 24h', 'Only 3 left in Size 42')."
+      "price_sale": {
+        "classes": "font-mono font-bold text-base sm:text-lg text-fire tracking-tight",
+        "notes": "Active discounted prices with visual weight."
       },
-      {
-        "section_name": "Customer Reviews & Fit Showcase",
-        "description": "Real verified buyer photos from Karachi, Lahore, Islamabad with star ratings and authentic testimonials."
+      "price_strikethrough": {
+        "classes": "font-mono text-xs sm:text-sm text-ink-400 line-through tracking-tight",
+        "notes": "Original compare-at prices."
       },
-      {
-        "section_name": "Streetwear SEO & Culture Manifesto",
-        "description": "Rich content accordion block explaining Pakistan's emerging sneaker culture, premium materials, sizing guide, and care instructions."
-      },
-      {
-        "section_name": "Footer",
-        "description": "High-contrast dark footer with email drop newsletter, city shipping dispatch list, Pakistan payment methods (COD, JazzCash, EasyPaisa, Visa/Mastercard), policy links, and copyright."
-      }
-    ]
-  },
-  "component_specifications": {
-    "product_card": {
-      "features": [
-        "Primary image to secondary hover image smooth crossfade via Framer Motion",
-        "Discount percentage tag ('-42% OFF') in bold red-orange badge",
-        "Inline quick size selector chips on card (clicking a size selects it directly for quick add)",
-        "Quick Add to Cart button with micro-animation loading state",
-        "Heart Wishlist button with SVG fill and scale-bounce animation",
-        "Sold-Out overlay state if inventory is 0 with 'Notify Me' option",
-        "Price in Pakistani Rupees (PKR) with formatted commas",
-        "Star rating snippet (e.g., ★ 4.9 (84))"
-      ],
-      "data_testids": {
-        "container": "product-card-{id}",
-        "image": "product-card-image-{id}",
-        "title": "product-card-title-{id}",
-        "price": "product-card-price-{id}",
-        "original_price": "product-card-original-price-{id}",
-        "size_chip": "product-card-size-{size}-{id}",
-        "add_to_cart": "product-card-add-btn-{id}",
-        "wishlist_btn": "product-card-wishlist-btn-{id}",
-        "badge": "product-card-badge-{id}"
-      }
-    },
-    "cart_drawer": {
-      "features": [
-        "Slide-in right drawer with Framer Motion backdrop & panel transition",
-        "Progress bar for Free Shipping threshold (e.g. 'Add Rs. 1,500 more for Free Delivery!')",
-        "Item quantity increments/decrements with real-time recalculation",
-        "Size badge display and easy variant edit",
-        "Guest checkout shortcut button directly to Checkout flow",
-        "Promo code input field with instant discount calculation (e.g. 'STREET15', 'JUTAY10')",
-        "Local delivery estimation badge (Karachi/Lahore 1-2 days, others 2-4 days)"
-      ],
-      "data_testids": {
-        "drawer": "cart-drawer",
-        "close_btn": "cart-drawer-close-btn",
-        "item_row": "cart-item-{id}",
-        "qty_plus": "cart-item-qty-plus-{id}",
-        "qty_minus": "cart-item-qty-minus-{id}",
-        "remove_item": "cart-item-remove-btn-{id}",
-        "checkout_btn": "cart-drawer-checkout-btn",
-        "subtotal_amount": "cart-drawer-subtotal-amount"
-      }
-    },
-    "product_detail_page": {
-      "features": [
-        "High-res gallery with thumbnail selector and click-to-zoom modal",
-        "Size selector with UK/US/EU conversion table modal",
-        "Stock urgency indicator ('⚡ Only 2 pairs left in EU 42!')",
-        "Sticky bottom buy bar on mobile screens",
-        "Tabs: Product Details, Cushioning & Materials, 7-Day Return Policy, Size Guide, Verified Customer Reviews",
-        "Related sneakers carousel with smart category matching"
-      ],
-      "data_testids": {
-        "gallery_main": "pdp-main-image",
-        "thumbnail": "pdp-thumbnail-{index}",
-        "size_option": "pdp-size-{size}",
-        "add_to_cart_btn": "pdp-add-to-cart-btn",
-        "buy_now_btn": "pdp-buy-now-btn",
-        "wishlist_btn": "pdp-wishlist-toggle",
-        "reviews_section": "pdp-reviews-section"
-      }
-    },
-    "guest_checkout_flow": {
-      "features": [
-        "1-Page frictionless guest checkout without mandatory password creation",
-        "Pakistan City Dropdown (Karachi, Lahore, Islamabad, Rawalpindi, Faisalabad, Multan, Peshawar, Quetta, Sialkot, Gujranwala, Hyderabad, etc.) with automatic postal code & shipping time sync",
-        "Payment options: Cash on Delivery (COD), JazzCash / EasyPaisa Wallet Transfer, Direct Card (Mocked with instant confirmation)",
-        "Order confirmation screen with generated Tracking ID (e.g. 'PK-SNK-89211'), tracking timeline status, and WhatsApp confirmation prompt"
-      ],
-      "data_testids": {
-        "form": "checkout-form",
-        "fullname_input": "checkout-fullname-input",
-        "phone_input": "checkout-phone-input",
-        "email_input": "checkout-email-input",
-        "address_input": "checkout-address-input",
-        "city_select": "checkout-city-select",
-        "payment_method": "checkout-payment-method-{method}",
-        "submit_order_btn": "checkout-submit-order-btn"
-      }
-    },
-    "order_tracking": {
-      "features": [
-        "Track by Order ID or Phone number",
-        "Visual kinetic 4-stage tracking stepper: [Order Placed -> Verified -> Dispatched from Hub -> Out for Delivery -> Delivered]",
-        "Carrier details (TCS / Leopard / CallCourier simulation) with status timestamps"
-      ],
-      "data_testids": {
-        "tracking_input": "tracking-search-input",
-        "tracking_btn": "tracking-search-btn",
-        "timeline_step": "tracking-timeline-step-{step}"
-      }
-    },
-    "admin_dashboard": {
-      "features": [
-        "Overview metrics: Total Revenue (PKR), Active Orders, Average Order Value, Return Rate",
-        "Product Management: Add/Edit products, upload mock image, toggle Flash Sale, update stock per size",
-        "Order Management: View pending COD orders, update status (Verified, Dispatched, Delivered, Cancelled)",
-        "Discount & Promo codes manager"
-      ],
-      "data_testids": {
-        "dashboard_container": "admin-dashboard",
-        "stats_card": "admin-stat-{key}",
-        "order_row": "admin-order-row-{id}",
-        "product_table": "admin-products-table",
-        "add_product_btn": "admin-add-product-btn"
+      "body_text": {
+        "classes": "font-sans text-sm sm:text-base text-ink-500 leading-relaxed",
+        "notes": "Product descriptions, FAQ answers, editorial notes."
       }
     }
   },
-  "motion_and_animations": {
-    "framework": "framer-motion",
-    "rules": [
-      "Use spring transitions for modal popups and cart drawer: { type: 'spring', damping: 25, stiffness: 200 }",
-      "Product card hover state: scale 1.02 on image, image crossfade transition: { duration: 0.3, ease: 'easeInOut' }",
-      "Wishlist heart micro-interaction: scale bounce [1, 1.35, 1] on click with red heart fill",
-      "Notification toast via sonner with customized dark streetwear theme",
-      "Staggered reveal for product grid items when switching categories or applying filters"
+  "spacing_and_layout_system": {
+    "unit_base": "8px standard Tailwind spacing scale",
+    "tokens": {
+      "p-2": "8px (micro padding, chips, badges)",
+      "p-4": "16px (card interior, table cells)",
+      "p-6": "24px (compact section padding, drawer guts)",
+      "p-8": "32px (card containers, modal bodies)",
+      "py-16": "64px (standard section vertical rhythm)",
+      "py-24": "96px (hero section and high-impact editorial drop gaps)"
+    },
+    "container_max_width": "max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8",
+    "grid_layouts": {
+      "product_catalog_grid": "grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6",
+      "category_bento_grid": "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6",
+      "trust_ribbon_grid": "grid grid-cols-2 lg:grid-cols-4 gap-6 py-8 sm:py-10",
+      "checkout_two_column": "grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12",
+      "pdp_two_column": "grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14"
+    }
+  },
+  "button_system": {
+    "rules": "High-contrast rectangular architecture. Instant tactile response. Absolutely NO pill-shaped rounded-full buttons.",
+    "variants": {
+      "primary_obsidian": {
+        "classes": "inline-flex items-center justify-center gap-2 bg-obsidian text-white font-display font-bold uppercase tracking-wider text-xs sm:text-sm px-7 py-3.5 sm:py-4 rounded-none border border-obsidian hover:bg-fire hover:border-fire hover:text-white transition-colors duration-200 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed",
+        "usage": "Main CTA buttons (Add to Bag, Checkout, Submit Order, Save Changes)."
+      },
+      "secondary_outline": {
+        "classes": "inline-flex items-center justify-center gap-2 bg-transparent text-obsidian font-display font-bold uppercase tracking-wider text-xs sm:text-sm px-6 py-3.5 sm:py-4 rounded-none border-2 border-obsidian hover:bg-obsidian hover:text-white transition-colors duration-200 active:scale-[0.99]",
+        "usage": "Secondary CTA buttons (View All, Continue Shopping, Size Guide)."
+      },
+      "kinetic_fire": {
+        "classes": "inline-flex items-center justify-center gap-2 bg-fire text-white font-display font-bold uppercase tracking-wider text-xs sm:text-sm px-7 py-3.5 sm:py-4 rounded-none border border-fire hover:bg-[#E03126] transition-colors duration-200 active:scale-[0.99]",
+        "usage": "Flash sale instant cop, urgent notifications, promotional banners."
+      },
+      "square_icon_action": {
+        "classes": "h-10 w-10 sm:h-11 sm:w-11 grid place-items-center rounded-none border border-ink-200 bg-white text-obsidian hover:border-obsidian hover:bg-obsidian hover:text-white transition-colors duration-200",
+        "usage": "Wishlist toggle, search button, bag toggle, quantity incrementors."
+      },
+      "size_chip_button": {
+        "classes": "h-10 min-w-[38px] px-2 rounded-none border text-xs font-mono font-bold uppercase transition-colors duration-150 border-ink-200 hover:border-obsidian data-[selected=true]:bg-obsidian data-[selected=true]:text-white data-[selected=true]:border-obsidian disabled:border-ink-200/50 disabled:text-ink-300 disabled:line-through disabled:cursor-not-allowed",
+        "usage": "EU Shoe Size selection chips on PDP and quick-add overlays."
+      }
+    }
+  },
+  "product_card_spec": {
+    "layout": "Sharp 1px border container with crisp interior padding and hover image swap.",
+    "container_classes": "group relative bg-white border border-ink-200 hover:border-obsidian transition-colors duration-300 p-2.5 sm:p-3 rounded-none flex flex-col justify-between",
+    "image_frame_classes": "relative overflow-hidden aspect-square bg-[#F4F4F5] rounded-none mb-3",
+    "image_transition": {
+      "primary_img": "absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 group-hover:opacity-0",
+      "hover_img": "absolute inset-0 h-full w-full object-cover opacity-0 transition-all duration-500 group-hover:scale-105 group-hover:opacity-100"
+    },
+    "badge_spec": {
+      "sale_badge": "bg-fire text-white font-mono text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-none uppercase tracking-wider",
+      "new_badge": "bg-obsidian text-white font-mono text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-none uppercase tracking-wider"
+    },
+    "wishlist_button": "absolute top-2.5 right-2.5 h-8 w-8 sm:h-9 sm:w-9 grid place-items-center rounded-none bg-white/95 border border-ink-200 hover:border-obsidian hover:bg-white text-obsidian transition-colors duration-200 z-10",
+    "quick_add_bar": "absolute bottom-0 inset-x-0 p-2 sm:p-3 bg-white/95 backdrop-blur-sm border-t border-ink-200 z-10 transform translate-y-full group-hover:translate-y-0 transition-transform duration-250 ease-out",
+    "content_spec": {
+      "brand_label": "font-mono text-[10px] uppercase tracking-[0.2em] text-ink-400 block truncate",
+      "title": "font-display font-bold text-sm sm:text-base tracking-tight leading-snug line-clamp-1 hover:text-fire transition-colors mt-1",
+      "price_row": "flex items-center gap-2 mt-2",
+      "sold_out_overlay": "absolute inset-0 bg-white/80 backdrop-blur-[1px] grid place-items-center z-10"
+    }
+  },
+  "motion_and_interactions_spec": {
+    "rule": "Never use transition: all. Specify explicit properties: transition-colors, transition-opacity, transition-transform.",
+    "scroll_reveal": {
+      "initial": "{ opacity: 0, y: 16 }",
+      "animate_while_in_view": "{ opacity: 1, y: 0 }",
+      "viewport": "{ once: true, margin: '-40px' }",
+      "transition": "{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }"
+    },
+    "header_shrink": {
+      "default_padding": "py-4",
+      "scrolled_padding": "py-2.5",
+      "border_transition": "border-b border-ink-200 bg-white/95 backdrop-blur-md shadow-sm"
+    },
+    "drawer_sliding": {
+      "initial": "{ x: '100%' }",
+      "animate": "{ x: 0 }",
+      "exit": "{ x: '100%' }",
+      "transition": "{ type: 'spring', damping: 30, stiffness: 280 }"
+    },
+    "cart_bump_bounce": {
+      "scale": "[1, 1.2, 1]",
+      "duration": 0.35
+    }
+  },
+  "components_redesign_spec": {
+    "Header": {
+      "file": "/app/frontend/src/components/Header.jsx",
+      "description": "Sticky shrinking header with top announcement marquee bar. High-contrast obsidian marquee, crystal glass white nav with 1px bottom border on scroll. Sharp icon action buttons without round pills.",
+      "key_elements": [
+        "AnnouncementBar: bg-obsidian text-white py-2 font-mono text-[11px] uppercase tracking-[0.2em]",
+        "Logo: SOLEKICKS.PK with sharp dot and mono country badge",
+        "Nav Links: font-display font-bold text-xs sm:text-[13px] uppercase tracking-wider relative hover:text-fire with underline-grow indicator",
+        "Action Buttons: Search, Wishlist, Account, Cart Drawer in sharp 10x10 squares with badge count counters",
+        "Mobile Menu: Full-height sliding panel with sharp borders and clean typography"
+      ]
+    },
+    "HeroSlider": {
+      "file": "/app/frontend/src/components/HeroSlider.jsx",
+      "description": "75vh editorial banner slider. Deep obsidian base with 40-50% gradient scrim to preserve shoe photography. Confident 4xl-6xl Archivo headline, sharp rectangular 'SHOP DROP' action button, and minimalist horizontal progress tick bars.",
+      "key_elements": [
+        "Image Overlay: bg-gradient-to-r from-obsidian/90 via-obsidian/45 to-transparent (allows sneakers to breathe)",
+        "Typography: text-4xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight",
+        "CTA Button: bg-white text-obsidian rounded-none font-display font-bold uppercase tracking-wider px-8 py-4 hover:bg-fire hover:text-white",
+        "Slider Indicators: Sharp rectangular bars at bottom (h-1 w-10 vs w-3)"
+      ]
+    },
+    "CategoryGrid": {
+      "file": "/app/frontend/src/pages/Home.jsx",
+      "description": "Asymmetric editorial drop grid with 1px borders and deep contrast overlays.",
+      "key_elements": [
+        "Cards: aspect-[3/4] overflow-hidden rounded-none border border-ink-200 group relative",
+        "Hover Effect: Subtle 1.06x zoom with smooth darkening overlay",
+        "Typography: Sharp overline product count, heavy uppercase category name, and animated arrow link"
+      ]
+    },
+    "FlashSaleSection": {
+      "file": "/app/frontend/src/pages/Home.jsx",
+      "description": "High-urgency obsidian block with fire countdown clock and sharp white product cards.",
+      "key_elements": [
+        "Container: bg-obsidian text-white py-16 sm:py-24 border-y border-neutral-800",
+        "Countdown Timer: Sharp square mono tiles with white borders (bg-obsidian border border-neutral-700 text-white p-3 font-mono text-xl font-bold)",
+        "Cards: White sharp product cards on dark canvas creating intense graphic contrast"
+      ]
+    },
+    "ProductCard": {
+      "file": "/app/frontend/src/components/ProductCard.jsx",
+      "description": "The centerpiece of the e-commerce catalog. Pure 0px radius, 1px subtle border, smooth hover image crossfade, sharp quick-add tray, and crisp price typography.",
+      "key_elements": [
+        "Sharp border: border border-ink-200 hover:border-obsidian bg-white",
+        "Sharp badges: Sale (-XX%) in #FF3B30 and NEW in #0A0A0A (rounded-none)",
+        "Wishlist: Sharp square action trigger (rounded-none border border-ink-200)",
+        "Size Chips: Sharp mono squares (rounded-none border border-ink-200)",
+        "Quick Add: Full-width obsidian button with hover to fire transition"
+      ]
+    },
+    "CartDrawer": {
+      "file": "/app/frontend/src/components/CartDrawer.jsx",
+      "description": "Sliding right drawer with sharp geometry, free nationwide delivery milestone bar, item cards with sharp 1px borders, and high-impact checkout CTA.",
+      "key_elements": [
+        "Drawer Panel: fixed right-0 top-0 h-full w-full sm:w-[440px] bg-[#FAFAFA] rounded-none border-l border-ink-200 shadow-2xl z-50",
+        "Free Shipping Bar: Sharp rectangular progress bar (h-2 bg-ink-200 rounded-none with bg-fire fill)",
+        "Item Rows: Sharp square product thumbnail, quantity minus/plus in sharp boxed grid",
+        "Checkout CTA: Full-width obsidian button (rounded-none py-4 hover:bg-fire)"
+      ]
+    },
+    "ProductDetail": {
+      "file": "/app/frontend/src/pages/ProductDetail.jsx",
+      "description": "Editorial 2-column sneaker deep-dive. Sticky multi-image gallery with sharp thumbnail selectors, clear size grid with live low-stock badges, instant add-to-bag with COD trust cards, and tabbed specifications.",
+      "key_elements": [
+        "Gallery: Sharp square master preview (rounded-none border border-ink-200 bg-[#F4F4F5]) + sharp thumbnail row with active fire border",
+        "Price Block: Large mono fire price + strikethrough original + sharp discount pill replacement",
+        "Size Selector: 8-column sharp grid of EU sizes with sold-out strikethrough and urgency counters",
+        "Trust Badges: 3 sharp square cards with COD, 7-day exchange, and authenticity guarantees",
+        "Tabs: Sharp underline tab switcher for Specs vs Customer Reviews"
+      ]
+    },
+    "Checkout": {
+      "file": "/app/frontend/src/pages/Checkout.jsx",
+      "description": "Streamlined guest-friendly checkout with sharp form inputs, payment option selector cards, and sticky order summary.",
+      "key_elements": [
+        "Form Fields: Sharp border-ink-200 inputs with focus:border-obsidian (rounded-none px-4 py-3)",
+        "Payment Tiles: 3 sharp cards (COD, Wallet/JazzCash/EasyPaisa, Card) with checkmark highlight",
+        "Order Summary: Sharp white card with 1px border, coupon input, store credit checkbox, and total breakdown"
+      ]
+    },
+    "AdminDashboard": {
+      "file": "/app/frontend/src/pages/Admin.jsx",
+      "description": "High-density command center with sharp obsidian sidebar, data cards, Recharts visualizations with #FF3B30 highlights, order status selectors, product form with multi-image reorder, and refund modals.",
+      "key_elements": [
+        "Sidebar: Sharp obsidian vertical rail with fire active states",
+        "KPI Cards: Sharp 1px border white containers with mono metrics",
+        "Tables: Bordered dense tables with monospace order numbers and phone links",
+        "Modals: Sharp white center overlays with 1px borders (rounded-none)"
+      ]
+    },
+    "Footer": {
+      "file": "/app/frontend/src/components/Footer.jsx",
+      "description": "High-impact near-black footer (#0A0A0A) with TrustRibbon banner, newsletter subscribe with sharp inputs, navigation links, and payment method chips.",
+      "key_elements": [
+        "Trust Ribbon: 4-column white bar with nationwide delivery, 7-day exchange, authenticity, and WhatsApp support",
+        "Newsletter Form: Sharp bg-white/10 input + sharp fire submit button",
+        "Payment Badges: Sharp mono chips for COD, JazzCash, EasyPaisa, Visa, Mastercard"
+      ]
+    }
+  },
+  "curated_image_assets": {
+    "hero_and_editorial_banners": [
+      {
+        "title": "Air Jordan 1 High OG Chicago / Lost & Found",
+        "url": "https://images.unsplash.com/photo-1552346154-21d32810aba3?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDN8MHwxfHNlYXJjaHwyfHxzbmVha2VycyUyMG5pa2UlMjBqb3JkYW58ZW58MHx8fHwxNzg3MDY5MzAyfDA&ixlib=rb-4.1.0&q=85",
+        "category": "hero_slider",
+        "description": "Iconic high-top red, black, and white sneaker pair on urban asphalt."
+      },
+      {
+        "title": "Nike Dunk Low Retro Streetwear",
+        "url": "https://images.unsplash.com/photo-1556906781-9a412961c28c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDN8MHwxfHNlYXJjaHwxfHxzbmVha2VycyUyMG5pa2UlMjBqb3JkYW58ZW58MHx8fHwxNzg3MDY5MzAyfDA&ixlib=rb-4.1.0&q=85",
+        "category": "hero_slider",
+        "description": "Streetwear lifestyle model sitting on urban ledge wearing Jordan 1 Lows."
+      },
+      {
+        "title": "Air Jordan 1 Mid High Heat Edition",
+        "url": "https://images.unsplash.com/photo-1597045566677-8cf032ed6634?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDN8MHwxfHNlYXJjaHw0fHxzbmVha2VycyUyMG5pa2UlMjBqb3JkYW58ZW58MHx8fHwxNzg3MDY5MzAyfDA&ixlib=rb-4.1.0&q=85",
+        "category": "hero_slider",
+        "description": "Black, white, and red Nike high-top sneaker suspended against graphic architectural contrast."
+      }
+    ],
+    "streetwear_culture_and_categories": [
+      {
+        "title": "Urban Streetwear Bomber & Cargo Fit",
+        "url": "https://images.unsplash.com/photo-1532332248682-206cc786359f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MDV8MHwxfHNlYXJjaHw0fHxzdHJlZXR3ZWFyJTIwZmFzaGlvbiUyMG1vZGVsfGVufDB8fHx8MTc4NzA2OTMwMnww&ixlib=rb-4.1.0&q=85",
+        "category": "category_streetwear",
+        "description": "High-fashion model in oversized shearling jacket and sunglasses."
+      },
+      {
+        "title": "Minimalist Streetwear Duo Lookbook",
+        "url": "https://images.unsplash.com/photo-1507553532144-b9df5e38c8d1?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MDV8MHwxfHNlYXJjaHwzfHxzdHJlZXR3ZWFyJTIwZmFzaGlvbiUyMG1vZGVsfGVufDB8fHx8MTc4NzA2OTMwMnww&ixlib=rb-4.1.0&q=85",
+        "category": "category_retro",
+        "description": "Monochrome streetwear models against raw architectural concrete."
+      },
+      {
+        "title": "Contemporary Street Silhouette Berlin",
+        "url": "https://images.pexels.com/photos/29538558/pexels-photo-29538558.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "category": "category_runners",
+        "description": "Urban portrait of modern streetwear style."
+      },
+      {
+        "title": "Oversized Cyber Street Duo",
+        "url": "https://images.unsplash.com/photo-1559697242-a465f2578a95?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MDV8MHwxfHNlYXJjaHwxfHxzdHJlZXR3ZWFyJTIwZmFzaGlvbiUyMG1vZGVsfGVufDB8fHx8MTc4NzA2OTMwMnww&ixlib=rb-4.1.0&q=85",
+        "category": "category_slides",
+        "description": "Two models posing in technical black outerwear with electric blue linings."
+      }
+    ],
+    "footwear_closeups_and_details": [
+      {
+        "title": "Nike Retro Low Red Swoosh Portrait",
+        "url": "https://images.unsplash.com/photo-1656944227421-416b1d2186c9?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDN8MHwxfHNlYXJjaHwzfHxzbmVha2VycyUyMG5pa2UlMjBqb3JkYW58ZW58MHx8fHwxNzg3MDY5MzAyfDA&ixlib=rb-4.1.0&q=85",
+        "category": "product_detail",
+        "description": "Vertical studio portrait of red and white sneaker resting against minimal white wall."
+      },
+      {
+        "title": "Performance Runner Tech Cushioning",
+        "url": "https://images.unsplash.com/photo-1768647417374-5a31c61dc5d0?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjd8MHwxfHNlYXJjaHwyfHxzbmVha2VyJTIwY2xvc2UlMjB1cCUyMGRldGFpbHxlbnwwfHx8fDE3ODcwNjkzMDJ8MA&ixlib=rb-4.1.0&q=85",
+        "category": "product_detail",
+        "description": "Black and white performance runner showing thick cushioned outsole and breathable upper."
+      },
+      {
+        "title": "Sand Suede Terrace Court Sneaker",
+        "url": "https://images.pexels.com/photos/38914242/pexels-photo-38914242.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "category": "product_detail",
+        "description": "Stylish beige suede sneaker hanging against textured background."
+      },
+      {
+        "title": "Classic Court White Canvas Low",
+        "url": "https://images.unsplash.com/photo-1777811662707-95d400b6672b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjd8MHwxfHNlYXJjaHwxfHxzbmVha2VyJTIwY2xvc2UlMjB1cCUyMGRldGFpbHxlbnwwfHx8fDE3ODcwNjkzMDJ8MA&ixlib=rb-4.1.0&q=85",
+        "category": "product_detail",
+        "description": "Clean white low-top sneaker on wooden surface."
+      }
     ]
   },
-  "pakistan_localization_details": {
-    "currency": "PKR (Displayed as Rs. XX,XXX)",
-    "phone_format": "+92 3XX XXXXXXX",
-    "shipping_rules": "Free Shipping on orders over Rs. 5,000; Flat Rs. 250 delivery fee for other orders",
-    "major_cities": [
-      "Karachi",
-      "Lahore",
-      "Islamabad",
-      "Rawalpindi",
-      "Faisalabad",
-      "Multan",
-      "Peshawar",
-      "Quetta",
-      "Sialkot",
-      "Gujranwala",
-      "Hyderabad"
+  "data_testid_contract": {
+    "header": [
+      "logo",
+      "search-toggle",
+      "search-input",
+      "wishlist-link",
+      "account-link",
+      "cart-toggle",
+      "mobile-menu-btn"
     ],
-    "payment_gateways_mocked": [
-      "Cash on Delivery (COD) - Most Popular in Pakistan",
-      "JazzCash / EasyPaisa Direct Transfer",
-      "Credit / Debit Card (Visa, Mastercard, UnionPay)"
+    "hero_slider": [
+      "hero-slider"
+    ],
+    "product_card": [
+      "product-card-{id}",
+      "product-card-image-{id}",
+      "product-card-badge-{id}",
+      "product-card-wishlist-btn-{id}",
+      "product-card-size-{size}-{id}",
+      "product-card-add-btn-{id}",
+      "product-card-title-{id}",
+      "product-card-price-{id}",
+      "product-card-original-price-{id}"
+    ],
+    "cart_drawer": [
+      "cart-drawer",
+      "cart-drawer-close-btn",
+      "cart-item-{id}",
+      "cart-item-remove-btn-{id}",
+      "cart-item-qty-minus-{id}",
+      "cart-item-qty-plus-{id}",
+      "cart-drawer-subtotal-amount",
+      "cart-drawer-checkout-btn"
+    ],
+    "product_detail": [
+      "pdp-main-image",
+      "pdp-thumbnail-{i}",
+      "pdp-size-{size}",
+      "pdp-add-to-cart-btn",
+      "pdp-add-to-cart-btn-mobile",
+      "pdp-wishlist-toggle",
+      "pdp-reviews-section"
+    ],
+    "checkout": [
+      "checkout-form",
+      "checkout-fullname-input",
+      "checkout-phone-input",
+      "checkout-email-input",
+      "checkout-address-input",
+      "checkout-city-select",
+      "checkout-payment-method-{method}",
+      "checkout-coupon-input",
+      "checkout-apply-coupon-btn",
+      "checkout-store-credit-toggle",
+      "checkout-total-amount",
+      "checkout-advance-notice",
+      "checkout-submit-order-btn"
+    ],
+    "admin": [
+      "admin-dashboard",
+      "admin-nav-{tab}",
+      "admin-stat-{metric}",
+      "admin-order-row-{id}",
+      "admin-refund-btn-{id}",
+      "admin-products-table",
+      "admin-add-product-btn",
+      "admin-edit-product-{id}",
+      "admin-product-name",
+      "admin-product-price",
+      "admin-product-gallery",
+      "admin-product-gallery-upload",
+      "admin-product-save",
+      "admin-hero-title",
+      "admin-hero-upload",
+      "admin-hero-save",
+      "admin-return-{id}",
+      "admin-return-approve-{id}",
+      "admin-refund-amount",
+      "admin-refund-method",
+      "admin-refund-reason",
+      "admin-refund-submit"
     ]
   },
   "instructions_to_main_agent": [
-    "Build the complete single-vendor sneaker e-commerce platform with the exact streetwear aesthetic outlined in this file.",
-    "Implement clean React state management with persistent LocalStorage for Guest Cart, Wishlist, and Recent Orders so refreshes keep items.",
-    "Include pre-seeded catalog with 16+ high-heat streetwear sneaker models across Retro, Lows, Runners, and Slides with realistic PKR pricing and size runs (EU 39 to 46).",
-    "Ensure all test IDs (data-testid) defined in this document are strictly attached to all interactive buttons, inputs, links, and cards for end-to-end testing.",
-    "Provide interactive mock flows for Checkout, Order Tracking, Customer Reviews with photo uploads simulation, and an accessible Admin Portal.",
-    "Ensure the mobile experience has the sticky bottom navigation bar for quick thumb access to Shop, Search, Wishlist, and Cart Drawer."
+    "Strictly honor all existing data-testid attributes and API integrations without altering endpoints or parameters.",
+    "Replace all instances of 'rounded-full' on buttons and category chips with 'rounded-none' for the sharp editorial aesthetic.",
+    "Replace all 'rounded-2xl' or 'rounded-3xl' containers with 'rounded-none' or subtle 'rounded-sm' bordered boxes.",
+    "Ensure the sticky header uses a solid/semi-solid crystal glass background ('bg-white/95 backdrop-blur-md border-b border-ink-200') to prevent transparent text overlap during scroll.",
+    "Use the Fire Red-Orange (#FF3B30) accent strictly for sale badges, live urgency stock notices, active indicators, and high-conversion actions (< 5% screen presence).",
+    "Preserve all responsive mobile workflows including the fixed bottom mobile navigation bar and sticky PDP mobile buy tray.",
+    "Keep framer-motion micro-animations smooth and lightweight; avoid 'transition: all' in CSS utilities."
   ]
 }

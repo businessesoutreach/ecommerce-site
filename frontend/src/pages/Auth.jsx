@@ -47,12 +47,12 @@ export default function Auth({ mode = "login" }) {
           <h1 className="font-display text-3xl font-black uppercase tracking-tight">{isLogin ? "Welcome Back" : "Create Account"}</h1>
           <p className="text-ink-500 mt-1 mb-8 text-sm">{isLogin ? "Sign in to your account" : "Guest checkout is always available — no account needed to shop."}</p>
           <div className="space-y-4">
-            {!isLogin && <input value={form.name} onChange={set("name")} required placeholder="Full name" data-testid="auth-name" className="w-full border border-ink-200 rounded-xl px-4 py-3 outline-none focus:border-obsidian" />}
-            <input value={form.email} onChange={set("email")} type="email" required placeholder="Email" data-testid="auth-email" className="w-full border border-ink-200 rounded-xl px-4 py-3 outline-none focus:border-obsidian" />
-            {!isLogin && <input value={form.phone} onChange={set("phone")} placeholder="Phone (optional)" className="w-full border border-ink-200 rounded-xl px-4 py-3 outline-none focus:border-obsidian" />}
-            <input value={form.password} onChange={set("password")} type="password" required placeholder="Password" data-testid="auth-password" className="w-full border border-ink-200 rounded-xl px-4 py-3 outline-none focus:border-obsidian" />
+            {!isLogin && <input value={form.name} onChange={set("name")} required placeholder="Full name" data-testid="auth-name" className="w-full border border-ink-200 rounded-none px-4 py-3 outline-none focus:border-obsidian" />}
+            <input value={form.email} onChange={set("email")} type="email" required placeholder="Email" data-testid="auth-email" className="w-full border border-ink-200 rounded-none px-4 py-3 outline-none focus:border-obsidian" />
+            {!isLogin && <input value={form.phone} onChange={set("phone")} placeholder="Phone (optional)" className="w-full border border-ink-200 rounded-none px-4 py-3 outline-none focus:border-obsidian" />}
+            <input value={form.password} onChange={set("password")} type="password" required placeholder="Password" data-testid="auth-password" className="w-full border border-ink-200 rounded-none px-4 py-3 outline-none focus:border-obsidian" />
           </div>
-          <button disabled={loading} data-testid="auth-submit" className="w-full bg-obsidian text-white font-display font-bold uppercase tracking-wide py-4 rounded-full mt-6 hover:bg-fire transition-colors disabled:opacity-60">{loading ? "Please wait…" : isLogin ? "Sign In" : "Create Account"}</button>
+          <button disabled={loading} data-testid="auth-submit" className="w-full bg-obsidian text-white font-display font-bold uppercase tracking-wider py-4 rounded-none mt-6 hover:bg-fire transition-colors disabled:opacity-60">{loading ? "Please wait…" : isLogin ? "Sign In" : "Create Account"}</button>
           <p className="text-center text-sm text-ink-500 mt-5">
             {isLogin ? "New here? " : "Already have an account? "}
             <Link to={isLogin ? "/register" : "/login"} className="font-bold text-fire underline underline-offset-4">{isLogin ? "Create account" : "Sign in"}</Link>

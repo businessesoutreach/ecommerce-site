@@ -70,8 +70,8 @@ function SearchOverlay({ open, onClose }) {
               </div>
               <div className="mt-4 space-y-1 max-h-[60vh] overflow-y-auto">
                 {results.map((p) => (
-                  <Link key={p.id} to={`/products/${p.slug}`} onClick={onClose} className="flex items-center gap-3 p-2 rounded-xl hover:bg-white">
-                    <img src={p.images[0]} alt={p.name} className="h-14 w-14 rounded-lg object-cover bg-ink-100" />
+                  <Link key={p.id} to={`/products/${p.slug}`} onClick={onClose} className="flex items-center gap-3 p-2 rounded-none hover:bg-white">
+                    <img src={p.images[0]} alt={p.name} className="h-14 w-14 rounded-none object-cover bg-ink-100" />
                     <div className="flex-1">
                       <p className="font-display font-bold text-sm">{p.name}</p>
                       <span className="font-mono text-fire text-sm">{fmt(p.base_price)}</span>
@@ -118,7 +118,7 @@ export default function Header() {
 
             <nav className="hidden lg:flex items-center gap-7">
               {NAV.map((n) => (
-                <Link key={n.to} to={n.to} className={`relative font-display font-bold text-[13px] uppercase tracking-wide group ${loc.pathname === n.to ? "text-fire" : "text-obsidian"}`}>
+                <Link key={n.to} to={n.to} className={`relative font-display font-bold text-[13px] uppercase tracking-wider group ${loc.pathname === n.to ? "text-fire" : "text-obsidian"}`}>
                   {n.hot && <Zap size={11} className="inline mr-1 fill-fire text-fire" />}
                   {n.label}
                   <span className="absolute -bottom-1 left-0 h-[2px] bg-fire w-0 group-hover:w-full transition-all duration-300" />
@@ -127,22 +127,22 @@ export default function Header() {
             </nav>
 
             <div className="flex items-center gap-1 sm:gap-2">
-              <button onClick={() => setSearchOpen(true)} data-testid="search-toggle" className="h-10 w-10 grid place-items-center rounded-full hover:bg-ink-100"><Search size={19} /></button>
-              <Link to="/wishlist" data-testid="wishlist-link" className="h-10 w-10 grid place-items-center rounded-full hover:bg-ink-100 relative">
+              <button onClick={() => setSearchOpen(true)} data-testid="search-toggle" className="h-10 w-10 grid place-items-center rounded-none hover:bg-ink-100"><Search size={19} /></button>
+              <Link to="/wishlist" data-testid="wishlist-link" className="h-10 w-10 grid place-items-center rounded-none hover:bg-ink-100 relative">
                 <Heart size={19} />
-                {wishlist.ids.length > 0 && <span className="absolute top-1 right-1 h-4 min-w-4 px-1 bg-fire text-white text-[10px] font-bold rounded-full grid place-items-center">{wishlist.ids.length}</span>}
+                {wishlist.ids.length > 0 && <span className="absolute top-1 right-1 h-4 min-w-4 px-1 bg-fire text-white text-[10px] font-bold rounded-none grid place-items-center">{wishlist.ids.length}</span>}
               </Link>
-              <Link to={user ? "/account" : "/login"} data-testid="account-link" className="h-10 w-10 grid place-items-center rounded-full hover:bg-ink-100"><User size={19} /></Link>
+              <Link to={user ? "/account" : "/login"} data-testid="account-link" className="h-10 w-10 grid place-items-center rounded-none hover:bg-ink-100"><User size={19} /></Link>
               <motion.button
                 key={cartBump}
                 animate={{ scale: [1, 1.25, 1] }}
                 transition={{ duration: 0.4 }}
                 onClick={() => setCartOpen(true)}
                 data-testid="cart-toggle"
-                className="h-10 w-10 grid place-items-center rounded-full hover:bg-ink-100 relative"
+                className="h-10 w-10 grid place-items-center rounded-none hover:bg-ink-100 relative"
               >
                 <ShoppingBag size={19} />
-                {cart.count > 0 && <span className="absolute top-1 right-1 h-4 min-w-4 px-1 bg-fire text-white text-[10px] font-bold rounded-full grid place-items-center">{cart.count}</span>}
+                {cart.count > 0 && <span className="absolute top-1 right-1 h-4 min-w-4 px-1 bg-fire text-white text-[10px] font-bold rounded-none grid place-items-center">{cart.count}</span>}
               </motion.button>
             </div>
           </div>
@@ -189,7 +189,7 @@ function MobileBottomNav() {
       <div className={`flex flex-col items-center gap-0.5 relative ${active ? "text-fire" : "text-obsidian"}`}>
         <Icon size={20} />
         <span className="text-[9px] font-bold uppercase tracking-wide">{label}</span>
-        {badge > 0 && <span className="absolute -top-1 right-2 h-4 min-w-4 px-1 bg-fire text-white text-[9px] font-bold rounded-full grid place-items-center">{badge}</span>}
+        {badge > 0 && <span className="absolute -top-1 right-2 h-4 min-w-4 px-1 bg-fire text-white text-[9px] font-bold rounded-none grid place-items-center">{badge}</span>}
       </div>
     );
     return onClick ? <button onClick={onClick} data-testid={`mobilenav-${label.toLowerCase()}`}>{content}</button> : <Link to={to} data-testid={`mobilenav-${label.toLowerCase()}`}>{content}</Link>;

@@ -49,7 +49,7 @@ export default function Home() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {cats.map((c, i) => (
             <ScrollReveal key={c.id} delay={i * 0.08}>
-              <Link to={`/collections/${c.slug}`} className="group relative block overflow-hidden rounded-2xl aspect-[3/4]">
+              <Link to={`/collections/${c.slug}`} className="group relative block overflow-hidden rounded-none aspect-[3/4]">
                 <img src={c.image_url} alt={c.name} className="absolute inset-0 h-full w-full object-cover group-hover:scale-110 transition-transform duration-700" />
                 <div className="absolute inset-0 bg-gradient-to-t from-obsidian/90 via-obsidian/20 to-transparent" />
                 <div className="absolute bottom-0 p-5 text-white">
@@ -81,7 +81,7 @@ export default function Home() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 [&_h3]:text-white [&_.text-obsidian]:text-white">
               <div className="contents">
                 {data.flash.slice(0, 4).map((p, i) => (
-                  <div key={p.id} className="bg-white rounded-2xl p-2"><ProductCard product={p} index={i} /></div>
+                  <div key={p.id} className="bg-white rounded-none p-2"><ProductCard product={p} index={i} /></div>
                 ))}
               </div>
             </div>
@@ -111,7 +111,7 @@ export default function Home() {
           <div className="grid grid-cols-4 sm:grid-cols-8 gap-3">
             {SIZES.map((s, i) => (
               <motion.div key={s} initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.04 }}>
-                <Link to={`/collections/retro?size=${s}`} className="block text-center border-2 border-obsidian rounded-xl py-5 font-display font-black text-lg hover:bg-obsidian hover:text-white transition-colors">
+                <Link to={`/collections/retro?size=${s}`} className="block text-center border-2 border-obsidian rounded-none py-5 font-display font-black text-lg hover:bg-obsidian hover:text-white transition-colors">
                   EU {s}
                 </Link>
               </motion.div>
@@ -149,11 +149,11 @@ function ReviewsSection() {
         <div className="grid md:grid-cols-3 gap-6">
           {reviews.map((r, i) => (
             <ScrollReveal key={i} delay={i * 0.1}>
-              <div className="bg-canvas rounded-2xl p-6 h-full border border-ink-200">
+              <div className="bg-canvas rounded-none p-6 h-full border border-ink-200">
                 <Stars rating={r.rating} />
                 <p className="mt-4 text-ink-700 leading-relaxed">"{r.text}"</p>
                 <div className="mt-5 flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-obsidian text-white grid place-items-center font-display font-bold">{r.name[0]}</div>
+                  <div className="h-10 w-10 rounded-none bg-obsidian text-white grid place-items-center font-display font-bold">{r.name[0]}</div>
                   <div>
                     <p className="font-display font-bold text-sm">{r.name}</p>
                     <span className="text-ink-400 text-xs">{r.city} · Verified</span>

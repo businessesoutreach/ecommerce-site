@@ -5,7 +5,7 @@ import { SlidersHorizontal, X, ChevronDown } from "lucide-react";
 import { http } from "../lib/api";
 import ProductCard from "../components/ProductCard";
 import { ProductCardSkeleton, EmptyState } from "../components/common";
-import { PackageX } from "lucide-react";
+import { Package } from "lucide-react";
 
 const SIZES = ["39", "40", "41", "42", "43", "44", "45", "46"];
 const SORTS = [
@@ -64,7 +64,7 @@ export default function Collection({ mode }) {
         <h4 className="font-display font-bold uppercase text-sm tracking-wide mb-3">Size</h4>
         <div className="grid grid-cols-4 gap-2">
           {SIZES.map((s) => (
-            <button key={s} onClick={() => setSize(size === s ? "" : s)} className={`py-2 rounded-lg font-mono text-sm font-bold border transition-colors ${size === s ? "bg-obsidian text-white border-obsidian" : "border-ink-200 hover:border-obsidian"}`}>{s}</button>
+            <button key={s} onClick={() => setSize(size === s ? "" : s)} className={`py-2 rounded-none font-mono text-sm font-bold border transition-colors ${size === s ? "bg-obsidian text-white border-obsidian" : "border-ink-200 hover:border-obsidian"}`}>{s}</button>
           ))}
         </div>
       </div>
@@ -109,9 +109,9 @@ export default function Collection({ mode }) {
           <div className="flex items-center justify-between mb-6">
             <span className="text-ink-500 text-sm font-mono">{loading ? "…" : products.length} products</span>
             <div className="flex items-center gap-2">
-              <button onClick={() => setShowFilters(true)} className="lg:hidden flex items-center gap-2 border border-ink-200 rounded-full px-4 py-2 text-sm font-bold" data-testid="mobile-filters-btn"><SlidersHorizontal size={15} /> Filter</button>
+              <button onClick={() => setShowFilters(true)} className="lg:hidden flex items-center gap-2 border border-ink-200 rounded-none px-4 py-2 text-sm font-bold" data-testid="mobile-filters-btn"><SlidersHorizontal size={15} /> Filter</button>
               <div className="relative">
-                <select value={sort} onChange={(e) => setSort(e.target.value)} data-testid="sort-select" className="appearance-none border border-ink-200 rounded-full pl-4 pr-9 py-2 text-sm font-bold bg-white cursor-pointer">
+                <select value={sort} onChange={(e) => setSort(e.target.value)} data-testid="sort-select" className="appearance-none border border-ink-200 rounded-none pl-4 pr-9 py-2 text-sm font-bold bg-white cursor-pointer">
                   {SORTS.map((s) => <option key={s.v} value={s.v}>{s.l}</option>)}
                 </select>
                 <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -122,7 +122,7 @@ export default function Collection({ mode }) {
           {loading ? (
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">{Array.from({ length: 9 }).map((_, i) => <ProductCardSkeleton key={i} />)}</div>
           ) : products.length === 0 ? (
-            <EmptyState icon={PackageX} title="No kicks match" subtitle="Try adjusting your filters or explore another category." />
+            <EmptyState icon={Package} title="No kicks match" subtitle="Try adjusting your filters or explore another category." />
           ) : (
             <motion.div layout className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {products.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
@@ -136,13 +136,13 @@ export default function Collection({ mode }) {
         {showFilters && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-obsidian/60 z-50" onClick={() => setShowFilters(false)} />
-            <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 30, stiffness: 260 }} className="fixed bottom-0 inset-x-0 max-h-[85vh] overflow-y-auto bg-canvas z-50 rounded-t-3xl p-6">
+            <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 30, stiffness: 260 }} className="fixed bottom-0 inset-x-0 max-h-[85vh] overflow-y-auto bg-canvas z-50 rounded-none p-6">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="font-display font-black text-xl uppercase">Filters</h3>
                 <button onClick={() => setShowFilters(false)}><X size={22} /></button>
               </div>
               <Filters />
-              <button onClick={() => setShowFilters(false)} className="w-full bg-obsidian text-white font-display font-bold uppercase py-4 rounded-full mt-8">Show {products.length} results</button>
+              <button onClick={() => setShowFilters(false)} className="w-full bg-obsidian text-white font-display font-bold uppercase py-4 rounded-none mt-8">Show {products.length} results</button>
             </motion.div>
           </>
         )}

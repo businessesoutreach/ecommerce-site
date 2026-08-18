@@ -41,7 +41,7 @@ export default function CartDrawer() {
               <h2 className="font-display text-lg font-extrabold uppercase tracking-tight flex items-center gap-2">
                 <ShoppingBag size={18} /> Your Bag <span className="text-fire">({cart.count})</span>
               </h2>
-              <button data-testid="cart-drawer-close-btn" onClick={() => setCartOpen(false)} className="h-9 w-9 grid place-items-center rounded-full hover:bg-ink-100">
+              <button data-testid="cart-drawer-close-btn" onClick={() => setCartOpen(false)} className="h-9 w-9 grid place-items-center rounded-none hover:bg-ink-100">
                 <X size={18} />
               </button>
             </div>
@@ -56,7 +56,7 @@ export default function CartDrawer() {
                     <span className="text-fire font-bold">You've unlocked FREE nationwide delivery! 🎉</span>
                   )}
                 </div>
-                <div className="h-1.5 bg-ink-100 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-ink-100 rounded-none overflow-hidden">
                   <motion.div className="h-full bg-fire" animate={{ width: `${pct}%` }} transition={{ duration: 0.5 }} />
                 </div>
               </div>
@@ -69,7 +69,7 @@ export default function CartDrawer() {
                 <div className="space-y-4">
                   {cart.items.map((it) => (
                     <div key={it.id} data-testid={`cart-item-${it.id}`} className="flex gap-3">
-                      <Link to={`/products/${it.slug}`} onClick={() => setCartOpen(false)} className="h-24 w-24 rounded-xl overflow-hidden bg-ink-100 shrink-0">
+                      <Link to={`/products/${it.slug}`} onClick={() => setCartOpen(false)} className="h-24 w-24 rounded-none overflow-hidden bg-ink-100 shrink-0">
                         <img src={it.image} alt={it.name} className="h-full w-full object-cover" />
                       </Link>
                       <div className="flex-1 min-w-0">
@@ -79,9 +79,9 @@ export default function CartDrawer() {
                             <Trash2 size={15} />
                           </button>
                         </div>
-                        <span className="font-mono text-[11px] uppercase tracking-wide text-ink-400">EU {it.size}</span>
+                        <span className="font-mono text-[11px] uppercase tracking-wider text-ink-400">EU {it.size}</span>
                         <div className="flex items-center justify-between mt-2">
-                          <div className="flex items-center border border-ink-200 rounded-lg">
+                          <div className="flex items-center border border-ink-200 rounded-none">
                             <button data-testid={`cart-item-qty-minus-${it.id}`} onClick={() => updateQty(it.id, it.quantity - 1)} className="h-7 w-7 grid place-items-center hover:bg-ink-100">
                               <Minus size={13} />
                             </button>
@@ -108,7 +108,7 @@ export default function CartDrawer() {
                 <button
                   data-testid="cart-drawer-checkout-btn"
                   onClick={() => go("/checkout")}
-                  className="w-full bg-obsidian text-white font-display font-bold uppercase tracking-wide py-4 rounded-full hover:bg-fire transition-colors active:scale-[0.99]"
+                  className="w-full bg-obsidian text-white font-display font-bold uppercase tracking-wider py-4 rounded-none hover:bg-fire transition-colors active:scale-[0.99]"
                 >
                   Checkout · Guest Friendly
                 </button>

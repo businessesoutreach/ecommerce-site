@@ -30,10 +30,10 @@ export default function Admin() {
           <div className="p-4 lg:p-6 border-b border-white/10"><span className="font-display font-black uppercase tracking-tighter hidden lg:block">SOLEKICKS<span className="text-fire">.</span></span><span className="lg:hidden font-display font-black text-fire text-center block">S.</span></div>
           <nav className="flex-1 p-2 lg:p-3 space-y-1">
             {NAV.map(([k, l, I]) => (
-              <button key={k} onClick={() => setTab(k)} data-testid={`admin-nav-${k}`} className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl font-display font-bold uppercase text-sm tracking-tight transition-colors ${tab === k ? "bg-fire text-white" : "text-white/60 hover:bg-white/10"}`}><I size={18} /><span className="hidden lg:block">{l}</span></button>
+              <button key={k} onClick={() => setTab(k)} data-testid={`admin-nav-${k}`} className={`w-full flex items-center gap-3 px-3 py-3 rounded-none font-display font-bold uppercase text-sm tracking-tight transition-colors ${tab === k ? "bg-fire text-white" : "text-white/60 hover:bg-white/10"}`}><I size={18} /><span className="hidden lg:block">{l}</span></button>
             ))}
           </nav>
-          <button onClick={() => { logout(); navigate("/"); }} className="m-3 flex items-center gap-3 px-3 py-3 rounded-xl text-white/60 hover:bg-white/10 font-bold uppercase text-sm"><LogOut size={18} /><span className="hidden lg:block">Logout</span></button>
+          <button onClick={() => { logout(); navigate("/"); }} className="m-3 flex items-center gap-3 px-3 py-3 rounded-none text-white/60 hover:bg-white/10 font-bold uppercase text-sm"><LogOut size={18} /><span className="hidden lg:block">Logout</span></button>
         </aside>
 
         <main className="flex-1 p-5 lg:p-8 max-w-full overflow-hidden">
@@ -55,27 +55,27 @@ export default function Admin() {
 function Overview() {
   const [d, setD] = useState(null);
   useEffect(() => { http.get("/admin/analytics/overview").then(({ data }) => setD(data.data)); }, []);
-  if (!d) return <div className="skeleton h-40 rounded-2xl" />;
+  if (!d) return <div className="skeleton h-40 rounded-none" />;
   const cards = [["Revenue", fmt(d.revenue), TrendingUp], ["Orders", d.total_orders, ShoppingCart], ["Avg Order", fmt(d.aov), Package], ["Pending", d.pending_orders, AlertTriangle]];
   return (
     <div>
       <h1 className="font-display text-3xl font-black uppercase tracking-tight mb-6">Dashboard</h1>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {cards.map(([l, v, I], i) => (
-          <div key={l} data-testid={`admin-stat-${l.toLowerCase().replace(" ", "-")}`} className="bg-white rounded-2xl p-5 border border-ink-200">
-            <div className="flex justify-between items-start"><span className="font-mono text-xs uppercase tracking-wide text-ink-400">{l}</span><I size={18} className="text-fire" /></div>
+          <div key={l} data-testid={`admin-stat-${l.toLowerCase().replace(" ", "-")}`} className="bg-white rounded-none p-5 border border-ink-200">
+            <div className="flex justify-between items-start"><span className="font-mono text-xs uppercase tracking-wider text-ink-400">{l}</span><I size={18} className="text-fire" /></div>
             <p className="font-display font-black text-2xl mt-2">{v}</p>
           </div>
         ))}
       </div>
       <div className="grid lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl p-5 border border-ink-200">
+        <div className="bg-white rounded-none p-5 border border-ink-200">
           <h3 className="font-display font-bold uppercase mb-4">Revenue (Last 7 days)</h3>
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={d.chart}><XAxis dataKey="date" tick={{ fontSize: 11 }} /><YAxis tick={{ fontSize: 11 }} /><Tooltip /><Line type="monotone" dataKey="revenue" stroke="#FF3B30" strokeWidth={2.5} dot={false} /></LineChart>
           </ResponsiveContainer>
         </div>
-        <div className="bg-white rounded-2xl p-5 border border-ink-200">
+        <div className="bg-white rounded-none p-5 border border-ink-200">
           <h3 className="font-display font-bold uppercase mb-4">Top Products</h3>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={d.top_products}><XAxis dataKey="name" tick={{ fontSize: 9 }} interval={0} /><YAxis tick={{ fontSize: 11 }} /><Tooltip /><Bar dataKey="sold" fill="#FF3B30" radius={[6, 6, 0, 0]} /></BarChart>
@@ -83,9 +83,9 @@ function Overview() {
         </div>
       </div>
       {d.low_stock.length > 0 && (
-        <div className="bg-white rounded-2xl p-5 border border-ink-200 mt-6">
+        <div className="bg-white rounded-none p-5 border border-ink-200 mt-6">
           <h3 className="font-display font-bold uppercase mb-3 flex items-center gap-2"><AlertTriangle size={18} className="text-fire" /> Low Stock Alert</h3>
-          <div className="flex flex-wrap gap-2">{d.low_stock.map((s, i) => <span key={i} className="bg-fire-subtle text-fire text-xs font-bold px-3 py-1.5 rounded-full">{s.product} · EU {s.size} ({s.stock})</span>)}</div>
+          <div className="flex flex-wrap gap-2">{d.low_stock.map((s, i) => <span key={i} className="bg-fire-subtle text-fire text-xs font-bold px-3 py-1.5 rounded-none">{s.product} · EU {s.size} ({s.stock})</span>)}</div>
         </div>
       )}
     </div>
@@ -101,7 +101,7 @@ function Orders() {
   return (
     <div>
       <h1 className="font-display text-3xl font-black uppercase tracking-tight mb-6">Orders</h1>
-      <div className="bg-white rounded-2xl border border-ink-200 overflow-x-auto">
+      <div className="bg-white rounded-none border border-ink-200 overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-ink-100 text-left"><tr>{["Order", "Customer", "Total", "Payment", "Status", "Actions"].map((h) => <th key={h} className="px-4 py-3 font-display font-bold uppercase text-xs tracking-wide">{h}</th>)}</tr></thead>
           <tbody>
@@ -112,14 +112,14 @@ function Orders() {
                 <td className="px-4 py-3 font-mono font-bold text-fire">{fmt(o.total)}</td>
                 <td className="px-4 py-3"><span className="text-xs">{o.payment_method} · {o.payment_status}</span></td>
                 <td className="px-4 py-3">
-                  <select value={o.status} onChange={(e) => updateStatus(o.id, e.target.value)} className="border border-ink-200 rounded-lg px-2 py-1.5 text-xs font-bold bg-white">
+                  <select value={o.status} onChange={(e) => updateStatus(o.id, e.target.value)} className="border border-ink-200 rounded-none px-2 py-1.5 text-xs font-bold bg-white">
                     {ORDER_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <button onClick={() => setRefundOrder(o)} data-testid={`admin-refund-btn-${o.id}`} className="text-xs font-bold uppercase border border-ink-200 px-3 py-1.5 rounded-full hover:border-fire hover:text-fire">Refund</button>
-                    <a href={waLink(o.customer_phone, `Hi ${o.customer_name}, update on your SOLEKICKS order ${o.order_number}:`)} target="_blank" rel="noreferrer" className="h-7 w-7 grid place-items-center rounded-full bg-[#25D366] text-white" title="WhatsApp customer"><MessageCircle size={14} /></a>
+                    <button onClick={() => setRefundOrder(o)} data-testid={`admin-refund-btn-${o.id}`} className="text-xs font-bold uppercase border border-ink-200 px-3 py-1.5 rounded-none hover:border-fire hover:text-fire">Refund</button>
+                    <a href={waLink(o.customer_phone, `Hi ${o.customer_name}, update on your SOLEKICKS order ${o.order_number}:`)} target="_blank" rel="noreferrer" className="h-7 w-7 grid place-items-center rounded-none bg-[#25D366] text-white" title="WhatsApp customer"><MessageCircle size={14} /></a>
                   </div>
                 </td>
               </tr>
@@ -146,15 +146,15 @@ function Products() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="font-display text-3xl font-black uppercase tracking-tight">Products</h1>
-        <button onClick={openNew} data-testid="admin-add-product-btn" className="bg-obsidian text-white font-display font-bold uppercase text-sm px-5 py-3 rounded-full flex items-center gap-2 hover:bg-fire transition-colors"><Plus size={16} /> Add Product</button>
+        <button onClick={openNew} data-testid="admin-add-product-btn" className="bg-obsidian text-white font-display font-bold uppercase text-sm px-5 py-3 rounded-none flex items-center gap-2 hover:bg-fire transition-colors"><Plus size={16} /> Add Product</button>
       </div>
-      <div className="bg-white rounded-2xl border border-ink-200 overflow-x-auto" data-testid="admin-products-table">
+      <div className="bg-white rounded-none border border-ink-200 overflow-x-auto" data-testid="admin-products-table">
         <table className="w-full text-sm">
           <thead className="bg-ink-100 text-left"><tr>{["", "Name", "Category", "Price", "Photos", "Flags", ""].map((h, i) => <th key={i} className="px-4 py-3 font-display font-bold uppercase text-xs">{h}</th>)}</tr></thead>
           <tbody>
             {products.map((p) => (
               <tr key={p.id} className="border-t border-ink-200">
-                <td className="px-4 py-2"><img src={p.images?.[0]} alt="" className="h-10 w-10 rounded-lg object-cover bg-ink-100" /></td>
+                <td className="px-4 py-2"><img src={p.images?.[0]} alt="" className="h-10 w-10 rounded-none object-cover bg-ink-100" /></td>
                 <td className="px-4 py-3 font-display font-bold">{p.name}</td>
                 <td className="px-4 py-3 capitalize">{p.category_slug}</td>
                 <td className="px-4 py-3 font-mono font-bold">{fmt(p.base_price)}</td>
@@ -162,7 +162,7 @@ function Products() {
                 <td className="px-4 py-3"><div className="flex gap-1 flex-wrap">{p.is_new_arrival && <span className="text-[10px] bg-ink-100 px-2 py-0.5 rounded">NEW</span>}{p.is_flash_sale && <span className="text-[10px] bg-fire/10 text-fire px-2 py-0.5 rounded">FLASH</span>}{p.is_best_seller && <span className="text-[10px] bg-ink-100 px-2 py-0.5 rounded">BEST</span>}</div></td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <button onClick={() => openEdit(p)} data-testid={`admin-edit-product-${p.id}`} className="text-xs font-bold uppercase border border-ink-200 px-3 py-1.5 rounded-full hover:border-obsidian">Edit</button>
+                    <button onClick={() => openEdit(p)} data-testid={`admin-edit-product-${p.id}`} className="text-xs font-bold uppercase border border-ink-200 px-3 py-1.5 rounded-none hover:border-obsidian">Edit</button>
                     <button onClick={() => del(p.id)} className="text-ink-400 hover:text-fire"><Trash2 size={16} /></button>
                   </div>
                 </td>
@@ -206,7 +206,7 @@ function MultiImageInput({ images, onChange }) {
     <div data-testid="admin-product-gallery">
       <div className="flex items-center justify-between mb-2">
         <label className="font-display font-bold uppercase text-xs tracking-wide text-ink-500">Product Gallery <span className="text-ink-400 normal-case font-normal">· drag to reorder · first = cover</span></label>
-        <label data-testid="admin-product-gallery-upload" className="flex items-center gap-1.5 bg-obsidian text-white text-xs font-bold uppercase px-3 py-2 rounded-xl cursor-pointer hover:bg-fire transition-colors">
+        <label data-testid="admin-product-gallery-upload" className="flex items-center gap-1.5 bg-obsidian text-white text-xs font-bold uppercase px-3 py-2 rounded-none cursor-pointer hover:bg-fire transition-colors">
           <Upload size={14} /> {busy ? "Uploading…" : "Upload"}
           <input type="file" accept="image/*" multiple onChange={addFiles} className="hidden" />
         </label>
@@ -221,21 +221,21 @@ function MultiImageInput({ images, onChange }) {
               onDragOver={(e) => e.preventDefault()}
               onDrop={() => { reorder(dragIdx.current, i); dragIdx.current = null; }}
               data-testid={`admin-gallery-thumb-${i}`}
-              className="relative group aspect-square rounded-lg overflow-hidden border-2 border-ink-200 cursor-grab active:cursor-grabbing"
+              className="relative group aspect-square rounded-none overflow-hidden border-2 border-ink-200 cursor-grab active:cursor-grabbing"
             >
               <img src={im} alt="" className="h-full w-full object-cover pointer-events-none" />
               {i === 0 && <span className="absolute top-0.5 left-0.5 bg-fire text-white text-[8px] font-bold uppercase px-1 rounded">Cover</span>}
-              <button type="button" onClick={() => remove(i)} data-testid={`admin-gallery-remove-${i}`} className="absolute top-0.5 right-0.5 h-5 w-5 grid place-items-center rounded-full bg-obsidian/80 text-white sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"><X size={11} /></button>
+              <button type="button" onClick={() => remove(i)} data-testid={`admin-gallery-remove-${i}`} className="absolute top-0.5 right-0.5 h-5 w-5 grid place-items-center rounded-none bg-obsidian/80 text-white sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"><X size={11} /></button>
               <span className="absolute bottom-0.5 right-1 text-white text-[9px] font-mono font-bold drop-shadow">{i + 1}</span>
             </div>
           ))}
         </div>
       ) : (
-        <p className="text-ink-400 text-xs mb-2 border border-dashed border-ink-200 rounded-lg py-4 text-center">No photos yet — upload or paste a URL below.</p>
+        <p className="text-ink-400 text-xs mb-2 border border-dashed border-ink-200 rounded-none py-4 text-center">No photos yet — upload or paste a URL below.</p>
       )}
       <div className="flex gap-2">
-        <input value={url} onChange={(e) => setUrl(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addUrl())} placeholder="Paste image URL…" className="flex-1 border border-ink-200 rounded-xl px-4 py-2 outline-none focus:border-obsidian text-sm" />
-        <button type="button" onClick={addUrl} className="border border-ink-200 text-xs font-bold uppercase px-3 rounded-xl hover:border-obsidian">Add</button>
+        <input value={url} onChange={(e) => setUrl(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addUrl())} placeholder="Paste image URL…" className="flex-1 border border-ink-200 rounded-none px-4 py-2 outline-none focus:border-obsidian text-sm" />
+        <button type="button" onClick={addUrl} className="border border-ink-200 text-xs font-bold uppercase px-3 rounded-none hover:border-obsidian">Add</button>
       </div>
     </div>
   );
@@ -278,26 +278,26 @@ function ProductForm({ product, onClose, onSaved }) {
   };
   return (
     <div className="fixed inset-0 bg-obsidian/60 z-50 grid place-items-center p-5" onClick={onClose}>
-      <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} onClick={(e) => e.stopPropagation()} className="bg-white rounded-none p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between mb-4"><h3 className="font-display font-black text-xl uppercase">{isEdit ? "Edit Product" : "Add Product"}</h3><button onClick={onClose}><X size={20} /></button></div>
         <div className="space-y-3">
-          <input placeholder="Product name" value={f.name} onChange={set("name")} data-testid="admin-product-name" className="w-full border border-ink-200 rounded-xl px-4 py-2.5 outline-none focus:border-obsidian" />
+          <input placeholder="Product name" value={f.name} onChange={set("name")} data-testid="admin-product-name" className="w-full border border-ink-200 rounded-none px-4 py-2.5 outline-none focus:border-obsidian" />
           <div className="grid grid-cols-2 gap-3">
-            <select value={f.category_slug} onChange={set("category_slug")} className="border border-ink-200 rounded-xl px-4 py-2.5 bg-white"><option value="retro">Retro</option><option value="streetwear">Streetwear</option><option value="runners">Runners</option><option value="slides">Slides</option></select>
-            <select value={f.brand_slug} onChange={set("brand_slug")} className="border border-ink-200 rounded-xl px-4 py-2.5 bg-white"><option value="airvault">AirVault</option><option value="terrace-co">Terrace Co</option><option value="cloudstride">CloudStride</option><option value="oasis">Oasis</option></select>
+            <select value={f.category_slug} onChange={set("category_slug")} className="border border-ink-200 rounded-none px-4 py-2.5 bg-white"><option value="retro">Retro</option><option value="streetwear">Streetwear</option><option value="runners">Runners</option><option value="slides">Slides</option></select>
+            <select value={f.brand_slug} onChange={set("brand_slug")} className="border border-ink-200 rounded-none px-4 py-2.5 bg-white"><option value="airvault">AirVault</option><option value="terrace-co">Terrace Co</option><option value="cloudstride">CloudStride</option><option value="oasis">Oasis</option></select>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <input placeholder="Price (Rs.)" type="number" value={f.base_price} onChange={set("base_price")} data-testid="admin-product-price" className="border border-ink-200 rounded-xl px-4 py-2.5 outline-none focus:border-obsidian" />
-            <input placeholder="Compare price" type="number" value={f.compare_at_price} onChange={set("compare_at_price")} className="border border-ink-200 rounded-xl px-4 py-2.5 outline-none focus:border-obsidian" />
+            <input placeholder="Price (Rs.)" type="number" value={f.base_price} onChange={set("base_price")} data-testid="admin-product-price" className="border border-ink-200 rounded-none px-4 py-2.5 outline-none focus:border-obsidian" />
+            <input placeholder="Compare price" type="number" value={f.compare_at_price} onChange={set("compare_at_price")} className="border border-ink-200 rounded-none px-4 py-2.5 outline-none focus:border-obsidian" />
           </div>
           <MultiImageInput images={images} onChange={setImages} />
-          <textarea placeholder="Description" value={f.description} onChange={set("description")} rows={3} className="w-full border border-ink-200 rounded-xl px-4 py-2.5 outline-none focus:border-obsidian" />
+          <textarea placeholder="Description" value={f.description} onChange={set("description")} rows={3} className="w-full border border-ink-200 rounded-none px-4 py-2.5 outline-none focus:border-obsidian" />
           <div className="flex gap-4 text-sm">
             {[["is_new_arrival", "New"], ["is_best_seller", "Best Seller"], ["is_flash_sale", "Flash Sale"]].map(([k, l]) => (
               <label key={k} className="flex items-center gap-2"><input type="checkbox" checked={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.checked })} className="accent-fire" /> {l}</label>
             ))}
           </div>
-          <button onClick={save} disabled={saving} data-testid="admin-product-save" className="w-full bg-obsidian text-white font-display font-bold uppercase py-3 rounded-full hover:bg-fire transition-colors disabled:opacity-60">{saving ? "Saving…" : isEdit ? "Update Product" : "Save Product"}</button>
+          <button onClick={save} disabled={saving} data-testid="admin-product-save" className="w-full bg-obsidian text-white font-display font-bold uppercase py-3 rounded-none hover:bg-fire transition-colors disabled:opacity-60">{saving ? "Saving…" : isEdit ? "Update Product" : "Save Product"}</button>
         </div>
       </motion.div>
     </div>
@@ -314,16 +314,16 @@ function Coupons() {
   return (
     <div>
       <h1 className="font-display text-3xl font-black uppercase tracking-tight mb-6">Coupons</h1>
-      <div className="bg-white rounded-2xl border border-ink-200 p-5 mb-6 grid sm:grid-cols-5 gap-3">
-        <input placeholder="CODE" value={f.code} onChange={(e) => setF({ ...f, code: e.target.value.toUpperCase() })} className="border border-ink-200 rounded-xl px-3 py-2.5 font-mono uppercase outline-none" />
-        <select value={f.type} onChange={(e) => setF({ ...f, type: e.target.value })} className="border border-ink-200 rounded-xl px-3 py-2.5 bg-white"><option value="percentage">Percentage</option><option value="flat">Flat</option></select>
-        <input placeholder="Value" type="number" value={f.value} onChange={(e) => setF({ ...f, value: e.target.value })} className="border border-ink-200 rounded-xl px-3 py-2.5 outline-none" />
-        <input placeholder="Min order" type="number" value={f.min_order_value} onChange={(e) => setF({ ...f, min_order_value: e.target.value })} className="border border-ink-200 rounded-xl px-3 py-2.5 outline-none" />
-        <button onClick={add} className="bg-obsidian text-white font-bold uppercase rounded-xl hover:bg-fire transition-colors">Add</button>
+      <div className="bg-white rounded-none border border-ink-200 p-5 mb-6 grid sm:grid-cols-5 gap-3">
+        <input placeholder="CODE" value={f.code} onChange={(e) => setF({ ...f, code: e.target.value.toUpperCase() })} className="border border-ink-200 rounded-none px-3 py-2.5 font-mono uppercase outline-none" />
+        <select value={f.type} onChange={(e) => setF({ ...f, type: e.target.value })} className="border border-ink-200 rounded-none px-3 py-2.5 bg-white"><option value="percentage">Percentage</option><option value="flat">Flat</option></select>
+        <input placeholder="Value" type="number" value={f.value} onChange={(e) => setF({ ...f, value: e.target.value })} className="border border-ink-200 rounded-none px-3 py-2.5 outline-none" />
+        <input placeholder="Min order" type="number" value={f.min_order_value} onChange={(e) => setF({ ...f, min_order_value: e.target.value })} className="border border-ink-200 rounded-none px-3 py-2.5 outline-none" />
+        <button onClick={add} className="bg-obsidian text-white font-bold uppercase rounded-none hover:bg-fire transition-colors">Add</button>
       </div>
       <div className="grid sm:grid-cols-3 gap-3">
         {coupons.map((c) => (
-          <div key={c.id} className="bg-white border border-ink-200 rounded-2xl p-4 flex justify-between items-start">
+          <div key={c.id} className="bg-white border border-ink-200 rounded-none p-4 flex justify-between items-start">
             <div><p className="font-mono font-black text-lg">{c.code}</p><span className="text-ink-400 text-xs">{c.type === "percentage" ? `${c.value}% off` : `${fmt(c.value)} off`}{c.min_order_value ? ` · min ${fmt(c.min_order_value)}` : ""}</span></div>
             <button onClick={() => del(c.id)} className="text-ink-400 hover:text-fire"><Trash2 size={15} /></button>
           </div>
@@ -343,11 +343,11 @@ function Reviews() {
       <h1 className="font-display text-3xl font-black uppercase tracking-tight mb-6">Reviews</h1>
       <div className="space-y-3">
         {reviews.map((r) => (
-          <div key={r.id} className="bg-white border border-ink-200 rounded-2xl p-4 flex justify-between items-center">
+          <div key={r.id} className="bg-white border border-ink-200 rounded-none p-4 flex justify-between items-center">
             <div><p className="font-display font-bold">{r.customer_name} · ⭐ {r.rating}</p><p className="text-ink-500 text-sm">{r.comment}</p></div>
             <div className="flex gap-2">
-              {!r.is_approved ? <button onClick={() => moderate(r.id, true)} className="bg-obsidian text-white text-xs font-bold uppercase px-3 py-2 rounded-full">Approve</button> : <span className="text-green-600 text-xs font-bold">Approved</span>}
-              <button onClick={() => moderate(r.id, false)} className="border border-ink-200 text-xs font-bold uppercase px-3 py-2 rounded-full">Hide</button>
+              {!r.is_approved ? <button onClick={() => moderate(r.id, true)} className="bg-obsidian text-white text-xs font-bold uppercase px-3 py-2 rounded-none">Approve</button> : <span className="text-green-600 text-xs font-bold">Approved</span>}
+              <button onClick={() => moderate(r.id, false)} className="border border-ink-200 text-xs font-bold uppercase px-3 py-2 rounded-none">Hide</button>
             </div>
           </div>
         ))}
@@ -376,12 +376,12 @@ function AdminImageInput({ value, onChange, testid }) {
   };
   return (
     <div className="flex gap-2 items-center">
-      <input placeholder="Image URL or upload →" value={value} onChange={(e) => onChange(e.target.value)} className="flex-1 border border-ink-200 rounded-xl px-4 py-2.5 outline-none focus:border-obsidian text-sm" />
-      <label data-testid={testid} className="shrink-0 flex items-center gap-1.5 bg-obsidian text-white text-xs font-bold uppercase px-3 py-2.5 rounded-xl cursor-pointer hover:bg-fire transition-colors">
+      <input placeholder="Image URL or upload →" value={value} onChange={(e) => onChange(e.target.value)} className="flex-1 border border-ink-200 rounded-none px-4 py-2.5 outline-none focus:border-obsidian text-sm" />
+      <label data-testid={testid} className="shrink-0 flex items-center gap-1.5 bg-obsidian text-white text-xs font-bold uppercase px-3 py-2.5 rounded-none cursor-pointer hover:bg-fire transition-colors">
         <Upload size={14} /> {busy ? "…" : "Upload"}
         <input type="file" accept="image/*" onChange={handle} className="hidden" />
       </label>
-      {value && <img src={value} alt="" className="h-10 w-10 rounded-lg object-cover bg-ink-100" />}
+      {value && <img src={value} alt="" className="h-10 w-10 rounded-none object-cover bg-ink-100" />}
     </div>
   );
 }
@@ -401,19 +401,19 @@ function RefundModal({ order, onClose, onDone }) {
   };
   return (
     <div className="fixed inset-0 bg-obsidian/60 z-50 grid place-items-center p-5" onClick={onClose}>
-      <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl p-6 w-full max-w-md">
+      <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} onClick={(e) => e.stopPropagation()} className="bg-white rounded-none p-6 w-full max-w-md">
         <div className="flex justify-between mb-4"><h3 className="font-display font-black text-xl uppercase">Refund {order.order_number}</h3><button onClick={onClose}><X size={20} /></button></div>
         <p className="text-sm text-ink-500 mb-4">Paid: {order.payment_status} · Total {fmt(order.total)}{order.advance_paid ? ` · Advance ${fmt(order.advance_paid)}` : ""}</p>
         <div className="space-y-3">
-          <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Amount" data-testid="admin-refund-amount" className="w-full border border-ink-200 rounded-xl px-4 py-2.5 outline-none focus:border-obsidian" />
-          <select value={method} onChange={(e) => setMethod(e.target.value)} data-testid="admin-refund-method" className="w-full border border-ink-200 rounded-xl px-4 py-2.5 bg-white">
+          <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Amount" data-testid="admin-refund-amount" className="w-full border border-ink-200 rounded-none px-4 py-2.5 outline-none focus:border-obsidian" />
+          <select value={method} onChange={(e) => setMethod(e.target.value)} data-testid="admin-refund-method" className="w-full border border-ink-200 rounded-none px-4 py-2.5 bg-white">
             <option value="STORE_CREDIT">Store Credit (registered users)</option>
             <option value="BANK_TRANSFER">Bank Transfer (manual)</option>
             <option value="PAYFAST_ORIGINAL">Original Method / Gateway</option>
           </select>
-          {method === "BANK_TRANSFER" && <input value={ref} onChange={(e) => setRef(e.target.value)} placeholder="Transfer reference" className="w-full border border-ink-200 rounded-xl px-4 py-2.5 outline-none focus:border-obsidian" />}
-          <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} placeholder="Reason" data-testid="admin-refund-reason" className="w-full border border-ink-200 rounded-xl px-4 py-2.5 outline-none focus:border-obsidian" />
-          <button onClick={submit} data-testid="admin-refund-submit" className="w-full bg-obsidian text-white font-display font-bold uppercase py-3 rounded-full hover:bg-fire transition-colors">Process Refund</button>
+          {method === "BANK_TRANSFER" && <input value={ref} onChange={(e) => setRef(e.target.value)} placeholder="Transfer reference" className="w-full border border-ink-200 rounded-none px-4 py-2.5 outline-none focus:border-obsidian" />}
+          <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} placeholder="Reason" data-testid="admin-refund-reason" className="w-full border border-ink-200 rounded-none px-4 py-2.5 outline-none focus:border-obsidian" />
+          <button onClick={submit} data-testid="admin-refund-submit" className="w-full bg-obsidian text-white font-display font-bold uppercase py-3 rounded-none hover:bg-fire transition-colors">Process Refund</button>
         </div>
       </motion.div>
     </div>
@@ -430,13 +430,13 @@ function Returns() {
       <h1 className="font-display text-3xl font-black uppercase tracking-tight mb-6">Return Requests</h1>
       <div className="space-y-3">
         {returns.map((r) => (
-          <div key={r.id} data-testid={`admin-return-${r.id}`} className="bg-white border border-ink-200 rounded-2xl p-4 flex justify-between items-center gap-4">
+          <div key={r.id} data-testid={`admin-return-${r.id}`} className="bg-white border border-ink-200 rounded-none p-4 flex justify-between items-center gap-4">
             <div className="flex-1"><p className="font-display font-bold">{r.order_number} · {r.customer_name}</p><p className="text-ink-500 text-sm">{r.reason}</p><span className="font-mono text-xs text-ink-400">{r.created_at?.slice(0, 10)}</span></div>
-            <span className={`text-xs font-bold uppercase px-3 py-1.5 rounded-full ${r.status === "pending" ? "bg-ink-100" : r.status === "approved" || r.status === "refunded" ? "bg-green-100 text-green-700" : "bg-fire/10 text-fire"}`}>{r.status}</span>
+            <span className={`text-xs font-bold uppercase px-3 py-1.5 rounded-none ${r.status === "pending" ? "bg-ink-100" : r.status === "approved" || r.status === "refunded" ? "bg-green-100 text-green-700" : "bg-fire/10 text-fire"}`}>{r.status}</span>
             {r.status === "pending" && (
               <div className="flex gap-2">
-                <button onClick={() => moderate(r.id, "approved")} data-testid={`admin-return-approve-${r.id}`} className="bg-obsidian text-white text-xs font-bold uppercase px-3 py-2 rounded-full">Approve</button>
-                <button onClick={() => moderate(r.id, "rejected")} className="border border-ink-200 text-xs font-bold uppercase px-3 py-2 rounded-full">Reject</button>
+                <button onClick={() => moderate(r.id, "approved")} data-testid={`admin-return-approve-${r.id}`} className="bg-obsidian text-white text-xs font-bold uppercase px-3 py-2 rounded-none">Approve</button>
+                <button onClick={() => moderate(r.id, "rejected")} className="border border-ink-200 text-xs font-bold uppercase px-3 py-2 rounded-none">Reject</button>
               </div>
             )}
           </div>
@@ -453,7 +453,7 @@ function Refunds() {
   return (
     <div>
       <h1 className="font-display text-3xl font-black uppercase tracking-tight mb-6">Refunds</h1>
-      <div className="bg-white rounded-2xl border border-ink-200 overflow-x-auto">
+      <div className="bg-white rounded-none border border-ink-200 overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-ink-100 text-left"><tr>{["Order", "Amount", "Method", "Status", "Ref", "Date"].map((h) => <th key={h} className="px-4 py-3 font-display font-bold uppercase text-xs">{h}</th>)}</tr></thead>
           <tbody>
@@ -489,21 +489,21 @@ function Cms() {
   return (
     <div>
       <h1 className="font-display text-3xl font-black uppercase tracking-tight mb-6">Hero Slides & CMS</h1>
-      <div className="bg-white rounded-2xl border border-ink-200 p-5 mb-6 space-y-3 max-w-2xl">
+      <div className="bg-white rounded-none border border-ink-200 p-5 mb-6 space-y-3 max-w-2xl">
         <h3 className="font-display font-bold uppercase text-sm">Add Hero Slide</h3>
         <AdminImageInput value={f.image_url} onChange={(v) => setF({ ...f, image_url: v })} testid="admin-hero-upload" />
         <div className="grid sm:grid-cols-2 gap-3">
-          <input placeholder="Title" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} data-testid="admin-hero-title" className="border border-ink-200 rounded-xl px-4 py-2.5 outline-none" />
-          <input placeholder="Badge (e.g. NEW DROP)" value={f.badge} onChange={(e) => setF({ ...f, badge: e.target.value })} className="border border-ink-200 rounded-xl px-4 py-2.5 outline-none" />
-          <input placeholder="CTA text" value={f.cta_text} onChange={(e) => setF({ ...f, cta_text: e.target.value })} className="border border-ink-200 rounded-xl px-4 py-2.5 outline-none" />
-          <input placeholder="Link URL" value={f.link_url} onChange={(e) => setF({ ...f, link_url: e.target.value })} className="border border-ink-200 rounded-xl px-4 py-2.5 outline-none" />
+          <input placeholder="Title" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} data-testid="admin-hero-title" className="border border-ink-200 rounded-none px-4 py-2.5 outline-none" />
+          <input placeholder="Badge (e.g. NEW DROP)" value={f.badge} onChange={(e) => setF({ ...f, badge: e.target.value })} className="border border-ink-200 rounded-none px-4 py-2.5 outline-none" />
+          <input placeholder="CTA text" value={f.cta_text} onChange={(e) => setF({ ...f, cta_text: e.target.value })} className="border border-ink-200 rounded-none px-4 py-2.5 outline-none" />
+          <input placeholder="Link URL" value={f.link_url} onChange={(e) => setF({ ...f, link_url: e.target.value })} className="border border-ink-200 rounded-none px-4 py-2.5 outline-none" />
         </div>
-        <input placeholder="Subtitle" value={f.subtitle} onChange={(e) => setF({ ...f, subtitle: e.target.value })} className="w-full border border-ink-200 rounded-xl px-4 py-2.5 outline-none" />
-        <button onClick={add} data-testid="admin-hero-save" className="bg-obsidian text-white font-display font-bold uppercase px-6 py-3 rounded-full hover:bg-fire transition-colors">Add Slide</button>
+        <input placeholder="Subtitle" value={f.subtitle} onChange={(e) => setF({ ...f, subtitle: e.target.value })} className="w-full border border-ink-200 rounded-none px-4 py-2.5 outline-none" />
+        <button onClick={add} data-testid="admin-hero-save" className="bg-obsidian text-white font-display font-bold uppercase px-6 py-3 rounded-none hover:bg-fire transition-colors">Add Slide</button>
       </div>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {slides.map((s) => (
-          <div key={s.id} className="bg-white border border-ink-200 rounded-2xl overflow-hidden">
+          <div key={s.id} className="bg-white border border-ink-200 rounded-none overflow-hidden">
             <img src={s.image_url} alt="" className="h-32 w-full object-cover" />
             <div className="p-3 flex justify-between items-center"><div><p className="font-display font-bold text-sm">{s.title}</p><span className="text-ink-400 text-xs">{s.badge}</span></div><button onClick={() => del(s.id)} className="text-ink-400 hover:text-fire"><Trash2 size={15} /></button></div>
           </div>
@@ -521,7 +521,7 @@ function Customers() {
   return (
     <div>
       <h1 className="font-display text-3xl font-black uppercase tracking-tight mb-6">Customers</h1>
-      <div className="bg-white rounded-2xl border border-ink-200 overflow-x-auto">
+      <div className="bg-white rounded-none border border-ink-200 overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-ink-100 text-left"><tr>{["Name", "Email", "Role", "Status", ""].map((h) => <th key={h} className="px-4 py-3 font-display font-bold uppercase text-xs">{h}</th>)}</tr></thead>
           <tbody>
@@ -531,7 +531,7 @@ function Customers() {
                 <td className="px-4 py-3">{c.email}</td>
                 <td className="px-4 py-3 capitalize">{c.role}</td>
                 <td className="px-4 py-3">{c.is_blocked ? <span className="text-fire font-bold">Blocked</span> : <span className="text-green-600 font-bold">Active</span>}</td>
-                <td className="px-4 py-3">{c.role !== "admin" && <button onClick={() => block(c.id, !c.is_blocked)} className="text-xs font-bold uppercase border border-ink-200 px-3 py-1.5 rounded-full">{c.is_blocked ? "Unblock" : "Block"}</button>}</td>
+                <td className="px-4 py-3">{c.role !== "admin" && <button onClick={() => block(c.id, !c.is_blocked)} className="text-xs font-bold uppercase border border-ink-200 px-3 py-1.5 rounded-none">{c.is_blocked ? "Unblock" : "Block"}</button>}</td>
               </tr>
             ))}
           </tbody>

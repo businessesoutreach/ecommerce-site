@@ -17,7 +17,7 @@ export function TrustRibbon() {
       <div className="max-w-[1400px] mx-auto px-5 sm:px-8 grid grid-cols-2 lg:grid-cols-4 gap-6 py-8">
         {TRUST.map((t) => (
           <div key={t.title} className="flex items-center gap-3">
-            <div className="h-11 w-11 shrink-0 grid place-items-center rounded-full bg-fire/10 text-fire"><t.icon size={20} /></div>
+            <div className="h-11 w-11 shrink-0 grid place-items-center rounded-none bg-fire/10 text-fire"><t.icon size={20} /></div>
             <div>
               <p className="font-display font-bold text-sm uppercase tracking-tight leading-tight">{t.title}</p>
               <p className="text-ink-400 text-xs">{t.sub}</p>
@@ -50,7 +50,7 @@ export default function Footer() {
             <p className="text-white/50 text-sm mt-4 leading-relaxed">Pakistan's home for high-heat streetwear silhouettes, retro re-issues & performance runners. Cop with confidence.</p>
             <div className="flex gap-3 mt-5">
               {[Instagram, Facebook, Twitter].map((I, i) => (
-                <a key={i} href="#" className="h-9 w-9 grid place-items-center rounded-full bg-white/10 hover:bg-fire transition-colors"><I size={16} /></a>
+                <a key={i} href="#" className="h-9 w-9 grid place-items-center rounded-none bg-white/10 hover:bg-fire transition-colors"><I size={16} /></a>
               ))}
             </div>
           </div>
@@ -59,7 +59,7 @@ export default function Footer() {
             { t: "Support", links: [["Track Order", "/track-order"], ["Shipping & Returns", "/shipping-returns"], ["FAQs", "/faqs"], ["Contact Us", "/contact-us"]] },
           ].map((col) => (
             <div key={col.t}>
-              <h4 className="font-display font-bold uppercase tracking-wide text-sm mb-4">{col.t}</h4>
+              <h4 className="font-display font-bold uppercase tracking-wider text-sm mb-4">{col.t}</h4>
               <ul className="space-y-2.5">
                 {col.links.map(([l, to]) => (
                   <li key={l}><Link to={to} className="text-white/50 hover:text-white text-sm transition-colors">{l}</Link></li>
@@ -68,10 +68,10 @@ export default function Footer() {
             </div>
           ))}
           <div>
-            <h4 className="font-display font-bold uppercase tracking-wide text-sm mb-4">Get 10% off first drop</h4>
+            <h4 className="font-display font-bold uppercase tracking-wider text-sm mb-4">Get 10% off first drop</h4>
             <form onSubmit={subscribe} className="flex gap-2">
-              <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required placeholder="your@email.com" data-testid="newsletter-input" className="flex-1 bg-white/10 rounded-full px-4 py-3 text-sm outline-none focus:bg-white/20 placeholder:text-white/40" />
-              <button data-testid="newsletter-submit" className="h-11 w-11 shrink-0 grid place-items-center bg-fire rounded-full hover:bg-fire-hover transition-colors"><Send size={17} /></button>
+              <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required placeholder="your@email.com" data-testid="newsletter-input" className="flex-1 bg-white/10 rounded-none px-4 py-3 text-sm outline-none focus:bg-white/20 placeholder:text-white/40" />
+              <button data-testid="newsletter-submit" className="h-11 w-11 shrink-0 grid place-items-center bg-fire rounded-none hover:bg-fire-hover transition-colors"><Send size={17} /></button>
             </form>
             <p className="text-white/40 text-xs mt-4 mb-2">We ship & accept</p>
             <div className="flex flex-wrap gap-2">

@@ -43,7 +43,7 @@ export const Stars = ({ rating = 5, size = 14, count }) => (
 
 export const ProductCardSkeleton = () => (
   <div className="space-y-3">
-    <div className="skeleton aspect-square rounded-2xl" />
+    <div className="skeleton aspect-square rounded-none" />
     <div className="skeleton h-3 w-1/3 rounded" />
     <div className="skeleton h-4 w-3/4 rounded" />
     <div className="skeleton h-4 w-1/2 rounded" />
@@ -66,7 +66,7 @@ export const Countdown = ({ endsAt }) => {
   }, [endsAt]);
   const Box = ({ v, l }) => (
     <div className="flex flex-col items-center">
-      <div className="bg-obsidian text-white font-mono text-lg sm:text-2xl font-bold w-12 sm:w-16 h-12 sm:h-16 flex items-center justify-center rounded-lg tabular-nums">
+      <div className="bg-obsidian text-white font-mono text-lg sm:text-2xl font-bold w-12 sm:w-16 h-12 sm:h-16 flex items-center justify-center rounded-none tabular-nums">
         {String(v).padStart(2, "0")}
       </div>
       <span className="text-[10px] uppercase tracking-widest text-ink-400 mt-1 font-bold">{l}</span>

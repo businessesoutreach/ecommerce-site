@@ -49,7 +49,7 @@ export default function HeroSlider({ slides = [] }) {
           className="max-w-2xl"
         >
           {s.badge && (
-            <span className="inline-block bg-fire text-white font-mono text-[11px] font-bold uppercase tracking-[0.2em] px-3 py-1.5 rounded-md mb-5">
+            <span className="inline-block bg-fire text-white font-mono text-[11px] font-bold uppercase tracking-[0.2em] px-3 py-1.5 rounded-none mb-5">
               {s.badge}
             </span>
           )}
@@ -59,7 +59,7 @@ export default function HeroSlider({ slides = [] }) {
           <p className="text-white/70 mt-5 text-base sm:text-lg max-w-lg leading-relaxed">{s.subtitle}</p>
           <Link
             to={s.link_url || "/collections/retro"}
-            className="group mt-8 inline-flex items-center gap-3 bg-white text-obsidian font-display font-bold uppercase tracking-wide text-sm px-7 py-4 rounded-full hover:bg-fire hover:text-white transition-colors"
+            className="group mt-8 inline-flex items-center gap-3 bg-white text-obsidian font-display font-bold uppercase tracking-wider text-sm px-7 py-4 rounded-none hover:bg-fire hover:text-white transition-colors"
           >
             {s.cta_text || "Shop Now"}
             <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
@@ -72,7 +72,7 @@ export default function HeroSlider({ slides = [] }) {
           <button
             key={i}
             onClick={() => setIdx(i)}
-            className="h-1.5 rounded-full transition-all duration-500"
+            className="h-1.5 rounded-none transition-all duration-500"
             style={{ width: i === idx ? 40 : 14, background: i === idx ? "#FF3B30" : "rgba(255,255,255,0.5)" }}
             aria-label={`slide ${i + 1}`}
           />
