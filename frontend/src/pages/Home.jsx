@@ -40,6 +40,7 @@ export default function Home() {
     <div>
       <HeroSlider slides={slides} />
       <TrustRibbon />
+      <CinematicVideo />
 
       {/* Category bento */}
       <section className="max-w-[1400px] mx-auto px-5 sm:px-8 py-16">
@@ -134,6 +135,29 @@ export default function Home() {
       <ReviewsSection />
       <SEOBlock />
     </div>
+  );
+}
+
+function CinematicVideo() {
+  return (
+    <section className="relative h-[72vh] min-h-[460px] overflow-hidden bg-obsidian" data-testid="cinematic-video">
+      <video
+        autoPlay muted loop playsInline
+        poster="https://images.unsplash.com/photo-1556906781-9a412961c28c?crop=entropy&cs=srgb&fm=jpg&q=85&w=1600"
+        className="absolute inset-0 h-full w-full object-cover"
+      >
+        <source src="https://videos.pexels.com/video-files/3048876/3048876-hd_1920_1080_30fps.mp4" type="video/mp4" />
+      </video>
+      <div className="absolute inset-0 bg-gradient-to-r from-obsidian/90 via-obsidian/45 to-obsidian/10" />
+      <div className="relative z-10 h-full max-w-[1400px] mx-auto px-5 sm:px-8 flex flex-col justify-center">
+        <ScrollReveal>
+          <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-fire font-bold">The Culture In Motion</span>
+          <h2 className="font-display text-white text-4xl sm:text-6xl lg:text-7xl font-black uppercase tracking-tight leading-[0.92] mt-3 max-w-3xl">Built For The Street.<br />Worn With Pride.</h2>
+          <p className="text-white/70 mt-4 max-w-lg text-sm sm:text-base">From the block to the boulevard — SOLEKICKS moves with Pakistan's boldest. Authentic heat, delivered nationwide.</p>
+          <Link to="/new-arrivals" className="mt-7 inline-flex items-center gap-3 bg-white text-obsidian font-display font-bold uppercase text-sm tracking-wider px-7 py-4 hover:bg-fire hover:text-white transition-colors">Shop The Movement <ArrowRight size={18} /></Link>
+        </ScrollReveal>
+      </div>
+    </section>
   );
 }
 

@@ -143,6 +143,20 @@ function Products() {
   const del = async (id) => { if (!window.confirm("Delete product?")) return; await http.delete(`/admin/products/${id}`); toast.success("Deleted"); load(); };
   const openNew = () => { setEditing(null); setShowForm(true); };
   const openEdit = (p) => { setEditing(p); setShowForm(true); };
+  const downloadTemplate = () => {
+    const csv = [
+      "name,slug,category_slug,brand_slug,base_price,compare_at_price,description,images,is_new_arrival,is_best_seller,is_flash_sale",
+      'Air Zoom Sample,air-zoom-sample,runners,cloudstride,7999,11999,Sample product description here,https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=900|https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?w=900,yes,no,no',
+      'Retro High Sample,retro-high-sample,retro,airvault,10999,15999,Another sample product,https://images.unsplash.com/photo-1556906781-9a412961c28c?w=900,no,yes,no',
+    ].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "solekicks-products-template.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
   const doImport = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -164,6 +178,7 @@ function Products() {
       <div className="flex justify-between items-center mb-2">
         <h1 className="font-display text-3xl font-black uppercase tracking-tight">Products</h1>
         <div className="flex gap-2">
+          <button onClick={downloadTemplate} data-testid="admin-download-template-btn" className="border border-ink-200 text-obsidian font-display font-bold uppercase text-sm px-4 py-3 rounded-none flex items-center gap-2 hover:border-obsidian transition-colors">Template .CSV</button>
           <label data-testid="admin-import-csv-btn" className="border-2 border-obsidian text-obsidian font-display font-bold uppercase text-sm px-5 py-3 rounded-none flex items-center gap-2 hover:bg-obsidian hover:text-white transition-colors cursor-pointer">
             <Upload size={16} /> {importing ? "Importing…" : "Import CSV"}
             <input type="file" accept=".csv" hidden onChange={doImport} />
