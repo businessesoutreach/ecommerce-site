@@ -22,10 +22,20 @@ export default function Checkout() {
   const [placing, setPlacing] = useState(false);
   const [credit, setCredit] = useState(0);
   const [useCredit, setUseCredit] = useState(false);
+  const [addresses, setAddresses] = useState([]);
 
   useEffect(() => {
-    if (user) http.get("/me/store-credit").then(({ data }) => setCredit(data.data.balance || 0)).catch(() => {});
+    if (user) {
+      http.get("/me/store-credit").then(({ data }) => setCredit(data.data.balance || 0)).catch(() => {});
+      http.get("/me/addresses").then(({ data }) => {
+        setAddresses(data.data);
+        const def = data.data.find((a) => a.is_default) || data.data[0];
+        if (def) setForm((f) => ({ ...f, customer_name: def.full_name, customer_phone: def.phone, address_l1: def.address_l1, city: def.city, postal_code: def.postal_code || "" }));
+      }).catch(() => {});
+    }
   }, [user]);
+
+  const applyAddress = (a) => setForm((f) => ({ ...f, customer_name: a.full_name, customer_phone: a.phone, address_l1: a.address_l1, city: a.city, postal_code: a.postal_code || "" }));
 
   const freeMin = Number(settings?.free_shipping_min_amt || 5000);
   const subtotal = cart.subtotal;
@@ -93,6 +103,23 @@ export default function Checkout() {
       <h1 className="font-display text-3xl sm:text-4xl font-black uppercase tracking-tight mb-8">Checkout</h1>
       <div className="grid lg:grid-cols-3 gap-10">
         <form data-testid="checkout-form" onSubmit={(e) => e.preventDefault()} className="lg:col-span-2 space-y-8">
+          {user && addresses.length > 0 && (
+            <div data-testid="checkout-saved-addresses">
+              <h3 className="font-display font-bold uppercase tracking-tight text-lg mb-4">Saved Addresses</h3>
+              <div className="grid sm:grid-cols-2 gap-3">
+                {addresses.map((a) => {
+                  const active = form.address_l1 === a.address_l1 && form.customer_phone === a.phone;
+                  return (
+                    <button key={a.id} type="button" onClick={() => applyAddress(a)} data-testid={`checkout-address-${a.id}`} className={`text-left border-2 p-4 transition-colors ${active ? "border-obsidian bg-white" : "border-ink-200 hover:border-obsidian"}`}>
+                      <div className="flex items-center justify-between"><span className="font-display font-bold text-sm">{a.full_name}</span>{a.is_default && <span className="font-mono text-[10px] uppercase tracking-wider text-fire">Default</span>}</div>
+                      <p className="text-ink-500 text-xs mt-1">{a.address_l1}, {a.city}</p>
+                      <p className="text-ink-400 text-xs">{a.phone}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           <div>
             <h3 className="font-display font-bold uppercase tracking-tight text-lg mb-4">Contact & Shipping</h3>
             <div className="grid sm:grid-cols-2 gap-4">

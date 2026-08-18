@@ -1,13 +1,58 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { User, Package, Heart, LogOut, Gift, RotateCcw, X } from "lucide-react";
+import { User, Package, Heart, LogOut, Gift, RotateCcw, X, MapPin, Plus, Trash2 } from "lucide-react";
 import { http, fmt } from "../lib/api";
 import { useStore } from "../context/StoreContext";
 import { EmptyState } from "../components/common";
 import { toast } from "sonner";
 
 const LABELS = { placed: "Placed", confirmed: "Verified", packed: "Packed", shipped: "Dispatched", out_for_delivery: "Out for Delivery", delivered: "Delivered", cancelled: "Cancelled", return_requested: "Return Requested", returned: "Returned" };
+
+function AddressesTab() {
+  const [items, setItems] = useState([]);
+  const [f, setF] = useState({ full_name: "", phone: "", address_l1: "", city: "Karachi", postal_code: "", is_default: false });
+  const load = () => http.get("/me/addresses").then(({ data }) => setItems(data.data)).catch(() => {});
+  useEffect(() => { load(); }, []);
+  const save = async () => {
+    if (!f.full_name || !f.phone || !f.address_l1) return toast.error("Name, phone & address required");
+    await http.post("/me/addresses", f);
+    toast.success("Address saved");
+    setF({ full_name: "", phone: "", address_l1: "", city: "Karachi", postal_code: "", is_default: false });
+    load();
+  };
+  const del = async (id) => { await http.delete(`/me/addresses/${id}`); load(); };
+  const inp = "w-full border border-ink-200 rounded-none px-4 py-2.5 outline-none focus:border-obsidian";
+  return (
+    <div data-testid="account-addresses">
+      <div className="grid sm:grid-cols-2 gap-3 mb-6">
+        {items.map((a) => (
+          <div key={a.id} data-testid={`account-address-${a.id}`} className="bg-white border border-ink-200 p-4 flex justify-between">
+            <div>
+              <div className="flex items-center gap-2"><span className="font-display font-bold text-sm">{a.full_name}</span>{a.is_default && <span className="font-mono text-[10px] uppercase tracking-wider text-fire">Default</span>}</div>
+              <p className="text-ink-500 text-sm mt-1">{a.address_l1}, {a.city}</p>
+              <p className="text-ink-400 text-xs">{a.phone}</p>
+            </div>
+            <button onClick={() => del(a.id)} className="text-ink-400 hover:text-fire h-fit"><Trash2 size={16} /></button>
+          </div>
+        ))}
+        {items.length === 0 && <p className="text-ink-400 text-sm">No saved addresses yet.</p>}
+      </div>
+      <div className="bg-white border border-ink-200 p-5 max-w-lg">
+        <h3 className="font-display font-bold uppercase text-sm mb-3 flex items-center gap-2"><Plus size={16} /> Add Address</h3>
+        <div className="grid sm:grid-cols-2 gap-3">
+          <input placeholder="Full name" value={f.full_name} onChange={(e) => setF({ ...f, full_name: e.target.value })} data-testid="address-fullname" className={inp} />
+          <input placeholder="Phone" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} data-testid="address-phone" className={inp} />
+          <input placeholder="Address" value={f.address_l1} onChange={(e) => setF({ ...f, address_l1: e.target.value })} data-testid="address-line1" className={`${inp} sm:col-span-2`} />
+          <input placeholder="City" value={f.city} onChange={(e) => setF({ ...f, city: e.target.value })} className={inp} />
+          <input placeholder="Postal code" value={f.postal_code} onChange={(e) => setF({ ...f, postal_code: e.target.value })} className={inp} />
+        </div>
+        <label className="flex items-center gap-2 mt-3 text-sm"><input type="checkbox" checked={f.is_default} onChange={(e) => setF({ ...f, is_default: e.target.checked })} className="accent-fire" /> Set as default</label>
+        <button onClick={save} data-testid="address-save" className="mt-4 bg-obsidian text-white font-display font-bold uppercase py-3 px-6 rounded-none hover:bg-fire transition-colors">Save Address</button>
+      </div>
+    </div>
+  );
+}
 
 export default function Account() {
   const { user, logout } = useStore();
@@ -52,7 +97,7 @@ export default function Account() {
       <div className="grid lg:grid-cols-4 gap-8">
         <aside className="lg:col-span-1">
           <nav className="flex lg:flex-col gap-1 overflow-x-auto no-scrollbar">
-            {[["orders", "My Orders", Package], ["credit", "Store Credit", Gift], ["wishlist", "Wishlist", Heart], ["settings", "Settings", User]].map(([k, l, I]) => (
+            {[["orders", "My Orders", Package], ["credit", "Store Credit", Gift], ["addresses", "Addresses", MapPin], ["wishlist", "Wishlist", Heart], ["settings", "Settings", User]].map(([k, l, I]) => (
               <button key={k} onClick={() => setTab(k)} data-testid={`account-tab-${k}`} className={`flex items-center gap-3 px-4 py-3 rounded-none font-display font-bold uppercase text-sm tracking-tight whitespace-nowrap ${tab === k ? "bg-obsidian text-white" : "hover:bg-ink-100"}`}><I size={17} /> {l}{k === "credit" && credit.balance > 0 && <span className="ml-1 font-mono text-fire">{fmt(credit.balance)}</span>}</button>
             ))}
             <button onClick={() => { logout(); navigate("/"); }} className="flex items-center gap-3 px-4 py-3 rounded-none font-display font-bold uppercase text-sm tracking-tight text-fire hover:bg-fire-subtle"><LogOut size={17} /> Logout</button>
@@ -104,6 +149,7 @@ export default function Account() {
             </div>
           )}
 
+          {tab === "addresses" && <AddressesTab />}
           {tab === "wishlist" && <button onClick={() => navigate("/wishlist")} className="bg-obsidian text-white font-bold uppercase px-6 py-3 rounded-none">Go to Wishlist</button>}
           {tab === "settings" && (
             <div className="bg-white border border-ink-200 rounded-none p-6 max-w-md">

@@ -10,6 +10,8 @@ import random
 import bcrypt
 import jwt
 import requests
+import csv
+import io
 from datetime import datetime, timezone, timedelta
 from typing import List, Optional
 
@@ -1112,6 +1114,105 @@ async def create_refund(order_id: str, body: RefundReq, admin=Depends(get_admin)
     o2 = await db.orders.find_one({"id": order_id}, {"_id": 0})
     await notify(o2, "REFUND", f"Refund of Rs. {int(body.amount)} for {o['order_number']} processed via {body.method.replace('_', ' ').title()}.")
     return {"success": True, "data": {"refund": clean(refund), "order": o2, "total_refunded": total_refunded}}
+
+
+# ==================== ADDRESSES ====================
+class AddressReq(BaseModel):
+    full_name: str
+    phone: str
+    address_l1: str
+    address_l2: Optional[str] = None
+    city: str
+    province: Optional[str] = None
+    postal_code: Optional[str] = None
+    country_code: str = "PK"
+    is_default: bool = False
+
+
+@api.get("/me/addresses")
+async def list_addresses(user=Depends(get_current_user)):
+    items = await db.addresses.find({"user_id": user["id"]}, {"_id": 0}).sort("is_default", -1).to_list(50)
+    return {"success": True, "data": items}
+
+
+@api.post("/me/addresses")
+async def add_address(body: AddressReq, user=Depends(get_current_user)):
+    doc = body.dict()
+    doc["id"] = str(uuid.uuid4())
+    doc["user_id"] = user["id"]
+    doc["created_at"] = datetime.now(timezone.utc).isoformat()
+    if doc["is_default"]:
+        await db.addresses.update_many({"user_id": user["id"]}, {"$set": {"is_default": False}})
+    elif await db.addresses.count_documents({"user_id": user["id"]}) == 0:
+        doc["is_default"] = True
+    await db.addresses.insert_one(dict(doc))
+    return {"success": True, "data": clean(doc)}
+
+
+@api.patch("/me/addresses/{aid}")
+async def update_address(aid: str, body: AddressReq, user=Depends(get_current_user)):
+    doc = body.dict()
+    if doc.get("is_default"):
+        await db.addresses.update_many({"user_id": user["id"]}, {"$set": {"is_default": False}})
+    await db.addresses.update_one({"id": aid, "user_id": user["id"]}, {"$set": doc})
+    a = await db.addresses.find_one({"id": aid}, {"_id": 0})
+    return {"success": True, "data": a}
+
+
+@api.delete("/me/addresses/{aid}")
+async def delete_address(aid: str, user=Depends(get_current_user)):
+    await db.addresses.delete_one({"id": aid, "user_id": user["id"]})
+    return {"success": True}
+
+
+# ==================== CSV BULK IMPORT ====================
+@api.post("/admin/products/import")
+async def import_products(file: UploadFile = File(...), admin=Depends(get_admin)):
+    raw = await file.read()
+    text = raw.decode("utf-8-sig", errors="ignore")
+    reader = csv.DictReader(io.StringIO(text))
+    created, updated, errors = 0, 0, []
+    for i, row in enumerate(reader, start=2):
+        try:
+            name = (row.get("name") or "").strip()
+            if not name:
+                continue
+            slug = (row.get("slug") or name.lower().replace(" ", "-")).strip()
+            images = [u.strip() for u in (row.get("images") or "").split("|") if u.strip()]
+
+            def flag(k):
+                return str(row.get(k, "")).strip().lower() in ("1", "true", "yes", "y")
+
+            fields = {
+                "name": name, "category_slug": (row.get("category_slug") or "retro").strip(),
+                "brand_slug": (row.get("brand_slug") or "airvault").strip(),
+                "base_price": float(row.get("base_price") or 0),
+                "compare_at_price": float(row["compare_at_price"]) if row.get("compare_at_price") else None,
+                "description": (row.get("description") or name).strip(),
+                "is_new_arrival": flag("is_new_arrival"), "is_best_seller": flag("is_best_seller"),
+                "is_flash_sale": flag("is_flash_sale"), "status": "active",
+            }
+            if images:
+                fields["images"] = images
+                fields["hover_image"] = images[1] if len(images) > 1 else images[0]
+            existing = await db.products.find_one({"slug": slug})
+            if existing:
+                await db.products.update_one({"slug": slug}, {"$set": fields})
+                updated += 1
+            else:
+                fields["id"] = str(uuid.uuid4())
+                fields["slug"] = slug
+                fields.setdefault("images", images or ["https://images.unsplash.com/photo-1559050993-d4e4fbf11769?q=85&w=900"])
+                fields["sizes"] = [{"size": s, "stock": 8} for s in seed_data.EU_SIZES]
+                fields["avg_rating"] = 5.0
+                fields["review_count"] = 0
+                fields["created_at"] = datetime.now(timezone.utc).isoformat()
+                fields["sort_order"] = 999
+                await db.products.insert_one(dict(fields))
+                created += 1
+        except Exception as e:
+            errors.append(f"Row {i}: {str(e)}")
+    return {"success": True, "data": {"created": created, "updated": updated, "errors": errors[:10]}}
 
 
 # ==================== SEED ====================

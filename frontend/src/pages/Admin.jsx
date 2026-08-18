@@ -137,17 +137,41 @@ function Products() {
   const [products, setProducts] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [importing, setImporting] = useState(false);
   const load = () => http.get("/admin/products").then(({ data }) => setProducts(data.data));
   useEffect(() => { load(); }, []);
   const del = async (id) => { if (!window.confirm("Delete product?")) return; await http.delete(`/admin/products/${id}`); toast.success("Deleted"); load(); };
   const openNew = () => { setEditing(null); setShowForm(true); };
   const openEdit = (p) => { setEditing(p); setShowForm(true); };
+  const doImport = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const { data } = await http.post("/admin/products/import", fd, { headers: { "Content-Type": "multipart/form-data" } });
+      const r = data.data;
+      toast.success(`Import done: ${r.created} added, ${r.updated} updated`);
+      if (r.errors?.length) toast.error(r.errors[0]);
+      load();
+    } catch { toast.error("Import failed — check CSV format"); }
+    setImporting(false);
+    e.target.value = "";
+  };
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-2">
         <h1 className="font-display text-3xl font-black uppercase tracking-tight">Products</h1>
-        <button onClick={openNew} data-testid="admin-add-product-btn" className="bg-obsidian text-white font-display font-bold uppercase text-sm px-5 py-3 rounded-none flex items-center gap-2 hover:bg-fire transition-colors"><Plus size={16} /> Add Product</button>
+        <div className="flex gap-2">
+          <label data-testid="admin-import-csv-btn" className="border-2 border-obsidian text-obsidian font-display font-bold uppercase text-sm px-5 py-3 rounded-none flex items-center gap-2 hover:bg-obsidian hover:text-white transition-colors cursor-pointer">
+            <Upload size={16} /> {importing ? "Importing…" : "Import CSV"}
+            <input type="file" accept=".csv" hidden onChange={doImport} />
+          </label>
+          <button onClick={openNew} data-testid="admin-add-product-btn" className="bg-obsidian text-white font-display font-bold uppercase text-sm px-5 py-3 rounded-none flex items-center gap-2 hover:bg-fire transition-colors"><Plus size={16} /> Add Product</button>
+        </div>
       </div>
+      <p className="text-ink-400 text-xs mb-6 font-mono">CSV columns: name, slug, category_slug, brand_slug, base_price, compare_at_price, description, images (pipe| separated), is_new_arrival, is_best_seller, is_flash_sale</p>
       <div className="bg-white rounded-none border border-ink-200 overflow-x-auto" data-testid="admin-products-table">
         <table className="w-full text-sm">
           <thead className="bg-ink-100 text-left"><tr>{["", "Name", "Category", "Price", "Photos", "Flags", ""].map((h, i) => <th key={i} className="px-4 py-3 font-display font-bold uppercase text-xs">{h}</th>)}</tr></thead>

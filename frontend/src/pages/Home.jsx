@@ -130,9 +130,37 @@ export default function Home() {
         </div>
       </section>
 
+      <EditorialLookbook />
       <ReviewsSection />
       <SEOBlock />
     </div>
+  );
+}
+
+function EditorialLookbook() {
+  const panels = [
+    { tag: "SS26 Lookbook", title: "Own The Concrete", sub: "Grail-worthy retro highs built for the city grid.", cta: "Shop Retro", link: "/collections/retro", img: "https://images.unsplash.com/photo-1507553532144-b9df5e38c8d1?crop=entropy&cs=srgb&fm=jpg&q=85&w=1000" },
+    { tag: "Performance", title: "Run The Night", sub: "Cloud-foam runners engineered for relentless pace.", cta: "Shop Runners", link: "/collections/runners", img: "https://images.pexels.com/photos/29538558/pexels-photo-29538558.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=900&w=1000" },
+  ];
+  return (
+    <section className="max-w-[1400px] mx-auto px-5 sm:px-8 py-16">
+      <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
+        {panels.map((p, i) => (
+          <ScrollReveal key={i} delay={i * 0.1}>
+            <Link to={p.link} className="group relative block overflow-hidden aspect-[4/5] sm:aspect-[3/4] border border-ink-200">
+              <img src={p.img} alt={p.title} className="absolute inset-0 h-full w-full object-cover group-hover:scale-105 transition-transform duration-700" />
+              <div className="absolute inset-0 bg-gradient-to-t from-obsidian/90 via-obsidian/25 to-transparent" />
+              <div className="absolute bottom-0 p-6 sm:p-8 text-white">
+                <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-fire font-bold">{p.tag}</span>
+                <h3 className="font-display font-black text-3xl sm:text-5xl uppercase tracking-tight leading-none mt-2">{p.title}</h3>
+                <p className="text-white/70 mt-2 max-w-xs text-sm sm:text-base">{p.sub}</p>
+                <span className="inline-flex items-center gap-2 mt-5 font-display font-bold uppercase text-sm tracking-wider border-b-2 border-fire pb-1 group-hover:gap-3 transition-all">{p.cta} <ArrowRight size={16} /></span>
+              </div>
+            </Link>
+          </ScrollReveal>
+        ))}
+      </div>
+    </section>
   );
 }
 
