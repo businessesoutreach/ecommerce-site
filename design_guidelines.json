@@ -1,0 +1,412 @@
+{
+  "project_name": "SOLEKICKS PK - Premium Streetwear Footwear Experience",
+  "app_type": "e-commerce",
+  "target_market": "Pakistan (Sneakerheads, Urban Streetwear, Runners, Gen-Z / Millennial Style Seekers, inspired by jutay.co / Kith / Bodega / SNKRS)",
+  "design_philosophy": {
+    "archetype": "THE PERFORMANCE PRO x SWISS EDITORIAL STREETWEAR",
+    "core_principles": [
+      "Product as Kinetic Hero: Pure high-contrast canvas (#0A0A0A deep obsidian text/accents, #FAFAFA warm crisp studio background) allowing sneaker silhouettes and colorways to pop.",
+      "High Tension Typography: Heavy condensed grotesk sans (Syne / Archivo / Clash Display feeling with tracking-tighter) for impactful punchy headlines, paired with ultra-clean utilitarian mono/sans for specs, sizes, and pricing.",
+      "Motion-First Micro-Interactions: Every card, chip, button, drawer, and banner breathes with kinetic Framer Motion polish (image-swap on hover, quick-size chip select, bounce pulse on wishlist heart, slide-over cart drawer with haptic-feel feedback).",
+      "Streetwear Trust & Local Conversion: Transparent Cash on Delivery (COD), 7-Day Hassle-Free Pakistan Exchange, Fast Nationwide Dispatch (Karachi/Lahore/Islamabad 24-48h, rest 2-4 days), Authentic Grade Quality Seals, and photo customer reviews."
+    ]
+  },
+  "typography": {
+    "font_family_recommendation": {
+      "headings": "'Plus Jakarta Sans', 'Cabinet Grotesk', 'Archivo', sans-serif",
+      "body": "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+      "mono_accent": "'JetBrains Mono', 'Space Mono', monospace"
+    },
+    "scale": {
+      "hero_h1": "text-4xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight leading-[1.05]",
+      "section_h2": "text-2xl sm:text-3xl lg:text-4xl font-extrabold uppercase tracking-tight leading-tight",
+      "card_h3": "text-base sm:text-lg font-bold tracking-tight text-neutral-900",
+      "subheading": "text-lg sm:text-xl font-medium text-neutral-600 leading-relaxed",
+      "body": "text-sm sm:text-base font-normal text-neutral-700 leading-relaxed",
+      "caption_badge": "text-xs font-bold uppercase tracking-[0.18em]"
+    },
+    "rules": [
+      "Never use Inter for primary H1/H2 headings. Use strong uppercase font-black with tracking-tighter for streetwear punchiness.",
+      "Price tags must display bold PKR currency formatting (e.g., 'Rs. 8,499') with slash through original price (e.g., 'Rs. 13,999') in muted red/gray.",
+      "Labels, category pills, and trust flags must use uppercase tracking-[0.15em] with text-[11px] or text-xs."
+    ]
+  },
+  "colors": {
+    "palette": {
+      "brand_obsidian": "#0A0A0A",
+      "brand_canvas_offwhite": "#FAFAFA",
+      "brand_surface_white": "#FFFFFF",
+      "brand_surface_subtle": "#F4F4F5",
+      "brand_accent_fire": "#FF3B30",
+      "brand_accent_fire_hover": "#E03126",
+      "brand_accent_fire_subtle": "#FFF1F0",
+      "brand_border_light": "#E5E7EB",
+      "brand_border_dark": "#27272A",
+      "text_primary": "#0A0A0A",
+      "text_secondary": "#52525B",
+      "text_muted": "#71717A",
+      "text_inverted": "#FAFAFA",
+      "badge_sale_bg": "#FF3B30",
+      "badge_sale_text": "#FFFFFF",
+      "badge_new_bg": "#0A0A0A",
+      "badge_new_text": "#FAFAFA",
+      "badge_stock_low": "#F59E0B"
+    },
+    "contrast_strategy": {
+      "cta_buttons": "Solid #0A0A0A with white text or Solid #FF3B30 with white text for High Impact actions.",
+      "hover_states": "Hover background changes must always explicitly set matching high-contrast text color (e.g., hover:bg-neutral-900 hover:text-white).",
+      "glassmorphism": "Used for sticky header: backdrop-blur-md bg-white/85 border-b border-neutral-200/80 (never pure transparent)."
+    }
+  },
+  "image_urls": {
+    "hero_slides": [
+      {
+        "id": "hero-1",
+        "title": "STREET REVOLUTION // SS26 DROPS",
+        "subtitle": "High-heat streetwear silhouettes & retro re-issues engineered for urban dominance across Pakistan.",
+        "badge": "NEW SS26 ARRIVAL",
+        "cta_text": "SHOP NEW RELEASES",
+        "cta_link": "/collections/new-arrivals",
+        "image_url": "https://images.unsplash.com/photo-1615440321519-dda3d4b5ccab?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHw0fHxzdHJlZXR3ZWFyJTIwc25lYWtlciUyMHNob2VzfGVufDB8fHx8MTc4NzA1NjYyNXww&ixlib=rb-4.1.0&q=85",
+        "description": "Editorial street style sneaker close-up with bold red and white kicks"
+      },
+      {
+        "id": "hero-2",
+        "title": "RETRO LOWS & COURT MASTERS",
+        "subtitle": "Timeless terrace vibes, chunkier midsoles, and everyday luxury crafted for maximum comfort.",
+        "badge": "TRENDING NOW",
+        "cta_text": "EXPLORE RETRO KICKS",
+        "cta_link": "/collections/retro",
+        "image_url": "https://images.unsplash.com/photo-1670948516733-0220701ea0de?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzd8MHwxfHNlYXJjaHwzfHxzbmVha2VyJTIwY29sbGVjdGlvbiUyMGVkaXRvcmlhbHxlbnwwfHx8fDE3ODcwNTY2MjV8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Streetwear sneaker enthusiast lifestyle collection shot"
+      },
+      {
+        "id": "hero-3",
+        "title": "MAX SPEED CLOUD RUNNERS",
+        "subtitle": "Engineered propulsion foam and hyper-breathable knit. Designed for the track, styled for the street.",
+        "badge": "PERFORMANCE GEAR",
+        "cta_text": "DISCOVER RUNNERS",
+        "cta_link": "/collections/runners",
+        "image_url": "https://images.unsplash.com/photo-1597892657493-6847b9640bac?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzV8MHwxfHNlYXJjaHwxfHxydW5uZXIlMjBhdGhsZXRpYyUyMHNob2VzfGVufDB8fHx8MTc4NzA1NjYyNXww&ixlib=rb-4.1.0&q=85",
+        "description": "High performance runner athlete wearing dynamic road sneakers"
+      }
+    ],
+    "category_tiles": [
+      {
+        "name": "RETRO & HIGH TOPS",
+        "tagline": "Grail-worthy silhouettes",
+        "item_count": "24 Models",
+        "image_url": "https://images.pexels.com/photos/4061385/pexels-photo-4061385.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "category_key": "retro"
+      },
+      {
+        "name": "EVERYDAY STREETWEAR",
+        "tagline": "Clean low-tops & terrace classics",
+        "item_count": "38 Models",
+        "image_url": "https://images.unsplash.com/photo-1641997465126-c73cc4070337?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHwzfHxzdHJlZXR3ZWFyJTIwc25lYWtlciUyMHNob2VzfGVufDB8fHx8MTc4NzA1NjYyNXww&ixlib=rb-4.1.0&q=85",
+        "category_key": "streetwear"
+      },
+      {
+        "name": "PERFORMANCE RUNNERS",
+        "tagline": "Ultra-cushioned responsive foam",
+        "item_count": "19 Models",
+        "image_url": "https://images.unsplash.com/photo-1676041669566-fead69bd7007?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzV8MHwxfHNlYXJjaHwyfHxydW5uZXIlMjBhdGhsZXRpYyUyMHNob2VzfGVufDB8fHx8MTc4NzA1NjYyNXww&ixlib=rb-4.1.0&q=85",
+        "category_key": "runners"
+      },
+      {
+        "name": "RECOVERY SLIDES & FOAM",
+        "tagline": "Post-run cloud softness",
+        "item_count": "12 Models",
+        "image_url": "https://images.pexels.com/photos/18110858/pexels-photo-18110858.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "category_key": "slides"
+      }
+    ],
+    "featured_products_media": [
+      {
+        "id": "prod-1",
+        "name": "AJ-4 Retro 'White Oreo' Premium",
+        "primary_image": "https://images.unsplash.com/photo-1640016713197-76fe85053279?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzd8MHwxfHNlYXJjaHwyfHxzbmVha2VyJTIwY29sbGVjdGlvbiUyMGVkaXRvcmlhbHxlbnwwfHx8fDE3ODcwNTY2MjV8MA&ixlib=rb-4.1.0&q=85",
+        "hover_image": "https://images.unsplash.com/photo-1612902377668-68ec50954ad9?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzd8MHwxfHNlYXJjaHwxfHxzbmVha2VyJTIwY29sbGVjdGlvbiUyMGVkaXRvcmlhbHxlbnwwfHx8fDE3ODcwNTY2MjV8MA&ixlib=rb-4.1.0&q=85",
+        "price": 8999,
+        "original_price": 14500,
+        "category": "Retro",
+        "rating": 4.9,
+        "reviews_count": 84
+      },
+      {
+        "id": "prod-2",
+        "name": "Dunk Low 'Coastline Blue' Edition",
+        "primary_image": "https://images.unsplash.com/photo-1595341888016-a392ef81b7de?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHwyfHxzdHJlZXR3ZWFyJTIwc25lYWtlciUyMHNob2VzfGVufDB8fHx8MTc4NzA1NjYyNXww&ixlib=rb-4.1.0&q=85",
+        "hover_image": "https://images.unsplash.com/photo-1560769629-975ec94e6a86?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHwxfHxzdHJlZXR3ZWFyJTIwc25lYWtlciUyMHNob2VzfGVufDB8fHx8MTc4NzA1NjYyNXww&ixlib=rb-4.1.0&q=85",
+        "price": 7499,
+        "original_price": 11999,
+        "category": "Streetwear",
+        "rating": 4.8,
+        "reviews_count": 126
+      },
+      {
+        "id": "prod-3",
+        "name": "CloudStratus Surge Pro Road Runner",
+        "primary_image": "https://images.unsplash.com/photo-1746206673199-5b75dcec1018?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzV8MHwxfHNlYXJjaHwzfHxydW5uZXIlMjBhdGhsZXRpYyUyMHNob2VzfGVufDB8fHx8MTc4NzA1NjYyNXww&ixlib=rb-4.1.0&q=85",
+        "hover_image": "https://images.unsplash.com/photo-1587587448924-b5a1db520d29?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzV8MHwxfHNlYXJjaHw0fHxydW5uZXIlMjBhdGhsZXRpYyUyMHNob2VzfGVufDB8fHx8MTc4NzA1NjYyNXww&ixlib=rb-4.1.0&q=85",
+        "price": 9250,
+        "original_price": 15000,
+        "category": "Runners",
+        "rating": 5.0,
+        "reviews_count": 62
+      },
+      {
+        "id": "prod-4",
+        "name": "Yeezy-Style Oasis Foam Slides",
+        "primary_image": "https://images.pexels.com/photos/18110858/pexels-photo-18110858.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "hover_image": "https://images.pexels.com/photos/16350687/pexels-photo-16350687.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "price": 3899,
+        "original_price": 5500,
+        "category": "Slides",
+        "rating": 4.7,
+        "reviews_count": 210
+      }
+    ],
+    "editorial_story_image": "https://images.pexels.com/photos/38209691/pexels-photo-38209691.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    "customer_review_avatars": [
+      {
+        "name": "Hamza Tariq (Lahore)",
+        "photo": "https://images.unsplash.com/photo-1615440321519-dda3d4b5ccab?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHw0fHxzdHJlZXR3ZWFyJTIwc25lYWtlciUyMHNob2VzfGVufDB8fHx8MTc4NzA1NjYyNXww&ixlib=rb-4.1.0&q=85",
+        "text": "Delivered in 2 days to DHA Lahore via COD! The cushioning on the Oreo 4s is insane. Exactly matches jutay quality.",
+        "verified": true,
+        "rating": 5
+      },
+      {
+        "name": "Zeeshan Malik (Karachi)",
+        "photo": "https://images.unsplash.com/photo-1641997465126-c73cc4070337?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHwzfHxzdHJlZXR3ZWFyJTIwc25lYWtlciUyMHNob2VzfGVufDB8fHx8MTc4NzA1NjYyNXww&ixlib=rb-4.1.0&q=85",
+        "text": "Size 43 fit true to chart. Exchange policy gave me full confidence to order. 10/10 streetwear staple.",
+        "verified": true,
+        "rating": 5
+      },
+      {
+        "name": "Ali Raza (Islamabad)",
+        "photo": "https://images.unsplash.com/photo-1595341888016-a392ef81b7de?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHwyfHxzdHJlZXR3ZWFyJTIwc25lYWtlciUyMHNob2VzfGVufDB8fHx8MTc4NzA1NjYyNXww&ixlib=rb-4.1.0&q=85",
+        "text": "Hands down best sneaker cop in Pakistan. The packaging with extra laces and sticker pack was top tier.",
+        "verified": true,
+        "rating": 5
+      }
+    ]
+  },
+  "layout_and_architecture": {
+    "header_and_navigation": {
+      "announcement_bar": {
+        "text": "⚡ FLASH DROP: 15% OFF ORDERS OVER RS. 9,999 | FREE SHIPPING NATIONWIDE ON PREPAID & COD ORDERS OVER RS. 5,000 | 7-DAY EXCHANGE",
+        "style": "bg-[#0A0A0A] text-white py-2 px-4 text-xs font-semibold uppercase tracking-wider flex items-center justify-between"
+      },
+      "sticky_header": {
+        "style": "sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-neutral-200 transition-all duration-300",
+        "desktop_elements": [
+          "Logo: SOLEKICKS [PK] with bold red dot badge",
+          "Mega-Menu Links: 'NEW RELEASES', 'STREETWEAR', 'RETRO & HIGH TOPS', 'RUNNERS', 'SLIDES', 'FLASH SALE'",
+          "Search bar with live instant preview dropdown",
+          "Wishlist Heart Icon with dynamic item count badge",
+          "Cart Icon with subtotal & item count badge trigger for Cart Drawer"
+        ],
+        "mobile_elements": [
+          "Hamburger menu with full-screen slide out categorized accordions",
+          "Center Brand Logo",
+          "Search & Cart quick triggers",
+          "Sticky Bottom Navigation bar for mobile with [Home, Shop, Search, Wishlist, Cart]"
+        ]
+      }
+    },
+    "homepage_merchandising_flow": [
+      {
+        "section_name": "Hero Slider",
+        "description": "Full-bleed auto-rotating banner carousel with slide indicators, pause-on-hover, bold street captions, and direct category CTA buttons."
+      },
+      {
+        "section_name": "Trust & Local Guarantees Ribbon",
+        "description": "4-pillar trust strip: 🚚 Fast Nationwide Delivery (COD Available), 🔄 7-Day Easy Exchange Policy, 👟 100% Quality & Fit Guarantee, 💬 24/7 WhatsApp & Live Support."
+      },
+      {
+        "section_name": "Category / Brand Banner Grid",
+        "description": "Asymmetric Bento grid showcasing 'Retro Highs', 'Streetwear Lows', 'Runners', and 'Cloud Slides' with hover zoom & item counts."
+      },
+      {
+        "section_name": "Flash Sale Drop with Live Countdown",
+        "description": "High-urgency section with active ticking countdown timer (Hours : Mins : Secs), animated fire badge, and exclusive discounted sneakers."
+      },
+      {
+        "section_name": "New Arrivals Grid",
+        "description": "Fresh releases featuring hover image swap, interactive inline size chips (EU 40, 41, 42, 43, 44, 45), 1-click add to cart, and wishlist toggle."
+      },
+      {
+        "section_name": "Quick Shop By Size Grid",
+        "description": "Interactive size grid [EU 39, 40, 41, 42, 43, 44, 45, 46] that instantly filters and scrolls to matching in-stock models."
+      },
+      {
+        "section_name": "Best Sellers & Streetwear Essentials",
+        "description": "Curated most-wanted kicks with social proof tags ('🔥 48 bought in last 24h', 'Only 3 left in Size 42')."
+      },
+      {
+        "section_name": "Customer Reviews & Fit Showcase",
+        "description": "Real verified buyer photos from Karachi, Lahore, Islamabad with star ratings and authentic testimonials."
+      },
+      {
+        "section_name": "Streetwear SEO & Culture Manifesto",
+        "description": "Rich content accordion block explaining Pakistan's emerging sneaker culture, premium materials, sizing guide, and care instructions."
+      },
+      {
+        "section_name": "Footer",
+        "description": "High-contrast dark footer with email drop newsletter, city shipping dispatch list, Pakistan payment methods (COD, JazzCash, EasyPaisa, Visa/Mastercard), policy links, and copyright."
+      }
+    ]
+  },
+  "component_specifications": {
+    "product_card": {
+      "features": [
+        "Primary image to secondary hover image smooth crossfade via Framer Motion",
+        "Discount percentage tag ('-42% OFF') in bold red-orange badge",
+        "Inline quick size selector chips on card (clicking a size selects it directly for quick add)",
+        "Quick Add to Cart button with micro-animation loading state",
+        "Heart Wishlist button with SVG fill and scale-bounce animation",
+        "Sold-Out overlay state if inventory is 0 with 'Notify Me' option",
+        "Price in Pakistani Rupees (PKR) with formatted commas",
+        "Star rating snippet (e.g., ★ 4.9 (84))"
+      ],
+      "data_testids": {
+        "container": "product-card-{id}",
+        "image": "product-card-image-{id}",
+        "title": "product-card-title-{id}",
+        "price": "product-card-price-{id}",
+        "original_price": "product-card-original-price-{id}",
+        "size_chip": "product-card-size-{size}-{id}",
+        "add_to_cart": "product-card-add-btn-{id}",
+        "wishlist_btn": "product-card-wishlist-btn-{id}",
+        "badge": "product-card-badge-{id}"
+      }
+    },
+    "cart_drawer": {
+      "features": [
+        "Slide-in right drawer with Framer Motion backdrop & panel transition",
+        "Progress bar for Free Shipping threshold (e.g. 'Add Rs. 1,500 more for Free Delivery!')",
+        "Item quantity increments/decrements with real-time recalculation",
+        "Size badge display and easy variant edit",
+        "Guest checkout shortcut button directly to Checkout flow",
+        "Promo code input field with instant discount calculation (e.g. 'STREET15', 'JUTAY10')",
+        "Local delivery estimation badge (Karachi/Lahore 1-2 days, others 2-4 days)"
+      ],
+      "data_testids": {
+        "drawer": "cart-drawer",
+        "close_btn": "cart-drawer-close-btn",
+        "item_row": "cart-item-{id}",
+        "qty_plus": "cart-item-qty-plus-{id}",
+        "qty_minus": "cart-item-qty-minus-{id}",
+        "remove_item": "cart-item-remove-btn-{id}",
+        "checkout_btn": "cart-drawer-checkout-btn",
+        "subtotal_amount": "cart-drawer-subtotal-amount"
+      }
+    },
+    "product_detail_page": {
+      "features": [
+        "High-res gallery with thumbnail selector and click-to-zoom modal",
+        "Size selector with UK/US/EU conversion table modal",
+        "Stock urgency indicator ('⚡ Only 2 pairs left in EU 42!')",
+        "Sticky bottom buy bar on mobile screens",
+        "Tabs: Product Details, Cushioning & Materials, 7-Day Return Policy, Size Guide, Verified Customer Reviews",
+        "Related sneakers carousel with smart category matching"
+      ],
+      "data_testids": {
+        "gallery_main": "pdp-main-image",
+        "thumbnail": "pdp-thumbnail-{index}",
+        "size_option": "pdp-size-{size}",
+        "add_to_cart_btn": "pdp-add-to-cart-btn",
+        "buy_now_btn": "pdp-buy-now-btn",
+        "wishlist_btn": "pdp-wishlist-toggle",
+        "reviews_section": "pdp-reviews-section"
+      }
+    },
+    "guest_checkout_flow": {
+      "features": [
+        "1-Page frictionless guest checkout without mandatory password creation",
+        "Pakistan City Dropdown (Karachi, Lahore, Islamabad, Rawalpindi, Faisalabad, Multan, Peshawar, Quetta, Sialkot, Gujranwala, Hyderabad, etc.) with automatic postal code & shipping time sync",
+        "Payment options: Cash on Delivery (COD), JazzCash / EasyPaisa Wallet Transfer, Direct Card (Mocked with instant confirmation)",
+        "Order confirmation screen with generated Tracking ID (e.g. 'PK-SNK-89211'), tracking timeline status, and WhatsApp confirmation prompt"
+      ],
+      "data_testids": {
+        "form": "checkout-form",
+        "fullname_input": "checkout-fullname-input",
+        "phone_input": "checkout-phone-input",
+        "email_input": "checkout-email-input",
+        "address_input": "checkout-address-input",
+        "city_select": "checkout-city-select",
+        "payment_method": "checkout-payment-method-{method}",
+        "submit_order_btn": "checkout-submit-order-btn"
+      }
+    },
+    "order_tracking": {
+      "features": [
+        "Track by Order ID or Phone number",
+        "Visual kinetic 4-stage tracking stepper: [Order Placed -> Verified -> Dispatched from Hub -> Out for Delivery -> Delivered]",
+        "Carrier details (TCS / Leopard / CallCourier simulation) with status timestamps"
+      ],
+      "data_testids": {
+        "tracking_input": "tracking-search-input",
+        "tracking_btn": "tracking-search-btn",
+        "timeline_step": "tracking-timeline-step-{step}"
+      }
+    },
+    "admin_dashboard": {
+      "features": [
+        "Overview metrics: Total Revenue (PKR), Active Orders, Average Order Value, Return Rate",
+        "Product Management: Add/Edit products, upload mock image, toggle Flash Sale, update stock per size",
+        "Order Management: View pending COD orders, update status (Verified, Dispatched, Delivered, Cancelled)",
+        "Discount & Promo codes manager"
+      ],
+      "data_testids": {
+        "dashboard_container": "admin-dashboard",
+        "stats_card": "admin-stat-{key}",
+        "order_row": "admin-order-row-{id}",
+        "product_table": "admin-products-table",
+        "add_product_btn": "admin-add-product-btn"
+      }
+    }
+  },
+  "motion_and_animations": {
+    "framework": "framer-motion",
+    "rules": [
+      "Use spring transitions for modal popups and cart drawer: { type: 'spring', damping: 25, stiffness: 200 }",
+      "Product card hover state: scale 1.02 on image, image crossfade transition: { duration: 0.3, ease: 'easeInOut' }",
+      "Wishlist heart micro-interaction: scale bounce [1, 1.35, 1] on click with red heart fill",
+      "Notification toast via sonner with customized dark streetwear theme",
+      "Staggered reveal for product grid items when switching categories or applying filters"
+    ]
+  },
+  "pakistan_localization_details": {
+    "currency": "PKR (Displayed as Rs. XX,XXX)",
+    "phone_format": "+92 3XX XXXXXXX",
+    "shipping_rules": "Free Shipping on orders over Rs. 5,000; Flat Rs. 250 delivery fee for other orders",
+    "major_cities": [
+      "Karachi",
+      "Lahore",
+      "Islamabad",
+      "Rawalpindi",
+      "Faisalabad",
+      "Multan",
+      "Peshawar",
+      "Quetta",
+      "Sialkot",
+      "Gujranwala",
+      "Hyderabad"
+    ],
+    "payment_gateways_mocked": [
+      "Cash on Delivery (COD) - Most Popular in Pakistan",
+      "JazzCash / EasyPaisa Direct Transfer",
+      "Credit / Debit Card (Visa, Mastercard, UnionPay)"
+    ]
+  },
+  "instructions_to_main_agent": [
+    "Build the complete single-vendor sneaker e-commerce platform with the exact streetwear aesthetic outlined in this file.",
+    "Implement clean React state management with persistent LocalStorage for Guest Cart, Wishlist, and Recent Orders so refreshes keep items.",
+    "Include pre-seeded catalog with 16+ high-heat streetwear sneaker models across Retro, Lows, Runners, and Slides with realistic PKR pricing and size runs (EU 39 to 46).",
+    "Ensure all test IDs (data-testid) defined in this document are strictly attached to all interactive buttons, inputs, links, and cards for end-to-end testing.",
+    "Provide interactive mock flows for Checkout, Order Tracking, Customer Reviews with photo uploads simulation, and an accessible Admin Portal.",
+    "Ensure the mobile experience has the sticky bottom navigation bar for quick thumb access to Shop, Search, Wishlist, and Cart Drawer."
+  ]
+}
