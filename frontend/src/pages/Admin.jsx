@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LayoutDashboard, Package, ShoppingCart, Ticket, Star, Users, LogOut, TrendingUp, AlertTriangle, Plus, Trash2, X } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Ticket, Star, Users, LogOut, TrendingUp, AlertTriangle, Plus, Trash2, X, RotateCcw, DollarSign, Image as ImageIcon, Upload, MessageCircle } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
-import { http, fmt } from "../lib/api";
+import { http, fmt, imgUrl, waLink } from "../lib/api";
 import { useStore } from "../context/StoreContext";
 import { toast } from "sonner";
 
@@ -21,7 +21,7 @@ export default function Admin() {
 
   if (!user || (user.role !== "admin" && user.role !== "staff")) return null;
 
-  const NAV = [["overview", "Overview", LayoutDashboard], ["orders", "Orders", ShoppingCart], ["products", "Products", Package], ["coupons", "Coupons", Ticket], ["reviews", "Reviews", Star], ["customers", "Customers", Users]];
+  const NAV = [["overview", "Overview", LayoutDashboard], ["orders", "Orders", ShoppingCart], ["products", "Products", Package], ["returns", "Returns", RotateCcw], ["refunds", "Refunds", DollarSign], ["coupons", "Coupons", Ticket], ["reviews", "Reviews", Star], ["customers", "Customers", Users], ["cms", "Hero & CMS", ImageIcon]];
 
   return (
     <div className="min-h-screen bg-ink-100" data-testid="admin-dashboard">
@@ -40,9 +40,12 @@ export default function Admin() {
           {tab === "overview" && <Overview />}
           {tab === "orders" && <Orders />}
           {tab === "products" && <Products />}
+          {tab === "returns" && <Returns />}
+          {tab === "refunds" && <Refunds />}
           {tab === "coupons" && <Coupons />}
           {tab === "reviews" && <Reviews />}
           {tab === "customers" && <Customers />}
+          {tab === "cms" && <Cms />}
         </main>
       </div>
     </div>
@@ -91,6 +94,7 @@ function Overview() {
 
 function Orders() {
   const [orders, setOrders] = useState([]);
+  const [refundOrder, setRefundOrder] = useState(null);
   const load = () => http.get("/admin/orders").then(({ data }) => setOrders(data.data));
   useEffect(() => { load(); }, []);
   const updateStatus = async (id, status) => { await http.patch(`/admin/orders/${id}/status`, { status }); toast.success("Status updated"); load(); };
@@ -99,7 +103,7 @@ function Orders() {
       <h1 className="font-display text-3xl font-black uppercase tracking-tight mb-6">Orders</h1>
       <div className="bg-white rounded-2xl border border-ink-200 overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-ink-100 text-left"><tr>{["Order", "Customer", "Total", "Payment", "Status"].map((h) => <th key={h} className="px-4 py-3 font-display font-bold uppercase text-xs tracking-wide">{h}</th>)}</tr></thead>
+          <thead className="bg-ink-100 text-left"><tr>{["Order", "Customer", "Total", "Payment", "Status", "Actions"].map((h) => <th key={h} className="px-4 py-3 font-display font-bold uppercase text-xs tracking-wide">{h}</th>)}</tr></thead>
           <tbody>
             {orders.map((o) => (
               <tr key={o.id} data-testid={`admin-order-row-${o.id}`} className="border-t border-ink-200">
@@ -112,12 +116,19 @@ function Orders() {
                     {ORDER_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setRefundOrder(o)} data-testid={`admin-refund-btn-${o.id}`} className="text-xs font-bold uppercase border border-ink-200 px-3 py-1.5 rounded-full hover:border-fire hover:text-fire">Refund</button>
+                    <a href={waLink(o.customer_phone, `Hi ${o.customer_name}, update on your SOLEKICKS order ${o.order_number}:`)} target="_blank" rel="noreferrer" className="h-7 w-7 grid place-items-center rounded-full bg-[#25D366] text-white" title="WhatsApp customer"><MessageCircle size={14} /></a>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
         {orders.length === 0 && <p className="p-8 text-center text-ink-400">No orders yet.</p>}
       </div>
+      {refundOrder && <RefundModal order={refundOrder} onClose={() => setRefundOrder(null)} onDone={() => { setRefundOrder(null); load(); }} />}
     </div>
   );
 }
@@ -185,7 +196,7 @@ function ProductForm({ onClose, onSaved }) {
             <input placeholder="Price (Rs.)" type="number" value={f.base_price} onChange={set("base_price")} data-testid="admin-product-price" className="border border-ink-200 rounded-xl px-4 py-2.5 outline-none focus:border-obsidian" />
             <input placeholder="Compare price" type="number" value={f.compare_at_price} onChange={set("compare_at_price")} className="border border-ink-200 rounded-xl px-4 py-2.5 outline-none focus:border-obsidian" />
           </div>
-          <input placeholder="Image URL (optional)" value={f.image} onChange={set("image")} className="w-full border border-ink-200 rounded-xl px-4 py-2.5 outline-none focus:border-obsidian" />
+          <AdminImageInput value={f.image} onChange={(v) => setF({ ...f, image: v })} testid="admin-product-image-upload" />
           <textarea placeholder="Description" value={f.description} onChange={set("description")} rows={3} className="w-full border border-ink-200 rounded-xl px-4 py-2.5 outline-none focus:border-obsidian" />
           <div className="flex gap-4 text-sm">
             {[["is_new_arrival", "New"], ["is_best_seller", "Best Seller"], ["is_flash_sale", "Flash Sale"]].map(([k, l]) => (
@@ -247,6 +258,162 @@ function Reviews() {
           </div>
         ))}
         {reviews.length === 0 && <p className="text-ink-400">No reviews.</p>}
+      </div>
+    </div>
+  );
+}
+
+async function uploadImage(file) {
+  const fd = new FormData();
+  fd.append("file", file);
+  const { data } = await http.post("/admin/upload", fd, { headers: { "Content-Type": "multipart/form-data" } });
+  return imgUrl(data.data.url);
+}
+
+function AdminImageInput({ value, onChange, testid }) {
+  const [busy, setBusy] = useState(false);
+  const handle = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBusy(true);
+    try { onChange(await uploadImage(file)); toast.success("Image uploaded"); }
+    catch { toast.error("Upload failed"); }
+    setBusy(false);
+  };
+  return (
+    <div className="flex gap-2 items-center">
+      <input placeholder="Image URL or upload →" value={value} onChange={(e) => onChange(e.target.value)} className="flex-1 border border-ink-200 rounded-xl px-4 py-2.5 outline-none focus:border-obsidian text-sm" />
+      <label data-testid={testid} className="shrink-0 flex items-center gap-1.5 bg-obsidian text-white text-xs font-bold uppercase px-3 py-2.5 rounded-xl cursor-pointer hover:bg-fire transition-colors">
+        <Upload size={14} /> {busy ? "…" : "Upload"}
+        <input type="file" accept="image/*" onChange={handle} className="hidden" />
+      </label>
+      {value && <img src={value} alt="" className="h-10 w-10 rounded-lg object-cover bg-ink-100" />}
+    </div>
+  );
+}
+
+function RefundModal({ order, onClose, onDone }) {
+  const [amount, setAmount] = useState(order.payment_status === "partially_paid" ? order.advance_paid : order.total);
+  const [reason, setReason] = useState("");
+  const [method, setMethod] = useState(order.payment_method === "COD" ? "STORE_CREDIT" : "PAYFAST_ORIGINAL");
+  const [ref, setRef] = useState("");
+  const submit = async () => {
+    if (!reason.trim()) return toast.error("Reason required");
+    try {
+      await http.post(`/admin/orders/${order.id}/refund`, { amount: Number(amount), reason, method, external_ref: ref || null });
+      toast.success("Refund processed");
+      onDone();
+    } catch (e) { toast.error(e.response?.data?.detail || "Refund failed"); }
+  };
+  return (
+    <div className="fixed inset-0 bg-obsidian/60 z-50 grid place-items-center p-5" onClick={onClose}>
+      <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl p-6 w-full max-w-md">
+        <div className="flex justify-between mb-4"><h3 className="font-display font-black text-xl uppercase">Refund {order.order_number}</h3><button onClick={onClose}><X size={20} /></button></div>
+        <p className="text-sm text-ink-500 mb-4">Paid: {order.payment_status} · Total {fmt(order.total)}{order.advance_paid ? ` · Advance ${fmt(order.advance_paid)}` : ""}</p>
+        <div className="space-y-3">
+          <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Amount" data-testid="admin-refund-amount" className="w-full border border-ink-200 rounded-xl px-4 py-2.5 outline-none focus:border-obsidian" />
+          <select value={method} onChange={(e) => setMethod(e.target.value)} data-testid="admin-refund-method" className="w-full border border-ink-200 rounded-xl px-4 py-2.5 bg-white">
+            <option value="STORE_CREDIT">Store Credit (registered users)</option>
+            <option value="BANK_TRANSFER">Bank Transfer (manual)</option>
+            <option value="PAYFAST_ORIGINAL">Original Method / Gateway</option>
+          </select>
+          {method === "BANK_TRANSFER" && <input value={ref} onChange={(e) => setRef(e.target.value)} placeholder="Transfer reference" className="w-full border border-ink-200 rounded-xl px-4 py-2.5 outline-none focus:border-obsidian" />}
+          <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} placeholder="Reason" data-testid="admin-refund-reason" className="w-full border border-ink-200 rounded-xl px-4 py-2.5 outline-none focus:border-obsidian" />
+          <button onClick={submit} data-testid="admin-refund-submit" className="w-full bg-obsidian text-white font-display font-bold uppercase py-3 rounded-full hover:bg-fire transition-colors">Process Refund</button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+function Returns() {
+  const [returns, setReturns] = useState([]);
+  const load = () => http.get("/admin/returns").then(({ data }) => setReturns(data.data));
+  useEffect(() => { load(); }, []);
+  const moderate = async (id, status) => { await http.patch(`/admin/returns/${id}`, { status }); toast.success(`Return ${status}`); load(); };
+  return (
+    <div>
+      <h1 className="font-display text-3xl font-black uppercase tracking-tight mb-6">Return Requests</h1>
+      <div className="space-y-3">
+        {returns.map((r) => (
+          <div key={r.id} data-testid={`admin-return-${r.id}`} className="bg-white border border-ink-200 rounded-2xl p-4 flex justify-between items-center gap-4">
+            <div className="flex-1"><p className="font-display font-bold">{r.order_number} · {r.customer_name}</p><p className="text-ink-500 text-sm">{r.reason}</p><span className="font-mono text-xs text-ink-400">{r.created_at?.slice(0, 10)}</span></div>
+            <span className={`text-xs font-bold uppercase px-3 py-1.5 rounded-full ${r.status === "pending" ? "bg-ink-100" : r.status === "approved" || r.status === "refunded" ? "bg-green-100 text-green-700" : "bg-fire/10 text-fire"}`}>{r.status}</span>
+            {r.status === "pending" && (
+              <div className="flex gap-2">
+                <button onClick={() => moderate(r.id, "approved")} data-testid={`admin-return-approve-${r.id}`} className="bg-obsidian text-white text-xs font-bold uppercase px-3 py-2 rounded-full">Approve</button>
+                <button onClick={() => moderate(r.id, "rejected")} className="border border-ink-200 text-xs font-bold uppercase px-3 py-2 rounded-full">Reject</button>
+              </div>
+            )}
+          </div>
+        ))}
+        {returns.length === 0 && <p className="text-ink-400">No return requests.</p>}
+      </div>
+    </div>
+  );
+}
+
+function Refunds() {
+  const [refunds, setRefunds] = useState([]);
+  useEffect(() => { http.get("/admin/refunds").then(({ data }) => setRefunds(data.data)); }, []);
+  return (
+    <div>
+      <h1 className="font-display text-3xl font-black uppercase tracking-tight mb-6">Refunds</h1>
+      <div className="bg-white rounded-2xl border border-ink-200 overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-ink-100 text-left"><tr>{["Order", "Amount", "Method", "Status", "Ref", "Date"].map((h) => <th key={h} className="px-4 py-3 font-display font-bold uppercase text-xs">{h}</th>)}</tr></thead>
+          <tbody>
+            {refunds.map((r) => (
+              <tr key={r.id} className="border-t border-ink-200">
+                <td className="px-4 py-3 font-mono font-bold">{r.order_number}</td>
+                <td className="px-4 py-3 font-mono font-bold text-fire">{fmt(r.amount)}</td>
+                <td className="px-4 py-3 text-xs">{r.method?.replace(/_/g, " ")}</td>
+                <td className="px-4 py-3"><span className={`text-xs font-bold uppercase ${r.status === "completed" ? "text-green-600" : "text-ink-400"}`}>{r.status}</span></td>
+                <td className="px-4 py-3 font-mono text-xs">{r.external_ref || "—"}</td>
+                <td className="px-4 py-3 font-mono text-xs">{r.created_at?.slice(0, 10)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {refunds.length === 0 && <p className="p-8 text-center text-ink-400">No refunds yet.</p>}
+      </div>
+    </div>
+  );
+}
+
+function Cms() {
+  const [slides, setSlides] = useState([]);
+  const [f, setF] = useState({ title: "", subtitle: "", badge: "", cta_text: "Shop Now", link_url: "/new-arrivals", image_url: "" });
+  const load = () => http.get("/admin/hero-slides").then(({ data }) => setSlides(data.data));
+  useEffect(() => { load(); }, []);
+  const add = async () => {
+    if (!f.image_url || !f.title) return toast.error("Title & image required");
+    await http.post("/admin/hero-slides", { ...f, sort_order: slides.length });
+    toast.success("Slide added"); setF({ title: "", subtitle: "", badge: "", cta_text: "Shop Now", link_url: "/new-arrivals", image_url: "" }); load();
+  };
+  const del = async (id) => { await http.delete(`/admin/hero-slides/${id}`); load(); };
+  return (
+    <div>
+      <h1 className="font-display text-3xl font-black uppercase tracking-tight mb-6">Hero Slides & CMS</h1>
+      <div className="bg-white rounded-2xl border border-ink-200 p-5 mb-6 space-y-3 max-w-2xl">
+        <h3 className="font-display font-bold uppercase text-sm">Add Hero Slide</h3>
+        <AdminImageInput value={f.image_url} onChange={(v) => setF({ ...f, image_url: v })} testid="admin-hero-upload" />
+        <div className="grid sm:grid-cols-2 gap-3">
+          <input placeholder="Title" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} data-testid="admin-hero-title" className="border border-ink-200 rounded-xl px-4 py-2.5 outline-none" />
+          <input placeholder="Badge (e.g. NEW DROP)" value={f.badge} onChange={(e) => setF({ ...f, badge: e.target.value })} className="border border-ink-200 rounded-xl px-4 py-2.5 outline-none" />
+          <input placeholder="CTA text" value={f.cta_text} onChange={(e) => setF({ ...f, cta_text: e.target.value })} className="border border-ink-200 rounded-xl px-4 py-2.5 outline-none" />
+          <input placeholder="Link URL" value={f.link_url} onChange={(e) => setF({ ...f, link_url: e.target.value })} className="border border-ink-200 rounded-xl px-4 py-2.5 outline-none" />
+        </div>
+        <input placeholder="Subtitle" value={f.subtitle} onChange={(e) => setF({ ...f, subtitle: e.target.value })} className="w-full border border-ink-200 rounded-xl px-4 py-2.5 outline-none" />
+        <button onClick={add} data-testid="admin-hero-save" className="bg-obsidian text-white font-display font-bold uppercase px-6 py-3 rounded-full hover:bg-fire transition-colors">Add Slide</button>
+      </div>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {slides.map((s) => (
+          <div key={s.id} className="bg-white border border-ink-200 rounded-2xl overflow-hidden">
+            <img src={s.image_url} alt="" className="h-32 w-full object-cover" />
+            <div className="p-3 flex justify-between items-center"><div><p className="font-display font-bold text-sm">{s.title}</p><span className="text-ink-400 text-xs">{s.badge}</span></div><button onClick={() => del(s.id)} className="text-ink-400 hover:text-fire"><Trash2 size={15} /></button></div>
+          </div>
+        ))}
       </div>
     </div>
   );

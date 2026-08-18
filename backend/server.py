@@ -174,6 +174,20 @@ class OrderReq(BaseModel):
     payment_method: str  # COD, CARD, WALLET
     coupon_code: Optional[str] = None
     customer_note: Optional[str] = None
+    store_credit_amount: float = 0
+
+
+class ReturnReq(BaseModel):
+    reason: str
+    phone: Optional[str] = None
+
+
+class RefundReq(BaseModel):
+    amount: float
+    reason: str
+    method: str  # PAYFAST_ORIGINAL, BANK_TRANSFER, STORE_CREDIT
+    external_ref: Optional[str] = None
+    return_request_id: Optional[str] = None
 
 
 class ReviewReq(BaseModel):
@@ -576,7 +590,18 @@ async def create_order(body: OrderReq, request: Request, user=Depends(get_option
     # shipping
     est = await shipping_estimate(ShippingReq(country_code=body.shipping_address.get("country_code", "PK"), subtotal=subtotal))
     shipping_fee = est["data"]["shipping_fee"]
-    total = round(subtotal - discount + shipping_fee, 2)
+    # advance payment rule
+    settings = await get_settings()
+    thr = settings.get("advance_payment_threshold")
+    pct = settings.get("advance_payment_percent")
+    advance_required = bool(body.payment_method == "COD" and thr and pct and subtotal >= float(thr))
+    advance_amount = round(subtotal * float(pct) / 100, 2) if advance_required else 0.0
+    # store credit (logged-in only)
+    store_credit_used = 0.0
+    if user and body.store_credit_amount and body.store_credit_amount > 0:
+        bal = await get_credit_balance(user["id"])
+        store_credit_used = round(min(float(body.store_credit_amount), bal, subtotal - discount + shipping_fee), 2)
+    total = round(subtotal - discount + shipping_fee - store_credit_used, 2)
     # decrement stock atomically (guarded) to prevent overselling; rollback on failure
     decremented = []
     for it in cart["items"]:
@@ -598,18 +623,28 @@ async def create_order(body: OrderReq, request: Request, user=Depends(get_option
         "customer_name": body.customer_name, "customer_phone": body.customer_phone,
         "customer_email": body.customer_email, "shipping_address": body.shipping_address,
         "items": order_items, "subtotal": subtotal, "shipping_fee": shipping_fee,
-        "discount_amount": discount, "coupon_code": coupon_code, "total": total,
+        "discount_amount": discount, "coupon_code": coupon_code,
+        "store_credit_used": store_credit_used, "advance_required": advance_required,
+        "advance_amount": advance_amount, "advance_paid": 0.0, "total": total,
         "payment_method": body.payment_method, "payment_status": payment_status,
         "status": "placed", "customer_note": body.customer_note,
         "tracking_number": None, "courier_name": None,
         "status_history": [{"status": "placed", "note": "Order placed", "at": now}],
         "created_at": now, "updated_at": now,
     }
-    if body.payment_method in ("WALLET",):
+    if body.payment_method == "WALLET":
         order["payment_status"] = "paid"
+    elif advance_required:
+        # advance collected upfront (mocked as paid for demo); remainder on delivery
+        order["payment_status"] = "partially_paid"
+        order["advance_paid"] = advance_amount
     await db.orders.insert_one(dict(order))
+    # deduct store credit within order flow
+    if store_credit_used > 0 and user:
+        await add_store_credit(user["id"], -store_credit_used, "REDEEMED_ON_ORDER", order["id"])
     # clear cart
     await db.carts.update_one({"id": cart["id"]}, {"$set": {"items": []}})
+    await notify(order, "ORDER_PLACED", f"Order {order['order_number']} confirmed! Total Rs. {int(total)} via {body.payment_method}. We'll update you as it ships.")
     return {"success": True, "data": clean(order)}
 
 
@@ -823,7 +858,17 @@ async def update_order_status(order_id: str, body: dict, admin=Depends(get_admin
     if body.get("courier_name"): update["courier_name"] = body["courier_name"]
     await db.orders.update_one({"id": order_id}, {"$set": update, "$push": {"status_history": {"status": status, "note": body.get("note", ""), "at": now}}})
     o = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    labels = {"confirmed": "verified ✅", "packed": "packed 📦", "shipped": "dispatched 🚚", "out_for_delivery": "out for delivery 🛵", "delivered": "delivered 🎉", "cancelled": "cancelled"}
+    if o and status in labels:
+        extra = f" Tracking: {o.get('courier_name') or ''} {o.get('tracking_number') or ''}".rstrip() if status == "shipped" and o.get("tracking_number") else ""
+        await notify(o, "STATUS_UPDATE", f"Order {o['order_number']} is now {labels[status]}.{extra}")
     return {"success": True, "data": o}
+
+
+@api.get("/admin/notifications")
+async def admin_notifications(admin=Depends(get_admin)):
+    items = await db.notifications.find({}, {"_id": 0}).sort("created_at", -1).to_list(200)
+    return {"success": True, "data": items}
 
 
 @api.get("/admin/coupons")
@@ -901,6 +946,166 @@ async def update_settings(body: dict, admin=Depends(get_admin)):
     return {"success": True, "data": await get_settings()}
 
 
+# ==================== NOTIFICATIONS (WhatsApp-ready) ====================
+async def notify(order, event, message):
+    """Structured notification stub. Logs + persists; swap in Twilio WhatsApp later."""
+    rec = {"id": str(uuid.uuid4()), "order_id": order.get("id"), "order_number": order.get("order_number"),
+           "phone": order.get("customer_phone"), "channel": "whatsapp", "event": event,
+           "message": message, "status": "logged", "created_at": datetime.now(timezone.utc).isoformat()}
+    await db.notifications.insert_one(dict(rec))
+    logger.info(f"[WHATSAPP:{event}] -> {order.get('customer_phone')}: {message}")
+    return rec
+
+
+# ==================== STORE CREDIT ====================
+async def get_credit_balance(user_id):
+    sc = await db.store_credit.find_one({"user_id": user_id})
+    return float(sc["balance"]) if sc else 0.0
+
+
+async def add_store_credit(user_id, amount, reason, order_id=None):
+    now = datetime.now(timezone.utc).isoformat()
+    sc = await db.store_credit.find_one({"user_id": user_id})
+    cur = float(sc["balance"]) if sc else 0.0
+    new_bal = round(cur + float(amount), 2)
+    if sc:
+        await db.store_credit.update_one({"user_id": user_id}, {"$set": {"balance": new_bal, "updated_at": now}})
+    else:
+        await db.store_credit.insert_one({"id": str(uuid.uuid4()), "user_id": user_id, "balance": new_bal, "updated_at": now})
+    await db.store_credit_ledger.insert_one({"id": str(uuid.uuid4()), "user_id": user_id, "amount": float(amount),
+        "reason": reason, "order_id": order_id, "created_at": now})
+    return new_bal
+
+
+@api.get("/me/store-credit")
+async def my_store_credit(user=Depends(get_current_user)):
+    bal = await get_credit_balance(user["id"])
+    ledger = await db.store_credit_ledger.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return {"success": True, "data": {"balance": bal, "ledger": ledger}}
+
+
+@api.post("/checkout/apply-store-credit")
+async def apply_store_credit(body: dict, user=Depends(get_current_user)):
+    subtotal = float(body.get("subtotal", 0))
+    bal = await get_credit_balance(user["id"])
+    usable = round(min(bal, subtotal), 2)
+    return {"success": True, "data": {"available": bal, "applicable": usable}}
+
+
+# ==================== RETURNS ====================
+@api.post("/orders/{order_id}/return-request")
+async def return_request(order_id: str, body: ReturnReq, user=Depends(get_optional_user)):
+    o = await db.orders.find_one({"id": order_id})
+    if not o:
+        raise HTTPException(404, "Order not found")
+    authorized = (user and o.get("user_id") == user["id"]) or (body.phone and o["customer_phone"].replace(" ", "") == body.phone.replace(" ", ""))
+    if not authorized:
+        raise HTTPException(403, "Not authorized for this order")
+    if o["status"] in ("cancelled", "returned", "return_requested"):
+        raise HTTPException(400, "A return is not available for this order")
+    now = datetime.now(timezone.utc).isoformat()
+    rr = {"id": str(uuid.uuid4()), "order_id": order_id, "order_number": o["order_number"],
+          "customer_name": o["customer_name"], "customer_phone": o["customer_phone"],
+          "reason": body.reason, "status": "pending", "created_at": now}
+    await db.return_requests.insert_one(dict(rr))
+    await db.orders.update_one({"id": order_id}, {"$set": {"status": "return_requested", "updated_at": now},
+        "$push": {"status_history": {"status": "return_requested", "note": body.reason, "at": now}}})
+    await notify(o, "RETURN_REQUESTED", f"Return request received for {o['order_number']}. Our team will review it shortly.")
+    return {"success": True, "data": clean(rr)}
+
+
+@api.get("/admin/returns")
+async def admin_returns(admin=Depends(get_admin)):
+    items = await db.return_requests.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return {"success": True, "data": items}
+
+
+@api.patch("/admin/returns/{rid}")
+async def moderate_return(rid: str, body: dict, admin=Depends(get_admin)):
+    status = body.get("status")  # approved | rejected
+    if status not in ("approved", "rejected"):
+        raise HTTPException(400, "Invalid status")
+    rr = await db.return_requests.find_one({"id": rid})
+    if not rr:
+        raise HTTPException(404, "Return request not found")
+    if rr["status"] != "pending":
+        raise HTTPException(400, f"Return already {rr['status']}")
+    await db.return_requests.update_one({"id": rid}, {"$set": {"status": status}})
+    rr = await db.return_requests.find_one({"id": rid}, {"_id": 0})
+    o = await db.orders.find_one({"id": rr["order_id"]}, {"_id": 0})
+    if o:
+        await notify(o, "RETURN_UPDATE", f"Your return for {o['order_number']} was {status}.")
+    return {"success": True, "data": rr}
+
+
+# ==================== REFUNDS ====================
+async def refunded_total(order_id):
+    rows = await db.refunds.find({"order_id": order_id, "status": "completed"}, {"_id": 0}).to_list(200)
+    return round(sum(float(r["amount"]) for r in rows), 2)
+
+
+@api.get("/admin/refunds")
+async def admin_refunds(admin=Depends(get_admin)):
+    items = await db.refunds.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return {"success": True, "data": items}
+
+
+@api.post("/admin/orders/{order_id}/refund")
+async def create_refund(order_id: str, body: RefundReq, admin=Depends(get_admin)):
+    o = await db.orders.find_one({"id": order_id})
+    if not o:
+        raise HTTPException(404, "Order not found")
+    # amount already paid: full total if paid, advance if partially_paid, else 0
+    if o["payment_status"] == "paid":
+        paid = float(o["total"])
+    elif o["payment_status"] == "partially_paid":
+        paid = float(o.get("advance_paid", 0))
+    else:
+        paid = 0.0
+    already = await refunded_total(order_id)
+    refundable = round(paid - already, 2)
+    if body.amount <= 0:
+        raise HTTPException(400, "Refund amount must be positive")
+    if body.amount > refundable + 0.01:
+        raise HTTPException(400, f"Amount exceeds refundable balance (Rs. {refundable})")
+    if body.method not in ("PAYFAST_ORIGINAL", "BANK_TRANSFER", "STORE_CREDIT"):
+        raise HTTPException(400, "Invalid refund method")
+    now = datetime.now(timezone.utc).isoformat()
+    refund = {"id": str(uuid.uuid4()), "order_id": order_id, "order_number": o["order_number"],
+              "return_request_id": body.return_request_id, "amount": round(body.amount, 2),
+              "reason": body.reason, "method": body.method, "status": "pending",
+              "external_ref": body.external_ref, "processed_by": admin["id"],
+              "failure_reason": None, "created_at": now, "processed_at": None}
+    if body.method == "STORE_CREDIT":
+        if not o.get("user_id"):
+            raise HTTPException(400, "Store credit requires a registered customer account")
+        await add_store_credit(o["user_id"], round(body.amount, 2), "REFUND", order_id)
+        refund["status"] = "completed"; refund["processed_at"] = now
+    elif body.method == "BANK_TRANSFER":
+        if not body.external_ref:
+            raise HTTPException(400, "Bank transfer requires a transfer reference (external_ref)")
+        refund["status"] = "completed"; refund["processed_at"] = now
+    else:  # PAYFAST_ORIGINAL (gateway) — mocked instant success in test env
+        if o.get("payment_method") not in ("CARD", "WALLET"):
+            raise HTTPException(400, "Original-method refund only valid for online payments")
+        refund["status"] = "completed"; refund["processed_at"] = now
+        refund["external_ref"] = refund["external_ref"] or f"RF-{uuid.uuid4().hex[:10].upper()}"
+    await db.refunds.insert_one(dict(refund))
+    # cascade order payment/status
+    total_refunded = await refunded_total(order_id)
+    updates = {"updated_at": now}
+    if paid > 0 and total_refunded >= paid - 0.01:
+        updates["payment_status"] = "refunded"
+    if body.return_request_id:
+        await db.return_requests.update_one({"id": body.return_request_id}, {"$set": {"status": "refunded"}})
+        if paid > 0 and total_refunded >= paid - 0.01:
+            updates["status"] = "returned"
+    await db.orders.update_one({"id": order_id}, {"$set": updates})
+    o2 = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    await notify(o2, "REFUND", f"Refund of Rs. {int(body.amount)} for {o['order_number']} processed via {body.method.replace('_', ' ').title()}.")
+    return {"success": True, "data": {"refund": clean(refund), "order": o2, "total_refunded": total_refunded}}
+
+
 # ==================== SEED ====================
 async def seed():
     # admin
@@ -925,6 +1130,7 @@ async def seed():
             "announcement_active": True, "free_shipping_min_amt": 5000, "flat_shipping_fee": 250,
             "advance_payment_threshold": 20000, "advance_payment_percent": 10,
             "cod_enabled": True, "card_enabled": True, "wallet_enabled": True,
+            "whatsapp_number": "923001234567",
             "supported_countries": ["PK"]})
     # shipping zone
     if not await db.shipping_zones.find_one({"country_code": "PK"}):

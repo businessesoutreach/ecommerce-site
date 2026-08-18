@@ -37,3 +37,8 @@ export function imgUrl(u) {
   if (u.startsWith("/api/")) return `${BACKEND_URL}${u}`;
   return u;
 }
+
+export function waLink(number, message) {
+  const n = String(number || "").replace(/[^0-9]/g, "");
+  return `https://wa.me/${n}?text=${encodeURIComponent(message)}`;
+}

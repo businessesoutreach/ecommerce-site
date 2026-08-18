@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useLocation, Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { CheckCircle2, Package, Truck, MapPin, Home } from "lucide-react";
-import { http, fmt } from "../lib/api";
+import { CheckCircle2, Package, Truck, MapPin, Home, MessageCircle } from "lucide-react";
+import { http, fmt, waLink } from "../lib/api";
+import { useStore } from "../context/StoreContext";
 
 export default function OrderConfirmation() {
   const { orderNumber } = useParams();
   const { state } = useLocation();
+  const { settings } = useStore();
   const [sp] = useSearchParams();
   const [order, setOrder] = useState(state?.order || null);
 
@@ -14,10 +16,10 @@ export default function OrderConfirmation() {
     window.scrollTo(0, 0);
     const sessionId = sp.get("session_id");
     if (sessionId) http.get(`/payments/status/${sessionId}`).catch(() => {});
-    if (!order && orderNumber) {
-      // best-effort: guest lookup won't work without phone; rely on state
-    }
   }, [orderNumber]);
+
+  const waNumber = settings?.whatsapp_number || "923001234567";
+  const waMsg = `Hi SOLEKICKS PK! I just placed order ${orderNumber}. Please send me updates. 👟`;
 
   return (
     <div className="max-w-2xl mx-auto px-5 py-16 text-center min-h-[70vh]">
@@ -52,10 +54,14 @@ export default function OrderConfirmation() {
                 <span className="font-mono text-sm font-bold">{fmt(it.unit_price * it.quantity)}</span>
               </div>
             ))}
-            <p className="text-xs text-ink-400 pt-2">Payment: <b>{order.payment_method}</b> · {order.payment_status}</p>
+            <p className="text-xs text-ink-400 pt-2">Payment: <b>{order.payment_method}</b> · {order.payment_status}{order.advance_required ? ` · Advance paid ${fmt(order.advance_paid)}, ${fmt(order.total - order.advance_paid)} on delivery` : ""}</p>
           </div>
         )}
       </div>
+
+      <a href={waLink(waNumber, waMsg)} target="_blank" rel="noreferrer" data-testid="order-whatsapp-btn" className="mt-6 inline-flex items-center gap-2 bg-[#25D366] text-white font-display font-bold uppercase text-sm px-6 py-3.5 rounded-full hover:opacity-90 transition-opacity">
+        <MessageCircle size={18} /> Get WhatsApp Updates
+      </a>
 
       <div className="flex gap-3 justify-center mt-8">
         <Link to="/track-order" className="border-2 border-obsidian font-display font-bold uppercase text-sm px-6 py-3 rounded-full hover:bg-obsidian hover:text-white transition-colors">Track Order</Link>

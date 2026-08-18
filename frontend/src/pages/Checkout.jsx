@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { CreditCard, Truck, Wallet, Tag, Check, Loader2 } from "lucide-react";
+import { CreditCard, Truck, Wallet, Tag, Check, Loader2, Gift, Info } from "lucide-react";
 import { http, fmt } from "../lib/api";
 import { useStore } from "../context/StoreContext";
 import { toast } from "sonner";
@@ -20,11 +20,23 @@ export default function Checkout() {
   const [discount, setDiscount] = useState(0);
   const [couponMsg, setCouponMsg] = useState("");
   const [placing, setPlacing] = useState(false);
+  const [credit, setCredit] = useState(0);
+  const [useCredit, setUseCredit] = useState(false);
+
+  useEffect(() => {
+    if (user) http.get("/me/store-credit").then(({ data }) => setCredit(data.data.balance || 0)).catch(() => {});
+  }, [user]);
 
   const freeMin = Number(settings?.free_shipping_min_amt || 5000);
   const subtotal = cart.subtotal;
   const shipping = subtotal >= freeMin ? 0 : Number(settings?.flat_shipping_fee || 250);
-  const total = Math.max(0, subtotal - discount + shipping);
+  const preCredit = Math.max(0, subtotal - discount + shipping);
+  const creditApplied = useCredit ? Math.min(credit, preCredit) : 0;
+  const total = Math.max(0, preCredit - creditApplied);
+  const advThreshold = Number(settings?.advance_payment_threshold || 0);
+  const advPercent = Number(settings?.advance_payment_percent || 0);
+  const advanceRequired = payment === "COD" && advThreshold > 0 && subtotal >= advThreshold;
+  const advanceAmount = advanceRequired ? Math.round((subtotal * advPercent) / 100) : 0;
 
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
@@ -48,6 +60,7 @@ export default function Checkout() {
         customer_name: form.customer_name, customer_phone: form.customer_phone, customer_email: form.customer_email,
         shipping_address: { address_l1: form.address_l1, city: form.city, postal_code: form.postal_code, country_code: "PK" },
         payment_method: payment, coupon_code: discount > 0 ? coupon : null,
+        store_credit_amount: creditApplied,
       };
       const { data } = await http.post("/orders", payload);
       const order = data.data;
@@ -113,6 +126,12 @@ export default function Checkout() {
               ))}
             </div>
             {payment === "WALLET" && <p className="text-xs text-ink-400 mt-3 bg-fire-subtle p-3 rounded-xl">Note: Wallet payment is <b>MOCKED</b> for demo — order confirms instantly.</p>}
+            {advanceRequired && (
+              <div data-testid="checkout-advance-notice" className="mt-3 flex gap-3 bg-obsidian text-white p-4 rounded-2xl">
+                <Info size={18} className="text-fire shrink-0 mt-0.5" />
+                <p className="text-sm leading-relaxed">Orders over <b>{fmt(advThreshold)}</b> require a <b>{advPercent}% advance</b> to confirm. You'll pay <b className="text-fire font-mono">{fmt(advanceAmount)}</b> now, and the remaining <b className="font-mono">{fmt(total - advanceAmount)}</b> as Cash on Delivery.</p>
+              </div>
+            )}
           </div>
         </form>
 
@@ -133,14 +152,23 @@ export default function Checkout() {
             <button onClick={applyCoupon} data-testid="checkout-apply-coupon-btn" className="bg-obsidian text-white font-bold uppercase text-sm px-4 rounded-xl hover:bg-fire transition-colors">Apply</button>
           </div>
           {couponMsg && <p className={`text-xs mb-3 ${discount > 0 ? "text-green-600" : "text-fire"}`}>{couponMsg}</p>}
+          {user && credit > 0 && (
+            <label data-testid="checkout-store-credit-toggle" className="flex items-center gap-3 border border-ink-200 rounded-xl p-3 mb-4 cursor-pointer">
+              <input type="checkbox" checked={useCredit} onChange={(e) => setUseCredit(e.target.checked)} className="accent-fire h-4 w-4" />
+              <Gift size={16} className="text-fire" />
+              <span className="text-sm flex-1">Use store credit <b className="font-mono">({fmt(credit)})</b></span>
+            </label>
+          )}
           <div className="space-y-2 text-sm border-t border-ink-200 pt-4">
             <div className="flex justify-between"><span className="text-ink-500">Subtotal</span><span className="font-mono">{fmt(subtotal)}</span></div>
             {discount > 0 && <div className="flex justify-between text-green-600"><span>Discount</span><span className="font-mono">−{fmt(discount)}</span></div>}
             <div className="flex justify-between"><span className="text-ink-500">Shipping</span><span className="font-mono">{shipping === 0 ? "FREE" : fmt(shipping)}</span></div>
-            <div className="flex justify-between font-display font-black uppercase text-lg border-t border-ink-200 pt-2"><span>Total</span><span className="font-mono text-fire">{fmt(total)}</span></div>
+            {creditApplied > 0 && <div className="flex justify-between text-green-600"><span>Store credit</span><span className="font-mono">−{fmt(creditApplied)}</span></div>}
+            <div className="flex justify-between font-display font-black uppercase text-lg border-t border-ink-200 pt-2"><span>Total</span><span data-testid="checkout-total-amount" className="font-mono text-fire">{fmt(total)}</span></div>
+            {advanceRequired && <div className="flex justify-between text-xs text-ink-500 pt-1"><span>Pay now (advance)</span><span className="font-mono font-bold">{fmt(advanceAmount)}</span></div>}
           </div>
           <button onClick={placeOrder} disabled={placing} data-testid="checkout-submit-order-btn" className="w-full bg-obsidian text-white font-display font-bold uppercase tracking-wide py-4 rounded-full mt-5 hover:bg-fire transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
-            {placing ? <><Loader2 size={18} className="animate-spin" /> Placing…</> : `Place Order · ${fmt(total)}`}
+            {placing ? <><Loader2 size={18} className="animate-spin" /> Placing…</> : advanceRequired ? `Pay ${fmt(advanceAmount)} Advance` : `Place Order · ${fmt(total)}`}
           </button>
         </div>
       </div>

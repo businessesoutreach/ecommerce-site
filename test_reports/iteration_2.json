@@ -1,0 +1,33 @@
+{
+  "summary": "Phase-2 testing for SOLEKICKS PK (Returns, Refunds+Store-Credit, Advance-Payment-on-COD, Image Upload, WhatsApp). Backend: 13/13 pytest tests PASSED in /app/backend/tests/test_phase2.py covering advance rule (>=20000 threshold, 10% advance, partially_paid), return-request + admin approval + duplicate rejection, refund STORE_CREDIT increments user balance, BANK_TRANSFER requires external_ref, over-refundable & unpaid-COD refunds rejected, PAYFAST_ORIGINAL mocked ok, store-credit redemption at checkout with REDEEMED_ON_ORDER ledger, notifications logged for ORDER_PLACED/STATUS_UPDATE/REFUND, admin /upload -> /api/files/{path} round-trip served correctly, upload requires admin auth. Frontend: guest checkout with qty 3 of AJ-4 Shadow Grail (subtotal 33750) shows checkout-advance-notice with 'Pay Rs. 3,375 Advance', order created (PK-SNK-82223) with payment_status=partially_paid, order-confirmation shows advance breakdown + green Get-WhatsApp-Updates button (wa.me link). Admin login -> Returns tab shows 4 requests + Approve works and returns become approved; Refunds tab renders; CMS tab exposes admin-hero-title/upload/save; Products -> Add Product modal exposes admin-product-image-upload; Orders rows expose admin-refund-btn + WhatsApp icon and the RefundModal auto-fills advance-paid amount (3375) with STORE_CREDIT default for COD.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_phase2.py",
+    "/app/test_reports/pytest/phase2_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Uploads are not garbage-collected: deleting a product or hero slide leaves the underlying object in Emergent object storage; add cleanup or a reference-counting sweep.",
+    "/api/files/{path:path} is unauthenticated so every uploaded object is public; fine for product/hero images but risky if reused for private assets later.",
+    "RefundModal always POSTs external_ref (null when empty); server accepts, but BANK_TRANSFER UI should mark the ref as required in-field. Currently server rejects with 400 which surfaces as a toast — acceptable but UX would benefit from client-side required attribute.",
+    "advance_amount is computed with Math.round on the client vs Python round(..., 2) on the server — for prices ending in .5 the client display may differ from the server by 1 rupee. Consider Math.round((subtotal*pct)/100 * 100)/100 or format via fmt.",
+    "server.py is now ~1200 lines including refunds/returns/store-credit/uploads; still would benefit from module split (returns.py, refunds.py, uploads.py).",
+    "moderate_return does not check that the current return is still 'pending' before flipping to approved/rejected — an admin can re-approve an already-refunded return; add state guard.",
+    "create_refund cascades order.status='returned' when return_request_id is provided regardless of refund method or amount — a partial refund tied to a return will mark the order returned; consider requiring full refunded_total>=paid.",
+    "Frontend `useCredit` toggle only appears when credit>0 but there is no upper-bound UI for how much to apply; the entire balance is always used. Consider allowing a partial amount input."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_phase2.py"
+  ],
+  "success_rate": {"backend": "100% (13/13 Phase-2 + prior 36/36 regression)", "frontend": "100% of Phase-2 flows exercised"},
+  "test_credentials": "Admin sahilwaheed48@gmail.com / Admin@12345, Customer customer@test.com / Test@12345",
+  "seed_data_creation": "Advance-payment order PK-SNK-82223 (COD partially_paid Rs. 33,750, advance 3,375) created on preview during frontend test; several WALLET + COD orders created via backend tests for refund coverage; test customer store_credit balance increased by Rs. 500 (STORE_CREDIT refund) and then decreased by Rs. 100 (REDEEMED_ON_ORDER).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Phase-2 backend tests live in /app/backend/tests/test_phase2.py — run with `pytest backend/tests/test_phase2.py -n 0 -v` (parallel loadscope breaks a cross-class pytest.wallet_order module-var; the -n 0 flag disables xdist). Phase-1 regression suite is still at /app/backend/tests/backend_test.py. Advance-payment rule uses settings.advance_payment_threshold=20000 & advance_payment_percent=10; picking any single item with unit price >= ~6700 and qty 3 will trigger it. Store-credit refund end-to-end requires a paid order (WALLET) with a user_id, otherwise backend rejects with 400. WhatsApp is purely a wa.me click-to-chat link + logged /api/admin/notifications rows — no external send performed."
+}
