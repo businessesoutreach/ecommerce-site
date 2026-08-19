@@ -90,7 +90,7 @@ export default function Account() {
   return (
     <div className="max-w-[1400px] mx-auto px-5 sm:px-8 py-10 min-h-[70vh]">
       <div className="flex items-center gap-4 mb-8">
-        <div className="h-14 w-14 rounded-none bg-obsidian text-white grid place-items-center font-display font-black text-xl">{user.name?.[0] || "U"}</div>
+        {user.picture ? <img src={user.picture} alt="" className="h-14 w-14 rounded-full object-cover" referrerPolicy="no-referrer" /> : <div className="h-14 w-14 rounded-none bg-obsidian text-white grid place-items-center font-display font-black text-xl">{user.name?.[0] || "U"}</div>}
         <div><h1 className="font-display text-2xl font-black uppercase tracking-tight">Hey, {user.name?.split(" ")[0]}</h1><p className="text-ink-500 text-sm">{user.email}</p></div>
       </div>
 

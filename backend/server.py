@@ -958,12 +958,32 @@ async def update_settings(body: dict, admin=Depends(get_admin)):
 
 # ==================== NOTIFICATIONS (WhatsApp-ready) ====================
 async def notify(order, event, message):
-    """Structured notification stub. Logs + persists; swap in Twilio WhatsApp later."""
+    """Sends WhatsApp via Twilio when credentials are configured; always logs + persists."""
     rec = {"id": str(uuid.uuid4()), "order_id": order.get("id"), "order_number": order.get("order_number"),
            "phone": order.get("customer_phone"), "channel": "whatsapp", "event": event,
            "message": message, "status": "logged", "created_at": datetime.now(timezone.utc).isoformat()}
+    sid = os.environ.get("TWILIO_ACCOUNT_SID")
+    tok = os.environ.get("TWILIO_AUTH_TOKEN")
+    frm = os.environ.get("TWILIO_WHATSAPP_FROM")
+    to = order.get("customer_phone")
+    if sid and tok and frm and to:
+        try:
+            digits = "".join(c for c in to if c.isdigit() or c == "+")
+            if not digits.startswith("+"):
+                digits = "+92" + digits.lstrip("0")
+            r = requests.post(
+                f"https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json",
+                data={"From": f"whatsapp:{frm}", "To": f"whatsapp:{digits}", "Body": message},
+                auth=(sid, tok), timeout=15,
+            )
+            rec["status"] = "sent" if r.status_code < 300 else "failed"
+            if r.status_code >= 300:
+                rec["error"] = r.text[:200]
+        except Exception as e:
+            rec["status"] = "failed"
+            logger.error(f"twilio send failed: {e}")
     await db.notifications.insert_one(dict(rec))
-    logger.info(f"[WHATSAPP:{event}] -> {order.get('customer_phone')}: {message}")
+    logger.info(f"[WHATSAPP:{event}:{rec['status']}] -> {to}: {message}")
     return rec
 
 
@@ -1238,7 +1258,7 @@ async def google_session(body: dict):
     if user.get("is_blocked"):
         raise HTTPException(403, "Account is blocked")
     token = create_access_token(user["id"], email, user["role"])
-    return {"success": True, "data": {"id": user["id"], "name": user["name"], "email": email, "role": user["role"], "token": token}}
+    return {"success": True, "data": {"id": user["id"], "name": user["name"], "email": email, "role": user["role"], "picture": user.get("picture"), "token": token}}
 
 
 # ==================== SEED ====================

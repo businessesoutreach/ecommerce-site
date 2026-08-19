@@ -145,7 +145,22 @@ export default function ProductCard({ product, index = 0 }) {
           )}
         </div>
         {!soldOut && (
-          <button onClick={handleAdd} data-testid={`product-card-mobile-add-${product.id}`} className="lg:hidden mt-2.5 w-full bg-obsidian text-white font-display font-bold uppercase tracking-wider text-xs py-2.5 flex items-center justify-center gap-1.5 active:scale-[0.99]">
+          <div className="lg:hidden mt-2.5 flex flex-wrap gap-1">
+            {(product.sizes || []).map((s) => (
+              <button
+                key={s.size}
+                disabled={s.stock <= 0}
+                onClick={() => setSize(s.size)}
+                data-testid={`product-card-msize-${s.size}-${product.id}`}
+                className={`h-7 min-w-[30px] px-1 border text-[11px] font-mono font-bold transition-colors ${size === s.size ? "bg-obsidian text-white border-obsidian" : s.stock <= 0 ? "border-ink-200 text-ink-200 line-through" : "border-ink-200 text-obsidian"}`}
+              >
+                {s.size}
+              </button>
+            ))}
+          </div>
+        )}
+        {!soldOut && (
+          <button onClick={handleAdd} data-testid={`product-card-mobile-add-${product.id}`} className="lg:hidden mt-2 w-full bg-obsidian text-white font-display font-bold uppercase tracking-wider text-xs py-2.5 flex items-center justify-center gap-1.5 active:scale-[0.99]">
             {adding ? <><Check size={14} /> Added</> : <><Plus size={14} /> Quick Add</>}
           </button>
         )}

@@ -133,7 +133,9 @@ export default function Header() {
                 <Heart size={19} />
                 {wishlist.ids.length > 0 && <span className="absolute top-1 right-1 h-4 min-w-4 px-1 bg-fire text-white text-[10px] font-bold rounded-none grid place-items-center">{wishlist.ids.length}</span>}
               </Link>
-              <Link to={user ? "/account" : "/login"} data-testid="account-link" className="h-10 w-10 grid place-items-center rounded-none hover:bg-ink-100"><User size={19} /></Link>
+              <Link to={user ? "/account" : "/login"} data-testid="account-link" className="h-10 w-10 grid place-items-center rounded-none hover:bg-ink-100 overflow-hidden">
+                {user?.picture ? <img src={user.picture} alt="" className="h-8 w-8 rounded-full object-cover" referrerPolicy="no-referrer" /> : <User size={19} />}
+              </Link>
               <motion.button
                 key={cartBump}
                 animate={{ scale: [1, 1.25, 1] }}
