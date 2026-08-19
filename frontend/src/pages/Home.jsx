@@ -79,7 +79,7 @@ export default function Home() {
               </div>
               {flashEnd && <Countdown endsAt={flashEnd} />}
             </div>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 [&_h3]:text-white [&_.text-obsidian]:text-white">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               <div className="contents">
                 {data.flash.slice(0, 4).map((p, i) => (
                   <div key={p.id} className="bg-white rounded-none p-2"><ProductCard product={p} index={i} /></div>

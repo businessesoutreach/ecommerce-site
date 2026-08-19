@@ -1215,6 +1215,32 @@ async def import_products(file: UploadFile = File(...), admin=Depends(get_admin)
     return {"success": True, "data": {"created": created, "updated": updated, "errors": errors[:10]}}
 
 
+# ==================== GOOGLE AUTH ====================
+@api.post("/auth/google/session")
+async def google_session(body: dict):
+    sid = body.get("session_id")
+    if not sid:
+        raise HTTPException(400, "Missing session_id")
+    r = requests.get("https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data", headers={"X-Session-ID": sid}, timeout=30)
+    if r.status_code != 200:
+        raise HTTPException(401, "Google authentication failed")
+    d = r.json()
+    email = (d.get("email") or "").lower()
+    if not email:
+        raise HTTPException(401, "No email from Google")
+    user = await db.users.find_one({"email": email})
+    if not user:
+        uid = str(uuid.uuid4())
+        user = {"id": uid, "name": d.get("name") or email, "email": email, "phone": None,
+                "password_hash": None, "role": "customer", "is_blocked": False,
+                "picture": d.get("picture"), "created_at": datetime.now(timezone.utc).isoformat()}
+        await db.users.insert_one(dict(user))
+    if user.get("is_blocked"):
+        raise HTTPException(403, "Account is blocked")
+    token = create_access_token(user["id"], email, user["role"])
+    return {"success": True, "data": {"id": user["id"], "name": user["name"], "email": email, "role": user["role"], "token": token}}
+
+
 # ==================== SEED ====================
 async def seed():
     # admin

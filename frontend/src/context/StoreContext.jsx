@@ -32,8 +32,24 @@ export function StoreProvider({ children }) {
 
   useEffect(() => {
     http.get("/settings").then(({ data }) => setSettings(data.data)).catch(() => {});
-    loadCart();
-    loadWishlist();
+    const h = window.location.hash;
+    if (h && h.includes("session_id=")) {
+      const sid = h.split("session_id=")[1].split("&")[0];
+      http.post("/auth/google/session", { session_id: sid }).then(({ data }) => {
+        const u = data.data;
+        localStorage.setItem("jt_token", u.token);
+        localStorage.setItem("jt_user", JSON.stringify(u));
+        setUser(u);
+        window.history.replaceState(null, "", window.location.pathname);
+        http.post("/cart/merge").catch(() => {});
+        http.post("/wishlist/merge").catch(() => {});
+        loadCart();
+        loadWishlist();
+      }).catch(() => {});
+    } else {
+      loadCart();
+      loadWishlist();
+    }
   }, [loadCart, loadWishlist]);
 
   const addToCart = async (productId, size, quantity = 1) => {
