@@ -969,12 +969,32 @@ async def update_settings(body: dict, admin=Depends(get_admin)):
 
 # ==================== NOTIFICATIONS (WhatsApp-ready) ====================
 async def notify(order, event, message):
-    """Structured notification stub. Logs + persists; swap in Twilio WhatsApp later."""
+    """Sends WhatsApp via Twilio when credentials are configured; always logs + persists."""
     rec = {"id": str(uuid.uuid4()), "order_id": order.get("id"), "order_number": order.get("order_number"),
            "phone": order.get("customer_phone"), "channel": "whatsapp", "event": event,
            "message": message, "status": "logged", "created_at": datetime.now(timezone.utc).isoformat()}
+    sid = os.environ.get("TWILIO_ACCOUNT_SID")
+    tok = os.environ.get("TWILIO_AUTH_TOKEN")
+    frm = os.environ.get("TWILIO_WHATSAPP_FROM")
+    to = order.get("customer_phone")
+    if sid and tok and frm and to:
+        try:
+            digits = "".join(c for c in to if c.isdigit() or c == "+")
+            if not digits.startswith("+"):
+                digits = "+92" + digits.lstrip("0")
+            r = requests.post(
+                f"https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json",
+                data={"From": f"whatsapp:{frm}", "To": f"whatsapp:{digits}", "Body": message},
+                auth=(sid, tok), timeout=15,
+            )
+            rec["status"] = "sent" if r.status_code < 300 else "failed"
+            if r.status_code >= 300:
+                rec["error"] = r.text[:200]
+        except Exception as e:
+            rec["status"] = "failed"
+            logger.error(f"twilio send failed: {e}")
     await db.notifications.insert_one(dict(rec))
-    logger.info(f"[WHATSAPP:{event}] -> {order.get('customer_phone')}: {message}")
+    logger.info(f"[WHATSAPP:{event}:{rec['status']}] -> {to}: {message}")
     return rec
 
 
@@ -1224,6 +1244,32 @@ async def import_products(file: UploadFile = File(...), admin=Depends(get_admin)
         except Exception as e:
             errors.append(f"Row {i}: {str(e)}")
     return {"success": True, "data": {"created": created, "updated": updated, "errors": errors[:10]}}
+
+
+# ==================== GOOGLE AUTH ====================
+@api.post("/auth/google/session")
+async def google_session(body: dict):
+    sid = body.get("session_id")
+    if not sid:
+        raise HTTPException(400, "Missing session_id")
+    r = requests.get("https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data", headers={"X-Session-ID": sid}, timeout=30)
+    if r.status_code != 200:
+        raise HTTPException(401, "Google authentication failed")
+    d = r.json()
+    email = (d.get("email") or "").lower()
+    if not email:
+        raise HTTPException(401, "No email from Google")
+    user = await db.users.find_one({"email": email})
+    if not user:
+        uid = str(uuid.uuid4())
+        user = {"id": uid, "name": d.get("name") or email, "email": email, "phone": None,
+                "password_hash": None, "role": "customer", "is_blocked": False,
+                "picture": d.get("picture"), "created_at": datetime.now(timezone.utc).isoformat()}
+        await db.users.insert_one(dict(user))
+    if user.get("is_blocked"):
+        raise HTTPException(403, "Account is blocked")
+    token = create_access_token(user["id"], email, user["role"])
+    return {"success": True, "data": {"id": user["id"], "name": user["name"], "email": email, "role": user["role"], "picture": user.get("picture"), "token": token}}
 
 
 # ==================== SEED ====================

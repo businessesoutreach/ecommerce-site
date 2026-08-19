@@ -97,7 +97,7 @@ export default function ProductCard({ product, index = 0 }) {
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: "100%", opacity: 0 }}
                 transition={{ duration: 0.25, ease: "easeOut" }}
-                className="absolute bottom-0 inset-x-0 p-2.5 bg-white/95 backdrop-blur-sm border-t border-ink-200 hidden md:block z-10"
+                className="absolute bottom-0 inset-x-0 p-2.5 bg-white/95 backdrop-blur-sm border-t border-ink-200 hidden lg:block z-10"
               >
                 <div className="flex flex-wrap gap-1.5 justify-center mb-2">
                   {(product.sizes || []).map((s) => (
@@ -134,7 +134,7 @@ export default function ProductCard({ product, index = 0 }) {
           <Stars rating={product.avg_rating} count={product.review_count} size={12} />
         </div>
         <Link to={`/products/${product.slug}`}>
-          <h3 data-testid={`product-card-title-${product.id}`} className="font-display font-bold text-sm sm:text-base tracking-tight mt-1 leading-snug line-clamp-1 hover:text-fire transition-colors">
+          <h3 data-testid={`product-card-title-${product.id}`} className="font-display font-bold text-sm sm:text-base tracking-tight mt-1 leading-snug line-clamp-1 text-obsidian hover:text-fire transition-colors">
             {product.name}
           </h3>
         </Link>
@@ -144,6 +144,26 @@ export default function ProductCard({ product, index = 0 }) {
             <span data-testid={`product-card-original-price-${product.id}`} className="font-mono text-sm text-ink-400 line-through">{fmt(product.compare_at_price)}</span>
           )}
         </div>
+        {!soldOut && (
+          <div className="lg:hidden mt-2.5 flex flex-wrap gap-1">
+            {(product.sizes || []).map((s) => (
+              <button
+                key={s.size}
+                disabled={s.stock <= 0}
+                onClick={() => setSize(s.size)}
+                data-testid={`product-card-msize-${s.size}-${product.id}`}
+                className={`h-7 min-w-[30px] px-1 border text-[11px] font-mono font-bold transition-colors ${size === s.size ? "bg-obsidian text-white border-obsidian" : s.stock <= 0 ? "border-ink-200 text-ink-200 line-through" : "border-ink-200 text-obsidian"}`}
+              >
+                {s.size}
+              </button>
+            ))}
+          </div>
+        )}
+        {!soldOut && (
+          <button onClick={handleAdd} data-testid={`product-card-mobile-add-${product.id}`} className="lg:hidden mt-2 w-full bg-obsidian text-white font-display font-bold uppercase tracking-wider text-xs py-2.5 flex items-center justify-center gap-1.5 active:scale-[0.99]">
+            {adding ? <><Check size={14} /> Added</> : <><Plus size={14} /> Quick Add</>}
+          </button>
+        )}
       </div>
     </motion.div>
   );

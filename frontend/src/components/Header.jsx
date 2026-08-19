@@ -52,8 +52,8 @@ function SearchOverlay({ open, onClose }) {
     <AnimatePresence>
       {open && (
         <>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-obsidian/50 backdrop-blur-sm z-[60]" onClick={onClose} />
-          <motion.div initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -30, opacity: 0 }} className="fixed top-0 inset-x-0 bg-canvas z-[70] p-5 sm:p-8 shadow-xl">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-obsidian/60 backdrop-blur-sm z-[60] grid place-items-start justify-center pt-[12vh] px-4" onClick={onClose}>
+            <motion.div initial={{ scale: 0.96, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.96, opacity: 0 }} onClick={(e) => e.stopPropagation()} className="w-full max-w-2xl bg-canvas z-[70] p-5 sm:p-7 shadow-2xl border border-ink-200">
             <div className="max-w-2xl mx-auto">
               <div className="flex items-center gap-3 border-b-2 border-obsidian pb-3">
                 <Search size={22} />
@@ -81,6 +81,7 @@ function SearchOverlay({ open, onClose }) {
                 {q && results.length === 0 && <p className="text-ink-400 text-sm py-4">No matches for "{q}"</p>}
               </div>
             </div>
+            </motion.div>
           </motion.div>
         </>
       )}
@@ -132,7 +133,9 @@ export default function Header() {
                 <Heart size={19} />
                 {wishlist.ids.length > 0 && <span className="absolute top-1 right-1 h-4 min-w-4 px-1 bg-fire text-white text-[10px] font-bold rounded-none grid place-items-center">{wishlist.ids.length}</span>}
               </Link>
-              <Link to={user ? "/account" : "/login"} data-testid="account-link" className="h-10 w-10 grid place-items-center rounded-none hover:bg-ink-100"><User size={19} /></Link>
+              <Link to={user ? "/account" : "/login"} data-testid="account-link" className="h-10 w-10 grid place-items-center rounded-none hover:bg-ink-100 overflow-hidden">
+                {user?.picture ? <img src={user.picture} alt="" className="h-8 w-8 rounded-full object-cover" referrerPolicy="no-referrer" /> : <User size={19} />}
+              </Link>
               <motion.button
                 key={cartBump}
                 animate={{ scale: [1, 1.25, 1] }}
