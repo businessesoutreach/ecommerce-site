@@ -1,3 +1,5 @@
+"use client";
+
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { http } from "../lib/api";
 import { toast } from "sonner";
@@ -8,8 +10,11 @@ export const useStore = () => useContext(StoreCtx);
 export function StoreProvider({ children }) {
   const [settings, setSettings] = useState(null);
   const [user, setUser] = useState(() => {
-    const u = localStorage.getItem("jt_user");
-    return u ? JSON.parse(u) : null;
+    if (typeof window !== "undefined") {
+      const u = localStorage.getItem("jt_user");
+      return u ? JSON.parse(u) : null;
+    }
+    return null;
   });
   const [cart, setCart] = useState({ items: [], subtotal: 0, count: 0 });
   const [wishlist, setWishlist] = useState({ ids: [], items: [] });

@@ -1,10 +1,11 @@
 import axios from "axios";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.REACT_APP_BACKEND_URL || "http://localhost:8000";
 export const API = `${BACKEND_URL}/api`;
 
 // persistent guest id
 export function getGuestId() {
+  if (typeof window === 'undefined') return "ssr-guest";
   let id = localStorage.getItem("jt_guest_id");
   if (!id) {
     id = (crypto.randomUUID && crypto.randomUUID()) || `g_${Date.now()}_${Math.random().toString(36).slice(2)}`;
@@ -17,8 +18,10 @@ export const http = axios.create({ baseURL: API });
 
 http.interceptors.request.use((config) => {
   config.headers["x-guest-id"] = getGuestId();
-  const token = localStorage.getItem("jt_token");
-  if (token) config.headers["Authorization"] = `Bearer ${token}`;
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem("jt_token");
+    if (token) config.headers["Authorization"] = `Bearer ${token}`;
+  }
   return config;
 });
 

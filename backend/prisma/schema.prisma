@@ -1,0 +1,348 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  phone         String?
+  password_hash String?
+  role          String    @default("customer")
+  is_blocked    Boolean   @default(false)
+  picture       String?
+  created_at    DateTime  @default(now())
+
+  carts               Cart[]
+  wishlists           Wishlist[]
+  orders              Order[]
+  addresses           Address[]
+  reviews             Review[]
+  storeCredit         StoreCredit?
+  storeCreditLedgers  StoreCreditLedger[]
+}
+
+model Product {
+  id               String   @id @default(uuid())
+  slug             String   @unique
+  name             String
+  base_price       Float
+  compare_at_price Float?
+  description      String?
+  category_slug    String
+  brand_slug       String?
+  images           String[]
+  hover_image      String?
+  is_new_arrival   Boolean  @default(false)
+  is_best_seller   Boolean  @default(false)
+  is_flash_sale    Boolean  @default(false)
+  is_featured      Boolean  @default(false)
+  status           String   @default("active")
+  avg_rating       Float    @default(5.0)
+  review_count     Int      @default(0)
+  sort_order       Int      @default(999)
+  created_at       DateTime @default(now())
+
+  sizes        ProductSize[]
+  cartItems    CartItem[]
+  wishlistItems WishlistItem[]
+  orderItems   OrderItem[]
+  reviews      Review[]
+}
+
+model ProductSize {
+  id         String  @id @default(uuid())
+  size       String
+  stock      Int
+  product_id String
+  product    Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+
+  @@unique([product_id, size])
+}
+
+model Category {
+  id         String  @id @default(uuid())
+  name       String
+  slug       String  @unique
+  image_url  String?
+  sort_order Int     @default(0)
+  is_active  Boolean @default(true)
+}
+
+model Brand {
+  id        String  @id @default(uuid())
+  name      String
+  slug      String  @unique
+  image_url String?
+}
+
+model Review {
+  id            String   @id @default(uuid())
+  product_id    String
+  user_id       String?
+  customer_name String
+  rating        Int
+  comment       String?
+  image_urls    String[]
+  is_approved   Boolean  @default(false)
+  created_at    DateTime @default(now())
+
+  product Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [user_id], references: [id], onDelete: SetNull)
+}
+
+model Cart {
+  id         String   @id @default(uuid())
+  user_id    String?
+  guest_id   String?  @unique
+  updated_at DateTime @default(now()) @updatedAt
+
+  user  User?      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  items CartItem[]
+}
+
+model CartItem {
+  id         String  @id @default(uuid())
+  cart_id    String
+  product_id String
+  size       String
+  quantity   Int     @default(1)
+
+  cart    Cart    @relation(fields: [cart_id], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+}
+
+model Wishlist {
+  id       String  @id @default(uuid())
+  user_id  String?
+  guest_id String? @unique
+
+  user  User?          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  items WishlistItem[]
+}
+
+model WishlistItem {
+  id         String  @id @default(uuid())
+  wishlist_id String
+  product_id String
+  size       String?
+
+  wishlist Wishlist @relation(fields: [wishlist_id], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id                 String   @id @default(uuid())
+  order_number       String   @unique
+  user_id            String?
+  customer_name      String
+  customer_phone     String
+  customer_email     String?
+  shipping_address   Json
+  subtotal           Float
+  shipping_fee       Float
+  discount_amount    Float    @default(0)
+  coupon_code        String?
+  store_credit_used  Float    @default(0)
+  advance_required   Boolean  @default(false)
+  advance_amount     Float    @default(0)
+  advance_paid       Float    @default(0)
+  total              Float
+  payment_method     String
+  payment_status     String   @default("pending")
+  status             String   @default("placed")
+  customer_note      String?
+  tracking_number    String?
+  courier_name       String?
+  created_at         DateTime @default(now())
+  updated_at         DateTime @default(now()) @updatedAt
+
+  user                User?                @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  items               OrderItem[]
+  status_history      OrderStatusHistory[]
+  paymentTransactions PaymentTransaction[]
+  returnRequests      ReturnRequest[]
+  refunds             Refund[]
+  notifications       Notification[]
+}
+
+model OrderItem {
+  id            String @id @default(uuid())
+  order_id      String
+  product_id    String
+  product_name  String
+  variant_label String
+  size          String
+  image_url     String
+  unit_price    Float
+  quantity      Int
+
+  order   Order   @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [product_id], references: [id], onDelete: SetNull)
+}
+
+model OrderStatusHistory {
+  id       String   @id @default(uuid())
+  order_id String
+  status   String
+  note     String?
+  at       DateTime @default(now())
+
+  order Order @relation(fields: [order_id], references: [id], onDelete: Cascade)
+}
+
+model PaymentTransaction {
+  session_id     String   @id
+  order_id       String
+  amount         Float
+  currency       String
+  status         String
+  payment_status String
+  created_at     DateTime @default(now())
+
+  order Order @relation(fields: [order_id], references: [id], onDelete: Cascade)
+}
+
+model Coupon {
+  id              String    @id @default(uuid())
+  code            String    @unique
+  type            String    // percentage or flat
+  value           Float
+  min_order_value Float?
+  max_uses        Int?
+  used_count      Int       @default(0)
+  expires_at      DateTime?
+  is_active       Boolean   @default(true)
+  created_at      DateTime  @default(now())
+}
+
+model ShippingZone {
+  id                String  @id @default(uuid())
+  country_code      String  @unique
+  flat_fee          Float
+  free_shipping_min Float?
+  is_active         Boolean @default(true)
+}
+
+model Settings {
+  id                        String  @id @default("singleton")
+  announcement_text         String?
+  announcement_active       Boolean @default(false)
+  free_shipping_min_amt     Float?
+  flat_shipping_fee         Float?
+  advance_payment_threshold Float?
+  advance_payment_percent   Float?
+  cod_enabled               Boolean @default(true)
+  card_enabled              Boolean @default(true)
+  wallet_enabled            Boolean @default(true)
+  whatsapp_number           String?
+  supported_countries       String[]
+}
+
+model StoreCredit {
+  id         String   @id @default(uuid())
+  user_id    String   @unique
+  balance    Float    @default(0.0)
+  updated_at DateTime @default(now()) @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model StoreCreditLedger {
+  id         String   @id @default(uuid())
+  user_id    String
+  amount     Float
+  reason     String
+  order_id   String?
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model ReturnRequest {
+  id             String   @id @default(uuid())
+  order_id       String
+  order_number   String
+  customer_name  String
+  customer_phone String
+  reason         String
+  status         String   @default("pending")
+  created_at     DateTime @default(now())
+
+  order   Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  refunds Refund[]
+}
+
+model Refund {
+  id                String    @id @default(uuid())
+  order_id          String
+  order_number      String
+  return_request_id String?
+  amount            Float
+  reason            String
+  method            String
+  status            String    @default("pending")
+  external_ref      String?
+  processed_by      String?
+  failure_reason    String?
+  created_at        DateTime  @default(now())
+  processed_at      DateTime?
+
+  order         Order          @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  returnRequest ReturnRequest? @relation(fields: [return_request_id], references: [id], onDelete: SetNull)
+}
+
+model Address {
+  id           String   @id @default(uuid())
+  user_id      String
+  full_name    String
+  phone        String
+  address_l1   String
+  address_l2   String?
+  city         String
+  province     String?
+  postal_code  String?
+  country_code String   @default("PK")
+  is_default   Boolean  @default(false)
+  created_at   DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model HeroSlide {
+  id         String  @id @default(uuid())
+  title      String?
+  subtitle   String?
+  image_url  String?
+  mobile_image_url String?
+  link       String?
+  button_text String?
+  is_active  Boolean @default(true)
+  sort_order Int     @default(0)
+}
+
+model Newsletter {
+  email      String   @id
+  created_at DateTime @default(now())
+}
+
+model Notification {
+  id           String   @id @default(uuid())
+  order_id     String?
+  order_number String?
+  phone        String?
+  channel      String
+  event        String
+  message      String
+  status       String
+  error        String?
+  created_at   DateTime @default(now())
+
+  order Order? @relation(fields: [order_id], references: [id], onDelete: SetNull)
+}
