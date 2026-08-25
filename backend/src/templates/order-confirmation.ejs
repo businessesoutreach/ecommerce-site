@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Order Confirmation</title>
+  <style>
+    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; color: #1a1a1a; }
+    .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .header { background-color: #1a1a1a; padding: 40px 20px; text-center; color: #ffffff; text-align: center; }
+    .header h1 { margin: 0; font-size: 28px; text-transform: uppercase; letter-spacing: -0.5px; }
+    .header p { margin: 10px 0 0; color: #a0a0a0; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+    .content { padding: 40px 30px; }
+    .greeting { font-size: 20px; font-weight: bold; margin-top: 0; margin-bottom: 20px; }
+    .message { font-size: 16px; line-height: 1.6; color: #4a4a4a; margin-bottom: 30px; }
+    .order-details { background-color: #f9f9f9; border: 1px solid #eeeeee; border-radius: 6px; padding: 20px; margin-bottom: 30px; }
+    .order-details h2 { margin-top: 0; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
+    .item { display: flex; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+    .item:last-child { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
+    .item-info p { margin: 0 0 5px; font-weight: bold; font-size: 15px; }
+    .item-info span { font-size: 13px; color: #666; display: block; }
+    .item-price { font-weight: bold; font-size: 15px; }
+    .totals { margin-top: 20px; border-top: 2px solid #1a1a1a; padding-top: 15px; }
+    .total-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 15px; color: #4a4a4a; }
+    .total-row.final { font-size: 18px; font-weight: bold; color: #1a1a1a; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee; }
+    .shipping-info { margin-bottom: 30px; }
+    .shipping-info h2 { font-size: 16px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+    .shipping-info p { margin: 0; font-size: 15px; line-height: 1.5; color: #4a4a4a; }
+    .button-container { text-align: center; margin: 40px 0; }
+    .button { display: inline-block; background-color: #1a1a1a; color: #ffffff !important; text-decoration: none; padding: 15px 30px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; border-radius: 4px; }
+    .footer { text-align: center; padding: 20px; font-size: 12px; color: #888888; background-color: #f9f9f9; border-top: 1px solid #eeeeee; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>SoleKicks PK</h1>
+      <p>Order Confirmed</p>
+    </div>
+    
+    <div class="content">
+      <p class="greeting">Hi <%= order.customer_name %>,</p>
+      <p class="message">Thanks for copping from SoleKicks PK! We've received your order <strong>#<%= order.order_number %></strong> and are getting it ready to ship.</p>
+      
+      <div class="order-details">
+        <h2>Order Summary</h2>
+        
+        <% order.items.forEach(function(item) { %>
+          <div class="item">
+            <div class="item-info">
+              <p><%= item.product_name %></p>
+              <span>Size: <%= item.size %> | Qty: <%= item.quantity %></span>
+            </div>
+            <div class="item-price">Rs. <%= (item.unit_price * item.quantity).toLocaleString() %></div>
+          </div>
+        <% }); %>
+        
+        <div class="totals">
+          <div class="total-row">
+            <span>Subtotal</span>
+            <span>Rs. <%= order.subtotal.toLocaleString() %></span>
+          </div>
+          <div class="total-row">
+            <span>Shipping</span>
+            <span>Rs. <%= order.shipping_fee.toLocaleString() %></span>
+          </div>
+          <% if (order.discount_amount > 0) { %>
+          <div class="total-row" style="color: #3aaa35;">
+            <span>Discount</span>
+            <span>- Rs. <%= order.discount_amount.toLocaleString() %></span>
+          </div>
+          <% } %>
+          <% if (order.store_credit_used > 0) { %>
+          <div class="total-row" style="color: #3aaa35;">
+            <span>Store Credit</span>
+            <span>- Rs. <%= order.store_credit_used.toLocaleString() %></span>
+          </div>
+          <% } %>
+          <div class="total-row final">
+            <span>Total</span>
+            <span>Rs. <%= order.total.toLocaleString() %></span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="shipping-info">
+        <h2>Shipping Address</h2>
+        <p>
+          <%= order.customer_name %><br>
+          <%= order.shipping_address.address_l1 %><br>
+          <%= order.shipping_address.city %>, <%= order.shipping_address.province ? order.shipping_address.province + ', ' : '' %><%= order.shipping_address.postal_code %><br>
+          <%= order.shipping_address.country_code %>
+        </p>
+      </div>
+      
+      <div class="button-container">
+        <a href="<%= origin_url %>/order-confirmation/<%= order.order_number %>" class="button">View Order Status</a>
+      </div>
+      
+      <p class="message" style="font-size: 14px; margin-bottom: 0;">If you have any questions, reply to this email or contact our support team.</p>
+    </div>
+    
+    <div class="footer">
+      &copy; <%= new Date().getFullYear() %> SoleKicks PK. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>

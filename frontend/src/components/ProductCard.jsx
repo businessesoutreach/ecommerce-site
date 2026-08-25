@@ -84,7 +84,7 @@ export default function ProductCard({ product, index = 0 }) {
 
         {soldOut && (
           <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] grid place-items-center z-10">
-            <span className="font-display font-black uppercase tracking-widest text-obsidian border-2 border-obsidian px-4 py-2">Sold Out</span>
+            <span className="font-display tracking-widest text-obsidian border-2 border-obsidian px-4 py-2">Sold Out</span>
           </div>
         )}
 
@@ -117,7 +117,7 @@ export default function ProductCard({ product, index = 0 }) {
                 <button
                   onClick={handleAdd}
                   data-testid={`product-card-add-btn-${product.id}`}
-                  className="w-full bg-obsidian text-white font-display font-bold uppercase tracking-wider text-sm py-2.5 rounded-none flex items-center justify-center gap-2 hover:bg-fire transition-colors duration-200 active:scale-[0.99]"
+                  className="w-full bg-obsidian text-white font-display tracking-wider text-sm py-2.5 rounded-none flex items-center justify-center gap-2 hover:bg-fire transition-colors duration-200 active:scale-[0.99]"
                 >
                   {adding ? <><Check size={16} /> Added</> : <><Plus size={16} /> Quick Add</>}
                 </button>
@@ -160,7 +160,7 @@ export default function ProductCard({ product, index = 0 }) {
           </div>
         )}
         {!soldOut && (
-          <button onClick={handleAdd} data-testid={`product-card-mobile-add-${product.id}`} className="lg:hidden mt-2 w-full bg-obsidian text-white font-display font-bold uppercase tracking-wider text-xs py-2.5 flex items-center justify-center gap-1.5 active:scale-[0.99]">
+          <button onClick={handleAdd} data-testid={`product-card-mobile-add-${product.id}`} className="lg:hidden mt-2 w-full bg-obsidian text-white font-display tracking-wider text-xs py-2.5 flex items-center justify-center gap-1.5 active:scale-[0.99]">
             {adding ? <><Check size={14} /> Added</> : <><Plus size={14} /> Quick Add</>}
           </button>
         )}

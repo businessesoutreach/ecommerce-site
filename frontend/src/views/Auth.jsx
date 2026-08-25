@@ -1,8 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useStore } from "../context/StoreContext";
+import { http } from "../lib/api";
 import { toast } from "sonner";
+import PhoneInput from "../components/PhoneInput";
+import { ArrowLeft } from "lucide-react";
 
 function fmtErr(d) {
   if (!d) return "Something went wrong";
@@ -16,28 +19,62 @@ const GoogleIcon = () => (
 );
 
 export default function Auth({ mode = "login" }) {
-  const isLogin = mode === "login";
+  const [view, setView] = useState(mode);
+  const [step, setStep] = useState(1);
   const { login, register } = useStore();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: "", email: "", password: "", phone: "" });
+  const [form, setForm] = useState({ name: "", email: "", password: "", phone: "", otp: "" });
   const [loading, setLoading] = useState(false);
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
-  const submit = async (e) => {
+  useEffect(() => { setView(mode); setStep(1); }, [mode]);
+
+  const requestOTP = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const u = isLogin ? await login(form.email, form.password) : await register(form);
-      toast.success(`Welcome${u.name ? ", " + u.name.split(" ")[0] : ""}!`);
-      navigate(u.role === "admin" || u.role === "staff" ? "/admin" : "/account");
+      if (view === "register") {
+        await http.post("/auth/send-otp", { email: form.email });
+      } else if (view === "forgot") {
+        await http.post("/auth/forgot-password", { email: form.email });
+      }
+      setStep(2);
+      toast.success("Verification code sent to your email!");
     } catch (err) {
       toast.error(fmtErr(err.response?.data?.detail));
     }
     setLoading(false);
   };
 
+  const submitFinal = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      if (view === "login") {
+        const u = await login(form.email, form.password);
+        toast.success(`Welcome back!`);
+        navigate(u.role === "admin" || u.role === "staff" ? "/admin" : "/account");
+        return; // Skip setLoading(false) to prevent button blinking while Next.js route transitions
+      } else if (view === "register") {
+        const u = await register(form);
+        toast.success(`Welcome, ${u.name.split(" ")[0]}!`);
+        navigate(u.role === "admin" || u.role === "staff" ? "/admin" : "/account");
+        return; // Skip setLoading(false)
+      } else if (view === "forgot") {
+        await http.post("/auth/reset-password", { email: form.email, otp: form.otp, new_password: form.password });
+        toast.success("Password reset successfully! Please sign in.");
+        setView("login");
+        setStep(1);
+        setForm({ ...form, password: "", otp: "" });
+        setLoading(false);
+      }
+    } catch (err) {
+      toast.error(fmtErr(err.response?.data?.detail));
+      setLoading(false);
+    }
+  };
+
   const googleLogin = () => {
-    // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
     window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(window.location.origin + "/account")}`;
   };
 
@@ -45,50 +82,82 @@ export default function Auth({ mode = "login" }) {
 
   return (
     <div className="min-h-[85vh] grid place-items-center px-4 py-10 bg-ink-100">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-4xl grid lg:grid-cols-2 bg-white border border-ink-200 rounded-xl overflow-hidden shadow-xl">
-        {/* Image panel */}
-        <div className="relative hidden lg:block bg-obsidian min-h-[560px]">
-          <img src="https://images.unsplash.com/photo-1556906781-9a412961c28c?crop=entropy&cs=srgb&fm=jpg&q=85&w=1000" alt="" className="absolute inset-0 h-full w-full object-cover opacity-65" />
-          <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/40 to-transparent" />
-          <div className="absolute top-8 left-8">
-            <span className="font-display font-black text-2xl uppercase tracking-tighter text-white">SOLEKICKS<span className="text-fire">.</span>PK</span>
-          </div>
-          <div className="absolute bottom-10 left-8 right-8 text-white">
-            <h2 className="font-display font-black text-3xl uppercase tracking-tight leading-none">Step Into<br />The Culture</h2>
-            <p className="text-white/60 mt-3 text-sm max-w-xs">Track orders, save grails, and cop faster. Guest checkout is always available — no account required.</p>
-          </div>
-        </div>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-2xl bg-white border border-ink-200 rounded-xl overflow-hidden shadow-xl">
+        <div className="p-8 sm:p-14 flex flex-col justify-center">
+          
+          {view === "forgot" && step === 1 && (
+            <button onClick={() => setView("login")} className="flex items-center gap-2 text-ink-500 hover:text-obsidian mb-6 transition-colors w-fit"><ArrowLeft size={16} /> Back to Sign In</button>
+          )}
+          {step === 2 && (
+            <button onClick={() => setStep(1)} className="flex items-center gap-2 text-ink-500 hover:text-obsidian mb-6 transition-colors w-fit"><ArrowLeft size={16} /> Back</button>
+          )}
 
-        {/* Form panel */}
-        <div className="p-8 sm:p-12 flex flex-col justify-center">
-          <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-fire font-bold">{isLogin ? "Welcome Back" : "Join The Movement"}</span>
-          <h1 className="font-display text-3xl sm:text-4xl font-black uppercase tracking-tight mt-2">{isLogin ? "Sign In" : "Create Account"}</h1>
-          <p className="text-ink-500 mt-1.5 mb-6 text-sm">{isLogin ? "Access your orders, wishlist & store credit." : "Save your details for a faster checkout next time."}</p>
+          <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-fire font-bold">
+            {view === "login" ? "Welcome Back" : view === "register" ? "Join The Movement" : "Account Recovery"}
+          </span>
+          <h1 className="font-display tracking-tight mt-2">
+            {view === "login" ? "Sign In" : view === "register" ? (step === 1 ? "Create Account" : "Verify Email") : (step === 1 ? "Forgot Password" : "Reset Password")}
+          </h1>
+          <p className="text-ink-500 mt-1.5 mb-6 text-sm">
+            {view === "login" ? "Access your orders, wishlist & store credit." : 
+             view === "register" ? (step === 1 ? "Save your details for a faster checkout next time." : `We've sent a 6-digit code to ${form.email}.`) :
+             (step === 1 ? "Enter your email to receive a password reset code." : `We've sent a 6-digit code to ${form.email}.`)}
+          </p>
 
-          <button onClick={googleLogin} data-testid="google-login-btn" className="w-full flex items-center justify-center gap-3 border border-ink-200 rounded-none py-3 font-display font-bold uppercase text-sm tracking-wider hover:border-obsidian hover:bg-ink-100 transition-colors">
-            <GoogleIcon /> Continue with Google
-          </button>
+          {view !== "forgot" && step === 1 && (
+            <>
+              <button onClick={googleLogin} className="w-full flex items-center justify-center gap-3 border border-ink-200 rounded-none py-3 font-display text-sm tracking-wider hover:border-obsidian hover:bg-ink-100 transition-colors">
+                <GoogleIcon /> Continue with Google
+              </button>
+              <div className="flex items-center gap-4 my-6">
+                <span className="h-px flex-1 bg-ink-200" />
+                <span className="font-mono text-[11px] uppercase tracking-widest text-ink-400">or</span>
+                <span className="h-px flex-1 bg-ink-200" />
+              </div>
+            </>
+          )}
 
-          <div className="flex items-center gap-4 my-6">
-            <span className="h-px flex-1 bg-ink-200" />
-            <span className="font-mono text-[11px] uppercase tracking-widest text-ink-400">or</span>
-            <span className="h-px flex-1 bg-ink-200" />
-          </div>
+          <form onSubmit={step === 1 && view !== "login" ? requestOTP : submitFinal} className="space-y-3.5">
+            {step === 1 && (
+              <>
+                {view === "register" && <input value={form.name} onChange={set("name")} required placeholder="Full name" className={inp} />}
+                <input value={form.email} onChange={set("email")} type="email" required placeholder="Email address" className={inp} />
+                {view === "register" && <PhoneInput value={form.phone} onChange={(val) => setForm({ ...form, phone: val })} placeholder="Phone (optional)" />}
+                {view === "login" && (
+                  <div>
+                    <input value={form.password} onChange={set("password")} type="password" required placeholder="Password" className={inp} />
+                    <div className="flex justify-end mt-3 mb-1">
+                      <button type="button" onClick={() => setView("forgot")} className="text-xs font-bold text-ink-500 hover:text-fire transition-colors">Forgot Password?</button>
+                    </div>
+                  </div>
+                )}
+                {view === "register" && <input value={form.password} onChange={set("password")} type="password" required minLength={6} placeholder="Password" className={inp} />}
+              </>
+            )}
 
-          <form onSubmit={submit} className="space-y-3.5">
-            {!isLogin && <input value={form.name} onChange={set("name")} required placeholder="Full name" data-testid="auth-name" className={inp} />}
-            <input value={form.email} onChange={set("email")} type="email" required placeholder="Email address" data-testid="auth-email" className={inp} />
-            {!isLogin && <input value={form.phone} onChange={set("phone")} placeholder="Phone (optional)" className={inp} />}
-            <input value={form.password} onChange={set("password")} type="password" required placeholder="Password" data-testid="auth-password" className={inp} />
-            <button disabled={loading} data-testid="auth-submit" className="w-full bg-obsidian text-white font-display font-bold uppercase tracking-wider py-3.5 rounded-none hover:bg-fire transition-colors disabled:opacity-60">
-              {loading ? "Please wait…" : isLogin ? "Sign In" : "Create Account"}
-            </button>
+            {step === 2 && (
+              <>
+                <input value={form.otp} onChange={set("otp")} required maxLength={6} placeholder="6-digit code" className={`${inp} tracking-widest text-center text-xl font-mono`} />
+                {view === "forgot" && <input value={form.password} onChange={set("password")} type="password" required minLength={6} placeholder="New Password" className={inp} />}
+              </>
+            )}
+
+            <div className="pt-2">
+              <button disabled={loading} className="w-full bg-obsidian text-white font-display tracking-wider py-3.5 rounded-none hover:bg-fire transition-colors disabled:opacity-60">
+                {loading ? "Please wait…" : 
+                 view === "login" ? "Sign In" : 
+                 step === 1 ? (view === "register" ? "Verify Email" : "Send Reset Code") : 
+                 (view === "register" ? "Create Account" : "Reset Password")}
+              </button>
+            </div>
           </form>
 
-          <p className="text-center text-sm text-ink-500 mt-5">
-            {isLogin ? "New here? " : "Already have an account? "}
-            <Link to={isLogin ? "/register" : "/login"} className="font-bold text-fire underline underline-offset-4">{isLogin ? "Create account" : "Sign in"}</Link>
-          </p>
+          {view !== "forgot" && step === 1 && (
+            <p className="text-center text-sm text-ink-500 mt-5">
+              {view === "login" ? "New here? " : "Already have an account? "}
+              <Link to={view === "login" ? "/register" : "/login"} className="font-bold text-fire underline underline-offset-4">{view === "login" ? "Create account" : "Sign in"}</Link>
+            </p>
+          )}
         </div>
       </motion.div>
     </div>

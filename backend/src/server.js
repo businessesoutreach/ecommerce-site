@@ -14,6 +14,7 @@ const checkoutRoutes = require('./routes/checkout').router;
 const ordersRoutes = require('./routes/orders');
 const paymentsRoutes = require('./routes/payments');
 const adminRoutes = require('./routes/admin');
+const cmsRoutes = require('./routes/cms');
 const userRoutes = require('./routes/user');
 const miscRoutes = require('./routes/misc');
 
@@ -42,6 +43,7 @@ apiRouter.use('/checkout', checkoutRoutes);
 apiRouter.use('/orders', ordersRoutes);
 apiRouter.use('/', paymentsRoutes);
 apiRouter.use('/admin', adminRoutes);
+apiRouter.use('/admin/cms', cmsRoutes);
 apiRouter.use('/me', userRoutes);
 apiRouter.use('/', miscRoutes);
 

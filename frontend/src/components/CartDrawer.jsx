@@ -38,7 +38,7 @@ export default function CartDrawer() {
             data-testid="cart-drawer"
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-ink-200">
-              <h2 className="font-display text-lg font-extrabold uppercase tracking-tight flex items-center gap-2">
+              <h2 className="font-display tracking-tight flex items-center gap-2">
                 <ShoppingBag size={18} /> Your Bag <span className="text-fire">({cart.count})</span>
               </h2>
               <button data-testid="cart-drawer-close-btn" onClick={() => setCartOpen(false)} className="h-9 w-9 grid place-items-center rounded-none hover:bg-ink-100">
@@ -101,14 +101,14 @@ export default function CartDrawer() {
 
             {cart.items.length > 0 && (
               <div className="border-t border-ink-200 p-5 bg-white space-y-3">
-                <div className="flex justify-between font-display font-bold uppercase tracking-tight">
+                <div className="flex justify-between font-display tracking-tight">
                   <span>Subtotal</span>
                   <span data-testid="cart-drawer-subtotal-amount" className="font-mono text-fire">{fmt(cart.subtotal)}</span>
                 </div>
                 <button
                   data-testid="cart-drawer-checkout-btn"
                   onClick={() => go("/checkout")}
-                  className="w-full bg-obsidian text-white font-display font-bold uppercase tracking-wider py-4 rounded-none hover:bg-fire transition-colors active:scale-[0.99]"
+                  className="w-full bg-obsidian text-white font-display tracking-wider py-4 rounded-none hover:bg-fire transition-colors active:scale-[0.99]"
                 >
                   Checkout · Guest Friendly
                 </button>

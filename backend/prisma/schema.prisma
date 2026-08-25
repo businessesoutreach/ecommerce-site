@@ -34,6 +34,7 @@ model Product {
   name             String
   base_price       Float
   compare_at_price Float?
+  flash_sale_price Float?
   description      String?
   category_slug    String
   brand_slug       String?
@@ -67,12 +68,21 @@ model ProductSize {
 }
 
 model Category {
-  id         String  @id @default(uuid())
-  name       String
-  slug       String  @unique
-  image_url  String?
-  sort_order Int     @default(0)
-  is_active  Boolean @default(true)
+  id              String  @id @default(uuid())
+  parent_id       String?
+  name            String
+  slug            String  @unique
+  description     String?
+  seo_title       String?
+  seo_description String?
+  image_url       String?
+  hero_banner_url String?
+  hero_video_url  String?
+  sort_order      Int     @default(0)
+  is_active       Boolean @default(true)
+  
+  parent          Category?  @relation("CategoryToCategory", fields: [parent_id], references: [id], onDelete: SetNull)
+  children        Category[] @relation("CategoryToCategory")
 }
 
 model Brand {
@@ -86,15 +96,19 @@ model Review {
   id            String   @id @default(uuid())
   product_id    String
   user_id       String?
+  order_id      String?
   customer_name String
   rating        Int
   comment       String?
   image_urls    String[]
-  is_approved   Boolean  @default(false)
+  status        String   @default("pending") // pending, approved, rejected, reported
+  admin_reply   String?
+  report_reason String?
   created_at    DateTime @default(now())
 
   product Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
   user    User?   @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  order   Order?  @relation(fields: [order_id], references: [id], onDelete: SetNull)
 }
 
 model Cart {
@@ -170,6 +184,7 @@ model Order {
   returnRequests      ReturnRequest[]
   refunds             Refund[]
   notifications       Notification[]
+  reviews             Review[]
 }
 
 model OrderItem {
@@ -238,6 +253,8 @@ model Settings {
   flat_shipping_fee         Float?
   advance_payment_threshold Float?
   advance_payment_percent   Float?
+  flash_sale_active         Boolean @default(false)
+  flash_sale_end_time       DateTime?
   cod_enabled               Boolean @default(true)
   card_enabled              Boolean @default(true)
   wallet_enabled            Boolean @default(true)
@@ -271,6 +288,10 @@ model ReturnRequest {
   order_number   String
   customer_name  String
   customer_phone String
+  product_id     String?
+  product_name   String?
+  quantity       Int      @default(1)
+  refund_amount  Float    @default(0)
   reason         String
   status         String   @default("pending")
   created_at     DateTime @default(now())
@@ -316,15 +337,17 @@ model Address {
 }
 
 model HeroSlide {
-  id         String  @id @default(uuid())
-  title      String?
-  subtitle   String?
-  image_url  String?
+  id               String  @id @default(uuid())
+  title            String?
+  subtitle         String?
+  image_url        String?
   mobile_image_url String?
-  link       String?
-  button_text String?
-  is_active  Boolean @default(true)
-  sort_order Int     @default(0)
+  link             String?
+  button_text      String?
+  is_active        Boolean @default(true)
+  sort_order       Int     @default(0)
+  start_date       DateTime?
+  end_date         DateTime?
 }
 
 model Newsletter {
@@ -345,4 +368,64 @@ model Notification {
   created_at   DateTime @default(now())
 
   order Order? @relation(fields: [order_id], references: [id], onDelete: SetNull)
+}
+
+model OTP {
+  id         String   @id @default(uuid())
+  email      String
+  code       String
+  purpose    String   // "signup" or "reset_password"
+  expires_at DateTime
+  created_at DateTime @default(now())
+
+  @@index([email, purpose])
+}
+
+
+model HomepageSection {
+  id         String  @id @default(uuid())
+  type       String  @unique // e.g. hero, categories, new_arrivals, flash_sale
+  is_active  Boolean @default(true)
+  sort_order Int     @default(0)
+  settings   Json?   // flexible json for limits, titles, selected products
+}
+
+model PromoBanner {
+  id          String  @id @default(uuid())
+  title       String?
+  subtitle    String?
+  image_url   String
+  link        String?
+  button_text String?
+  is_active   Boolean @default(true)
+  start_date  DateTime?
+  end_date    DateTime?
+}
+
+model Testimonial {
+  id           String  @id @default(uuid())
+  author_name  String
+  author_meta  String? // e.g. "Verified Customer"
+  content      String
+  rating       Int     @default(5)
+  is_published Boolean @default(true)
+  review_id    String? // optional link to a real review
+}
+
+model StaticPage {
+  id              String  @id @default(uuid())
+  title           String
+  slug            String  @unique
+  content_html    String
+  seo_title       String?
+  seo_description String?
+  is_published    Boolean @default(true)
+  updated_at      DateTime @default(now()) @updatedAt
+}
+
+model SeoConfig {
+  id                 String  @id @default("singleton")
+  default_meta_title String?
+  default_meta_desc  String?
+  default_og_image   String?
 }

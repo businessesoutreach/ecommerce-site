@@ -53,17 +53,27 @@ export default function HeroSlider({ slides = [] }) {
               {s.badge}
             </span>
           )}
-          <h1 className="font-display text-white text-4xl sm:text-6xl lg:text-7xl font-black uppercase tracking-tight leading-[0.95]">
+          <h1 className="font-display text-white text-2xl sm:text-2xl lg:text-6xl font-bold tracking-tight leading-[1.1] drop-shadow-lg">
             {s.title}
           </h1>
-          <p className="text-white/70 mt-5 text-base sm:text-lg max-w-lg leading-relaxed">{s.subtitle}</p>
-          <Link
-            to={s.link_url || "/collections/retro"}
-            className="group mt-8 inline-flex items-center gap-3 bg-white text-obsidian font-display font-bold uppercase tracking-wider text-sm px-7 py-4 rounded-none hover:bg-fire hover:text-white transition-colors"
-          >
-            {s.cta_text || "Shop Now"}
-            <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-          </Link>
+          <p className="text-white/90 mt-5 text-base sm:text-lg max-w-lg leading-relaxed drop-shadow-md font-medium">
+            {s.subtitle}
+          </p>
+          <div className="mt-8 flex flex-wrap items-center gap-4">
+            <Link
+              to={s.link_url || "/shop"}
+              className="group inline-flex items-center gap-3 bg-fire text-white font-display tracking-wider text-sm px-7 py-4 rounded-none hover:bg-white hover:text-obsidian shadow-lg transition-colors"
+            >
+              {s.cta_text || "Shop Now"}
+              <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+            </Link>
+            <Link
+              to="/auth?mode=register"
+              className="inline-flex items-center justify-center bg-transparent border-2 border-white/80 text-white font-display tracking-wider text-sm px-7 py-3.5 rounded-none hover:bg-white hover:text-obsidian shadow-lg transition-colors backdrop-blur-sm"
+            >
+              Sign Up
+            </Link>
+          </div>
         </motion.div>
       </div>
 

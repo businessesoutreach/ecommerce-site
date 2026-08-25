@@ -204,6 +204,12 @@ router.post('/', getOptionalUser, async (req, res) => {
             await addStoreCredit(req.user.id, -store_credit_used, "REDEEMED_ON_ORDER", order.id);
         }
         
+        if (order.customer_email && payment_method === 'COD') {
+            const { sendOrderConfirmation } = require('../utils/mailer');
+            const origin = req.headers.origin || 'http://localhost:5173';
+            sendOrderConfirmation(order.customer_email, order, origin).catch(console.error);
+        }
+        
         await notify(order, "ORDER_PLACED", `Order ${order.order_number} confirmed! Total Rs. ${total} via ${payment_method}. We'll update you as it ships.`);
         
         res.json({ success: true, data: order });

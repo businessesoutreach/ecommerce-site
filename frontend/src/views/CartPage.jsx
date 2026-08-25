@@ -14,13 +14,13 @@ export default function CartPage() {
   if (cart.items.length === 0)
     return (
       <div className="max-w-[1400px] mx-auto px-5 sm:px-8 py-10 min-h-[60vh]">
-        <EmptyState icon={ShoppingBag} title="Your bag is empty" subtitle="Time to fill it with heat." action={<Link to="/new-arrivals" className="bg-obsidian text-white font-display font-bold uppercase px-8 py-4 rounded-none inline-flex items-center gap-2">Shop New Arrivals <ArrowRight size={16} /></Link>} />
+        <EmptyState icon={ShoppingBag} title="Your bag is empty" subtitle="Time to fill it with heat." action={<Link to="/new-arrivals" className="bg-obsidian text-white font-display px-8 py-4 rounded-none inline-flex items-center gap-2">Shop New Arrivals <ArrowRight size={16} /></Link>} />
       </div>
     );
 
   return (
     <div className="max-w-[1400px] mx-auto px-5 sm:px-8 py-10">
-      <h1 className="font-display text-3xl sm:text-4xl font-black uppercase tracking-tight mb-8">Your Bag <span className="text-fire">({cart.count})</span></h1>
+      <h1 className="font-display tracking-tight mb-8">Your Bag <span className="text-fire">({cart.count})</span></h1>
       <div className="grid lg:grid-cols-3 gap-10">
         <div className="lg:col-span-2 space-y-4">
           {cart.items.map((it) => (
@@ -49,13 +49,13 @@ export default function CartPage() {
         </div>
 
         <div className="lg:sticky lg:top-28 lg:self-start bg-white rounded-none p-6 border border-ink-200 h-fit">
-          <h3 className="font-display font-bold uppercase tracking-tight text-lg mb-4">Order Summary</h3>
+          <h3 className="font-display tracking-tight text-lg mb-4">Order Summary</h3>
           <div className="space-y-3 text-sm">
             <div className="flex justify-between"><span className="text-ink-500">Subtotal</span><span className="font-mono font-bold">{fmt(cart.subtotal)}</span></div>
             <div className="flex justify-between"><span className="text-ink-500">Shipping</span><span className="font-mono font-bold">{shipping === 0 ? "FREE" : fmt(shipping)}</span></div>
-            <div className="border-t border-ink-200 pt-3 flex justify-between font-display font-black uppercase text-lg"><span>Total</span><span className="font-mono text-fire">{fmt(cart.subtotal + shipping)}</span></div>
+            <div className="border-t border-ink-200 pt-3 flex justify-between font-display text-lg"><span>Total</span><span className="font-mono text-fire">{fmt(cart.subtotal + shipping)}</span></div>
           </div>
-          <button onClick={() => navigate("/checkout")} data-testid="cart-page-checkout-btn" className="w-full bg-obsidian text-white font-display font-bold uppercase tracking-wider py-4 rounded-none mt-5 hover:bg-fire transition-colors">Proceed to Checkout</button>
+          <button onClick={() => navigate("/checkout")} data-testid="cart-page-checkout-btn" className="w-full bg-obsidian text-white font-display tracking-wider py-4 rounded-none mt-5 hover:bg-fire transition-colors">Proceed to Checkout</button>
           <p className="text-center text-xs text-ink-400 mt-3">Guest checkout · No account needed</p>
         </div>
       </div>

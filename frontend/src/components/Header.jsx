@@ -64,7 +64,7 @@ function SearchOverlay({ open, onClose }) {
                   onChange={(e) => setQ(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter" && q) { navigate(`/search?q=${q}`); onClose(); } }}
                   placeholder="Search kicks, runners, slides…"
-                  className="flex-1 bg-transparent outline-none font-display text-xl uppercase tracking-tight placeholder:text-ink-200"
+                  className="flex-1 bg-transparent outline-none font-display tracking-tight placeholder:text-ink-200"
                 />
                 <button onClick={onClose}><X size={22} /></button>
               </div>
@@ -113,13 +113,13 @@ export default function Header() {
           <div className="max-w-[1400px] mx-auto px-5 sm:px-8 flex items-center justify-between gap-4">
             <button className="lg:hidden" onClick={() => setMenuOpen(true)} data-testid="mobile-menu-btn"><Menu size={22} /></button>
 
-            <Link to="/" className="font-display font-black text-xl sm:text-2xl uppercase tracking-tighter flex items-center gap-1" data-testid="logo">
-              SOLEKICKS<span className="text-fire text-3xl leading-none">.</span><span className="hidden sm:inline text-[10px] font-mono tracking-[0.25em] self-start mt-1">PK</span>
+            <Link to="/" className="font-display tracking-tighter flex items-center gap-1" data-testid="logo">
+              SOLEKICKS<span className="text-fire text-2xl leading-none">.</span><span className="hidden sm:inline text-[10px] font-mono tracking-[0.25em] self-start mt-1">PK</span>
             </Link>
 
             <nav className="hidden lg:flex items-center gap-7">
               {NAV.map((n) => (
-                <Link key={n.to} to={n.to} className={`relative font-display font-bold text-[13px] uppercase tracking-wider group ${loc.pathname === n.to ? "text-fire" : "text-obsidian"}`}>
+                <Link key={n.to} to={n.to} className={`relative font-display tracking-wider group ${loc.pathname === n.to ? "text-fire" : "text-obsidian"}`}>
                   {n.hot && <Zap size={11} className="inline mr-1 fill-fire text-fire" />}
                   {n.label}
                   <span className="absolute -bottom-1 left-0 h-[2px] bg-fire w-0 group-hover:w-full transition-all duration-300" />
@@ -161,16 +161,16 @@ export default function Header() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-obsidian/60 z-[60]" onClick={() => setMenuOpen(false)} />
             <motion.div initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }} transition={{ type: "spring", damping: 30, stiffness: 260 }} className="fixed left-0 top-0 h-full w-[82%] max-w-sm bg-canvas z-[70] p-6">
               <div className="flex justify-between items-center mb-8">
-                <span className="font-display font-black text-xl uppercase tracking-tighter">SOLEKICKS<span className="text-fire">.</span></span>
+                <span className="font-display tracking-tighter">SOLEKICKS<span className="text-fire">.</span></span>
                 <button onClick={() => setMenuOpen(false)}><X size={22} /></button>
               </div>
               <nav className="flex flex-col">
                 {NAV.map((n) => (
-                  <Link key={n.to} to={n.to} onClick={() => setMenuOpen(false)} className="font-display font-bold text-xl uppercase tracking-tight py-3 border-b border-ink-200 flex items-center gap-2">
+                  <Link key={n.to} to={n.to} onClick={() => setMenuOpen(false)} className="font-display tracking-tight py-3 border-b border-ink-200 flex items-center gap-2">
                     {n.hot && <Zap size={16} className="fill-fire text-fire" />}{n.label}
                   </Link>
                 ))}
-                <Link to="/track-order" onClick={() => setMenuOpen(false)} className="font-display font-bold text-xl uppercase tracking-tight py-3 border-b border-ink-200">Track Order</Link>
+                <Link to="/track-order" onClick={() => setMenuOpen(false)} className="font-display tracking-tight py-3 border-b border-ink-200">Track Order</Link>
               </nav>
             </motion.div>
           </>

@@ -26,12 +26,12 @@ export default function OrderConfirmation() {
       <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", damping: 12 }} className="mx-auto h-20 w-20 grid place-items-center rounded-none bg-fire/10 text-fire mb-6">
         <CheckCircle2 size={44} />
       </motion.div>
-      <h1 className="font-display text-3xl sm:text-4xl font-black uppercase tracking-tight">Order Confirmed!</h1>
-      <p className="text-ink-500 mt-2">Thank you — your kicks are on the way. A WhatsApp confirmation will follow shortly.</p>
+      <h1 className="font-display tracking-tight">Order Confirmed!</h1>
+      <p className="text-ink-500 mt-2">Thank you — your kicks are on the way. An email confirmation has been sent to you, and you can track your order using the order ID below.</p>
 
       <div className="bg-white border border-ink-200 rounded-none p-6 mt-8 text-left">
         <div className="flex items-center justify-between border-b border-ink-200 pb-4">
-          <div><span className="font-mono text-xs uppercase tracking-wider text-ink-400">Tracking ID</span><p className="font-display font-black text-2xl tracking-tight">{orderNumber}</p></div>
+          <div><span className="font-mono text-xs uppercase tracking-wider text-ink-400">Tracking ID</span><p className="font-display font-semibold text-2xl tracking-tight">{orderNumber}</p></div>
           {order && <div className="text-right"><span className="font-mono text-xs uppercase tracking-wider text-ink-400">Total</span><p className="font-mono font-bold text-xl text-fire">{fmt(order.total)}</p></div>}
         </div>
 
@@ -59,13 +59,13 @@ export default function OrderConfirmation() {
         )}
       </div>
 
-      <a href={waLink(waNumber, waMsg)} target="_blank" rel="noreferrer" data-testid="order-whatsapp-btn" className="mt-6 inline-flex items-center gap-2 bg-[#25D366] text-white font-display font-bold uppercase text-sm px-6 py-3.5 rounded-none hover:opacity-90 transition-opacity">
+      <a href={waLink(waNumber, waMsg)} target="_blank" rel="noreferrer" data-testid="order-whatsapp-btn" className="mt-6 inline-flex items-center gap-2 bg-[#25D366] text-white font-display text-sm px-6 py-3.5 rounded-none hover:opacity-90 transition-opacity">
         <MessageCircle size={18} /> Get WhatsApp Updates
       </a>
 
       <div className="flex gap-3 justify-center mt-8">
-        <Link to="/track-order" className="border-2 border-obsidian font-display font-bold uppercase text-sm px-6 py-3 rounded-none hover:bg-obsidian hover:text-white transition-colors">Track Order</Link>
-        <Link to="/" className="bg-obsidian text-white font-display font-bold uppercase text-sm px-6 py-3 rounded-none flex items-center gap-2 hover:bg-fire transition-colors"><Home size={16} /> Keep Shopping</Link>
+        <Link to="/track-order" className="border-2 border-obsidian font-display text-sm px-6 py-3 rounded-none hover:bg-obsidian hover:text-white transition-colors">Track Order</Link>
+        <Link to="/" className="bg-obsidian text-white font-display text-sm px-6 py-3 rounded-none flex items-center gap-2 hover:bg-fire transition-colors"><Home size={16} /> Keep Shopping</Link>
       </div>
     </div>
   );

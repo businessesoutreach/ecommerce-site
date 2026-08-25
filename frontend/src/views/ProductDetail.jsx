@@ -75,10 +75,10 @@ export default function ProductDetail() {
         {/* info */}
         <div>
           <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink-400">{p.brand_slug?.replace("-", " ")}</span>
-          <h1 className="font-display text-3xl sm:text-4xl font-black uppercase tracking-tight leading-none mt-2">{p.name}</h1>
+          <h1 className="font-display tracking-tight leading-none mt-2">{p.name}</h1>
           <div className="flex items-center gap-3 mt-3"><Stars rating={p.avg_rating} count={p.review_count} /></div>
           <div className="flex items-baseline gap-3 mt-5">
-            <span className="font-mono font-bold text-3xl text-fire">{fmt(p.base_price)}</span>
+            <span className="font-mono font-bold text-2xl text-fire">{fmt(p.base_price)}</span>
             {pct > 0 && <span className="font-mono text-lg text-ink-400 line-through">{fmt(p.compare_at_price)}</span>}
             {pct > 0 && <span className="bg-fire/10 text-fire font-bold text-sm px-2 py-0.5 rounded">Save {pct}%</span>}
           </div>
@@ -86,7 +86,7 @@ export default function ProductDetail() {
           {/* sizes */}
           <div className="mt-8">
             <div className="flex items-center justify-between mb-3">
-              <h4 className="font-display font-bold uppercase text-sm tracking-wide">Select Size (EU)</h4>
+              <h4 className="font-display text-sm tracking-wide">Select Size (EU)</h4>
               <span className="flex items-center gap-1 text-xs text-ink-400"><Ruler size={13} /> Size guide</span>
             </div>
             <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
@@ -99,7 +99,7 @@ export default function ProductDetail() {
 
           {/* actions */}
           <div className="hidden lg:flex gap-3 mt-8">
-            <button onClick={() => addToCart(p.id, size, 1)} data-testid="pdp-add-to-cart-btn" className="flex-1 bg-obsidian text-white font-display font-bold uppercase tracking-wider py-4 rounded-none flex items-center justify-center gap-2 hover:bg-fire transition-colors active:scale-[0.99]">
+            <button onClick={() => addToCart(p.id, size, 1)} data-testid="pdp-add-to-cart-btn" className="flex-1 bg-obsidian text-white font-display tracking-wider py-4 rounded-none flex items-center justify-center gap-2 hover:bg-fire transition-colors active:scale-[0.99]">
               <ShoppingBag size={18} /> Add to Bag
             </button>
             <button onClick={() => toggleWishlist(p.id)} data-testid="pdp-wishlist-toggle" className="h-[56px] w-[56px] grid place-items-center rounded-none border-2 border-obsidian hover:bg-obsidian hover:text-white transition-colors">
@@ -118,7 +118,7 @@ export default function ProductDetail() {
           <div className="mt-10 border-t border-ink-200 pt-6">
             <div className="flex gap-6 border-b border-ink-200">
               {[["details", "Details"], ["reviews", `Reviews (${reviews.length})`]].map(([k, l]) => (
-                <button key={k} onClick={() => setTab(k)} className="relative pb-3 font-display font-bold uppercase text-sm tracking-wide">
+                <button key={k} onClick={() => setTab(k)} className="relative pb-3 font-display text-sm tracking-wide">
                   {l}
                   {tab === k && <motion.span layoutId="tab" className="absolute -bottom-px left-0 right-0 h-[2px] bg-fire" />}
                 </button>
@@ -153,7 +153,7 @@ export default function ProductDetail() {
       {/* sticky mobile buy bar */}
       <div className="lg:hidden fixed bottom-[68px] inset-x-0 z-30 bg-white border-t border-ink-200 p-3 flex gap-2">
         <button onClick={() => toggleWishlist(p.id)} className="h-12 w-12 grid place-items-center rounded-none border-2 border-obsidian shrink-0"><Heart size={18} className={inWish ? "fill-fire text-fire" : ""} /></button>
-        <button onClick={() => { if (!size) return toast.error("Select a size"); addToCart(p.id, size, 1); }} data-testid="pdp-add-to-cart-btn-mobile" className="flex-1 bg-obsidian text-white font-display font-bold uppercase tracking-wider rounded-none flex items-center justify-center gap-2">
+        <button onClick={() => { if (!size) return toast.error("Select a size"); addToCart(p.id, size, 1); }} data-testid="pdp-add-to-cart-btn-mobile" className="flex-1 bg-obsidian text-white font-display tracking-wider rounded-none flex items-center justify-center gap-2">
           <ShoppingBag size={17} /> Add to Bag · {fmt(p.base_price)}
         </button>
       </div>

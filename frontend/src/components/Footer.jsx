@@ -19,7 +19,7 @@ export function TrustRibbon() {
           <div key={t.title} className="flex items-center gap-3">
             <div className="h-11 w-11 shrink-0 grid place-items-center rounded-none bg-fire/10 text-fire"><t.icon size={20} /></div>
             <div>
-              <p className="font-display font-bold text-sm uppercase tracking-tight leading-tight">{t.title}</p>
+              <p className="font-display tracking-tight leading-tight">{t.title}</p>
               <p className="text-ink-400 text-xs">{t.sub}</p>
             </div>
           </div>
@@ -46,7 +46,7 @@ export default function Footer() {
       <div className="max-w-[1400px] mx-auto px-5 sm:px-8 py-14">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
           <div>
-            <span className="font-display font-black text-2xl uppercase tracking-tighter">SOLEKICKS<span className="text-fire">.</span>PK</span>
+            <span className="font-display tracking-tighter">SOLEKICKS<span className="text-fire">.</span>PK</span>
             <p className="text-white/50 text-sm mt-4 leading-relaxed">Pakistan's home for high-heat streetwear silhouettes, retro re-issues & performance runners. Cop with confidence.</p>
             <div className="flex gap-3 mt-5">
               {[Instagram, Facebook, Twitter].map((I, i) => (
@@ -59,7 +59,7 @@ export default function Footer() {
             { t: "Support", links: [["Track Order", "/track-order"], ["Shipping & Returns", "/shipping-returns"], ["FAQs", "/faqs"], ["Contact Us", "/contact-us"]] },
           ].map((col) => (
             <div key={col.t}>
-              <h4 className="font-display font-bold uppercase tracking-wider text-sm mb-4">{col.t}</h4>
+              <h4 className="font-display tracking-wider text-sm mb-4">{col.t}</h4>
               <ul className="space-y-2.5">
                 {col.links.map(([l, to]) => (
                   <li key={l}><Link to={to} className="text-white/50 hover:text-white text-sm transition-colors">{l}</Link></li>
@@ -68,7 +68,7 @@ export default function Footer() {
             </div>
           ))}
           <div>
-            <h4 className="font-display font-bold uppercase tracking-wider text-sm mb-4">Get 10% off first drop</h4>
+            <h4 className="font-display tracking-wider text-sm mb-4">Get 10% off first drop</h4>
             <form onSubmit={subscribe} className="flex gap-2">
               <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required placeholder="your@email.com" data-testid="newsletter-input" className="flex-1 bg-white/10 rounded-none px-4 py-3 text-sm outline-none focus:bg-white/20 placeholder:text-white/40" />
               <button data-testid="newsletter-submit" className="h-11 w-11 shrink-0 grid place-items-center bg-fire rounded-none hover:bg-fire-hover transition-colors"><Send size={17} /></button>

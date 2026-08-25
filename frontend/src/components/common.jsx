@@ -23,7 +23,7 @@ export const SectionHeader = ({ eyebrow, title, tagline, action }) => (
           <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-fire font-bold">{eyebrow}</span>
         </div>
       )}
-      <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold uppercase tracking-tight leading-none">{title}</h2>
+      <h2 className="font-display tracking-tight leading-none">{title}</h2>
       {tagline && <p className="text-ink-500 mt-2 text-sm sm:text-base max-w-xl">{tagline}</p>}
     </div>
     {action}
@@ -75,9 +75,9 @@ export const Countdown = ({ endsAt }) => {
   return (
     <div className="flex items-center gap-2 sm:gap-3">
       <Box v={t.h} l="Hrs" />
-      <span className="font-display font-black text-fire text-xl">:</span>
+      <span className="font-display font-semibold text-fire text-xl">:</span>
       <Box v={t.m} l="Min" />
-      <span className="font-display font-black text-fire text-xl">:</span>
+      <span className="font-display font-semibold text-fire text-xl">:</span>
       <Box v={t.s} l="Sec" />
     </div>
   );
@@ -86,7 +86,7 @@ export const Countdown = ({ endsAt }) => {
 export const EmptyState = ({ icon: Icon, title, subtitle, action }) => (
   <div className="flex flex-col items-center justify-center py-24 text-center">
     {Icon && <Icon size={48} className="text-ink-200 mb-5" strokeWidth={1.2} />}
-    <h3 className="font-display text-xl font-bold uppercase tracking-tight">{title}</h3>
+    <h3 className="font-display tracking-tight">{title}</h3>
     {subtitle && <p className="text-ink-500 mt-2 max-w-sm">{subtitle}</p>}
     {action && <div className="mt-6">{action}</div>}
   </div>

@@ -11,8 +11,8 @@ router.get('/products', async (req, res) => {
         
         const where = { status: 'active' };
         
-        if (category) where.category_slug = category;
-        if (brand) where.brand_slug = brand;
+        if (category) where.category_slug = { in: category.split(',') };
+        if (brand) where.brand_slug = { in: brand.split(',') };
         if (search) where.name = { contains: search, mode: 'insensitive' };
         if (flag === 'new') where.is_new_arrival = true;
         if (flag === 'flash') where.is_flash_sale = true;
