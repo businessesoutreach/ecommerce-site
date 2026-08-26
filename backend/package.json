@@ -10,8 +10,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "build": "prisma generate",
-    "vercel-build": "prisma generate",
+    "build": "prisma generate && prisma db push --accept-data-loss",
+    "vercel-build": "prisma generate && prisma db push --accept-data-loss",
     "postinstall": "prisma generate"
   },
   "keywords": [],

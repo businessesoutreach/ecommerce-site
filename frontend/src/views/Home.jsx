@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
+import useSWR from "swr";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, Zap, Flame, Package, Star, RotateCcw, DollarSign } from "lucide-react";
@@ -11,11 +12,41 @@ import { ScrollReveal, SectionHeader, Countdown, ProductCardSkeleton, Stars } fr
 
 const SIZES = ["39", "40", "41", "42", "43", "44", "45", "46"];
 
-export default function Home() {
-  const [slides, setSlides] = useState([]);
-  const [cats, setCats] = useState([]);
-  const [data, setData] = useState({});
-  const [layout, setLayout] = useState([
+export default function Home({ initialData }) {
+  const fetcher = async () => {
+    const [s, c, nw, flash, best, feat, settings, cms] = await Promise.all([
+      http.get("/hero-slides"),
+      http.get("/categories"),
+      http.get("/products?flag=new&limit=8"),
+      http.get("/products?flag=flash&limit=8"),
+      http.get("/products?flag=best&limit=4"),
+      http.get("/products?flag=featured&limit=8"),
+      http.get("/settings"),
+      http.get("/admin/cms/homepage-sections").catch(() => ({ data: { data: [] } }))
+    ]);
+    return {
+      slides: s.data.data,
+      cats: c.data.data,
+      data: { 
+        nw: nw.data.data, 
+        flash: flash.data.data, 
+        best: best.data.data, 
+        feat: feat.data.data,
+        settings: settings.data.data 
+      },
+      layout: cms.data.data.sort((a, b) => a.sort_order - b.sort_order)
+    };
+  };
+
+  const { data: homeData, isLoading: loading } = useSWR('home-data', fetcher, { 
+    fallbackData: initialData,
+    revalidateOnFocus: false 
+  });
+
+  const slides = homeData?.slides || [];
+  const cats = homeData?.cats || [];
+  const data = homeData?.data || {};
+  const layout = homeData?.layout || [
     { id: 'h1', type: 'hero', is_active: true },
     { id: 'h2', type: 'categories', is_active: true },
     { id: 'h3', type: 'flash_sale', is_active: true },
@@ -23,34 +54,7 @@ export default function Home() {
     { id: 'h5', type: 'best_sellers', is_active: true },
     { id: 'h6', type: 'trending', is_active: true },
     { id: 'h7', type: 'testimonials', is_active: true }
-  ]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      const [s, c, nw, flash, best, feat, settings, cms] = await Promise.all([
-        http.get("/hero-slides"),
-        http.get("/categories"),
-        http.get("/products?flag=new&limit=8"),
-        http.get("/products?flag=flash&limit=8"),
-        http.get("/products?flag=best&limit=4"),
-        http.get("/products?flag=featured&limit=8"),
-        http.get("/settings"),
-        http.get("/admin/cms/homepage-sections").catch(() => ({ data: { data: [] } }))
-      ]);
-      setSlides(s.data.data);
-      setCats(c.data.data);
-      setData({ 
-        nw: nw.data.data, 
-        flash: flash.data.data, 
-        best: best.data.data, 
-        feat: feat.data.data,
-        settings: settings.data.data 
-      });
-      setLayout(cms.data.data.sort((a, b) => a.sort_order - b.sort_order));
-      setLoading(false);
-    })();
-  }, []);
+  ];
 
   const flashActive = data.settings?.flash_sale_active;
   const flashEnd = data.settings?.flash_sale_end_time;
