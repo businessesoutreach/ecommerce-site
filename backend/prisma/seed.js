@@ -243,7 +243,7 @@ async function main() {
                         rating,
                         comment: text,
                         image_urls: [],
-                        is_approved: true
+                        status: "approved"
                     }
                 });
             }
