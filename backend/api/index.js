@@ -6,17 +6,17 @@ const path = require('path');
 
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
-const authRoutes = require('./routes/auth');
-const catalogRoutes = require('./routes/catalog');
-const cartRoutes = require('./routes/cart').router;
-const wishlistRoutes = require('./routes/wishlist');
-const checkoutRoutes = require('./routes/checkout').router;
-const ordersRoutes = require('./routes/orders');
-const paymentsRoutes = require('./routes/payments');
-const adminRoutes = require('./routes/admin');
-const cmsRoutes = require('./routes/cms');
-const userRoutes = require('./routes/user');
-const miscRoutes = require('./routes/misc');
+const authRoutes = require('../src/routes/auth');
+const catalogRoutes = require('../src/routes/catalog');
+const cartRoutes = require('../src/routes/cart').router;
+const wishlistRoutes = require('../src/routes/wishlist');
+const checkoutRoutes = require('../src/routes/checkout').router;
+const ordersRoutes = require('../src/routes/orders');
+const paymentsRoutes = require('../src/routes/payments');
+const adminRoutes = require('../src/routes/admin');
+const cmsRoutes = require('../src/routes/cms');
+const userRoutes = require('../src/routes/user');
+const miscRoutes = require('../src/routes/misc');
 
 const app = express();
 
