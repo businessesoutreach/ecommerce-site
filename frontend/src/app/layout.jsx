@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import ClientShell from "./ClientShell";
 
 export const metadata = {
@@ -9,7 +10,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <ClientShell>{children}</ClientShell>
+        <Suspense fallback={null}>
+          <ClientShell>{children}</ClientShell>
+        </Suspense>
       </body>
     </html>
   );
