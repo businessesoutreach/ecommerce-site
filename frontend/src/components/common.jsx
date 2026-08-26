@@ -20,7 +20,7 @@ export const SectionHeader = ({ eyebrow, title, tagline, action }) => (
       {eyebrow && (
         <div className="flex items-center gap-2 mb-3">
           <span className="h-[2px] w-8 bg-fire" />
-          <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-fire font-bold">{eyebrow}</span>
+          <span className="font-mono text-[11px]  tracking-[0.2em] text-fire font-bold">{eyebrow}</span>
         </div>
       )}
       <h2 className="font-display tracking-tight leading-none">{title}</h2>
@@ -69,7 +69,7 @@ export const Countdown = ({ endsAt }) => {
       <div className="bg-obsidian text-white font-mono text-lg sm:text-2xl font-bold w-12 sm:w-16 h-12 sm:h-16 flex items-center justify-center rounded-none tabular-nums">
         {String(v).padStart(2, "0")}
       </div>
-      <span className="text-[10px] uppercase tracking-widest text-ink-400 mt-1 font-bold">{l}</span>
+      <span className="text-[10px]  tracking-widest text-ink-400 mt-1 font-bold">{l}</span>
     </div>
   );
   return (
@@ -91,3 +91,4 @@ export const EmptyState = ({ icon: Icon, title, subtitle, action }) => (
     {action && <div className="mt-6">{action}</div>}
   </div>
 );
+

@@ -74,7 +74,7 @@ export default function ProductSectionsCMS() {
 
               <div className="space-y-4 border-t border-ink-100 pt-4 mt-2">
                 <div>
-                  <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Section Title</label>
+                  <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Section Title</label>
                   <input 
                     type="text" 
                     value={settings.title || ''} 
@@ -83,7 +83,7 @@ export default function ProductSectionsCMS() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Product Limit</label>
+                  <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Product Limit</label>
                   <select 
                     value={settings.limit || 8} 
                     onChange={e => setSections(sections.map(s => s.id === section.id ? {...s, settings: {...settings, limit: parseInt(e.target.value, 10)}} : s))}
@@ -112,3 +112,4 @@ export default function ProductSectionsCMS() {
     </div>
   );
 }
+

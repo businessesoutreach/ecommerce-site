@@ -6,11 +6,136 @@ const { v4: uuidv4 } = require('uuid');
 const prisma = require('../db');
 const { getAdmin } = require('../middleware/auth');
 const { notify } = require('../utils/notifications');
-
+const courierService = require('../services/courier');
+const { requireRole, logAdminAction } = require('../middleware/rbac');
+const { sendShippingUpdate } = require('../utils/mailer');
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 router.use(getAdmin);
+
+// RBAC Strict routes
+router.use('/analytics', requireRole(['admin']));
+router.use('/settings', requireRole(['admin']));
+router.use('/users', requireRole(['admin']));
+router.use('/audit-logs', requireRole(['admin']));
+
+router.get('/audit-logs', async (req, res) => {
+    try {
+        const logs = await prisma.adminActionLog.findMany({
+            orderBy: { created_at: 'desc' },
+            take: 100
+        });
+        res.json({ success: true, data: logs });
+    } catch (err) {
+        res.status(500).json({ detail: err.message });
+    }
+});
+
+router.post('/pos/checkout', async (req, res) => {
+    try {
+        const { items, customer, payment_method, total } = req.body;
+        if (!items || items.length === 0) return res.status(400).json({ detail: 'Cart empty' });
+
+        const order_number = "POS-" + uuidv4().substring(0, 8).toUpperCase();
+        
+        const order = await prisma.$transaction(async (tx) => {
+            for (const it of items) {
+                await tx.productSize.updateMany({
+                    where: { product_id: it.product_id, size: it.size, stock: { gte: it.quantity } },
+                    data: { stock: { decrement: it.quantity } }
+                });
+            }
+            
+            return await tx.order.create({
+                data: {
+                    id: uuidv4(),
+                    order_number,
+                    customer_name: customer.name || 'Walk-in Customer',
+                    customer_phone: customer.phone || 'N/A',
+                    customer_email: customer.email || null,
+                    subtotal: total,
+                    shipping_fee: 0,
+                    total: total,
+                    payment_method: payment_method,
+                    payment_status: 'paid',
+                    status: 'delivered',
+                    source: 'POS',
+                    items: {
+                        create: items.map(oi => ({
+                            id: uuidv4(),
+                            product_id: oi.product_id,
+                            product_name: oi.name,
+                            variant_label: `Size ${oi.size}`,
+                            size: oi.size,
+                            image_url: '',
+                            unit_price: oi.price,
+                            quantity: oi.quantity
+                        }))
+                    },
+                    status_history: {
+                        create: [{ id: uuidv4(), status: 'delivered', note: 'POS Checkout' }]
+                    }
+                }
+            });
+        });
+
+        await logAdminAction(req.user, 'pos_checkout', 'order', order.id, { total, items: items.length });
+        res.json({ success: true, data: order });
+    } catch (err) {
+        res.status(400).json({ detail: err.message || 'POS Checkout failed' });
+    }
+});
+
+router.get('/analytics/profitability', async (req, res) => {
+    try {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        const orders = await prisma.order.findMany({
+            where: {
+                created_at: { gte: thirtyDaysAgo },
+                status: { notIn: ['cancelled', 'failed', 'refunded'] }
+            },
+            include: { items: { include: { product: true } } }
+        });
+
+        const revenue = orders.reduce((acc, o) => acc + o.total, 0);
+        
+        // Calculate exact COGS using the product's actual cost_price in DB
+        let cogs = 0;
+        orders.forEach(o => {
+            o.items.forEach(it => {
+                cogs += ((it.product?.cost_price || 0) * it.quantity);
+            });
+        });
+        
+        const shipping_costs = orders.reduce((acc, o) => acc + (o.shipping_fee * 0.8), 0); // Cost of shipping is ~80% of what we charge
+        
+        const net_profit = revenue - cogs - shipping_costs;
+
+        // Daily trend
+        const trendMap = {};
+        orders.forEach(o => {
+            const date = new Date(o.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            if (!trendMap[date]) trendMap[date] = 0;
+            
+            let orderCogs = 0;
+            o.items.forEach(it => { orderCogs += ((it.product?.cost_price || 0) * it.quantity); });
+            
+            trendMap[date] += (o.total - orderCogs - (o.shipping_fee * 0.8));
+        });
+        
+        const trend = Object.keys(trendMap).map(date => ({ date, profit: trendMap[date] })).reverse();
+
+        res.json({
+            success: true,
+            data: { revenue, cogs, shipping_costs, net_profit, trend }
+        });
+    } catch (err) {
+        res.status(500).json({ detail: err.message });
+    }
+});
 
 router.get('/analytics/overview', async (req, res) => {
     try {
@@ -28,8 +153,11 @@ router.get('/analytics/overview', async (req, res) => {
         const currentOrders = validOrders.filter(o => o.created_at >= thirtyDaysAgo);
         const previousOrders = validOrders.filter(o => o.created_at >= sixtyDaysAgo && o.created_at < thirtyDaysAgo);
 
-        const currentRev = currentOrders.reduce((sum, o) => sum + o.total, 0);
-        const prevRev = previousOrders.reduce((sum, o) => sum + o.total, 0);
+        const isCollected = (o) => o.payment_status === 'paid' || o.cod_remittance_status === 'remitted';
+        const currentRev = currentOrders.filter(isCollected).reduce((sum, o) => sum + o.total, 0);
+        const prevRev = previousOrders.filter(isCollected).reduce((sum, o) => sum + o.total, 0);
+        
+        const pendingCodRev = currentOrders.filter(o => o.payment_method === 'COD' && o.cod_remittance_status !== 'remitted' && o.status !== 'cancelled' && o.status !== 'failed').reduce((sum, o) => sum + o.total, 0);
         
         const currentCount = currentOrders.length;
         const prevCount = previousOrders.length;
@@ -48,6 +176,7 @@ router.get('/analytics/overview', async (req, res) => {
 
         const kpis = {
             revenue: { value: currentRev, trend: calcTrend(currentRev, prevRev) },
+            pending_cod: { value: pendingCodRev, trend: 0 },
             orders: { value: currentCount, trend: calcTrend(currentCount, prevCount) },
             customers: { value: allUsers.length, trend: calcTrend(currentUsers, prevUsers) },
             aov: { value: currentAOV, trend: calcTrend(currentAOV, prevAOV) }
@@ -63,7 +192,7 @@ router.get('/analytics/overview', async (req, res) => {
         for (const o of currentOrders) {
             const d = o.created_at.toISOString().split('T')[0];
             if (dailyMap[d]) {
-                dailyMap[d].revenue += o.total;
+                if (isCollected(o)) dailyMap[d].revenue += o.total;
                 dailyMap[d].orders += 1;
             }
         }
@@ -554,6 +683,11 @@ router.patch('/orders/:id/status', async (req, res) => {
             await notify(o, "STATUS_UPDATE", `Order ${o.order_number} is now ${labels[status]}.${extra}`);
         }
         
+        if (status === 'shipped' && o.customer_email) {
+            const origin_url = process.env.FRONTEND_URL || 'http://localhost:5173';
+            sendShippingUpdate(o.customer_email, o, origin_url).catch(e => console.error(e));
+        }
+        
         res.json({ success: true, data: o });
     } catch (err) {
         res.status(500).json({ detail: err.message });
@@ -609,6 +743,65 @@ router.delete('/categories/:id', async (req, res) => {
     }
 });
 
+
+// ===================== PRODUCT BUNDLES =====================
+router.get('/bundles', async (req, res) => {
+    try {
+        const bundles = await prisma.productBundle.findMany({
+            orderBy: { created_at: 'desc' },
+            include: { items: { include: { product: { select: { id: true, name: true, base_price: true, images: true } } } } }
+        });
+        res.json({ success: true, data: bundles });
+    } catch (err) { res.status(500).json({ detail: err.message }); }
+});
+
+router.post('/bundles', async (req, res) => {
+    try {
+        const { name, description, image_url, bundle_price, is_active, items } = req.body;
+        if (!name || !bundle_price) return res.status(400).json({ detail: 'Name and price required' });
+        const slug = name.toLowerCase().replace(/\s+/g, '-') + '-' + uuidv4().substring(0, 4);
+        const bundle = await prisma.productBundle.create({
+            data: {
+                id: uuidv4(), name, slug, description, image_url,
+                bundle_price: parseFloat(bundle_price),
+                is_active: is_active ?? true,
+                items: {
+                    create: (items || []).map(it => ({ id: uuidv4(), product_id: it.product_id, quantity: it.quantity || 1 }))
+                }
+            },
+            include: { items: { include: { product: true } } }
+        });
+        await logAdminAction(req.user, 'create_bundle', 'bundle', bundle.id, { name });
+        res.json({ success: true, data: bundle });
+    } catch (err) { res.status(500).json({ detail: err.message }); }
+});
+
+router.patch('/bundles/:id', async (req, res) => {
+    try {
+        const { name, description, image_url, bundle_price, is_active, items } = req.body;
+        await prisma.bundleItem.deleteMany({ where: { bundle_id: req.params.id } });
+        const bundle = await prisma.productBundle.update({
+            where: { id: req.params.id },
+            data: {
+                name, description, image_url,
+                bundle_price: bundle_price ? parseFloat(bundle_price) : undefined,
+                is_active,
+                items: {
+                    create: (items || []).map(it => ({ id: uuidv4(), product_id: it.product_id, quantity: it.quantity || 1 }))
+                }
+            },
+            include: { items: { include: { product: true } } }
+        });
+        res.json({ success: true, data: bundle });
+    } catch (err) { res.status(500).json({ detail: err.message }); }
+});
+
+router.delete('/bundles/:id', async (req, res) => {
+    try {
+        await prisma.productBundle.delete({ where: { id: req.params.id } });
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ detail: err.message }); }
+});
 
 router.get('/coupons', async (req, res) => {
     try {
@@ -797,7 +990,7 @@ router.patch('/reviews/:id', async (req, res) => {
     try {
         await prisma.review.update({
             where: { id: req.params.id },
-            data: { is_approved: req.body.is_approved !== false }
+            data: { status: req.body.is_approved !== false ? 'approved' : 'rejected' }
         });
         res.json({ success: true });
     } catch (err) {
@@ -1635,6 +1828,155 @@ router.patch('/reviews/:id', async (req, res) => {
         res.json({ success: true, data: updated });
     } catch (err) {
         console.error("REVIEW PATCH ERROR", err);
+        res.status(500).json({ detail: err.message });
+    }
+});
+
+
+router.get('/cod-remittance', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 25;
+        const skip = (page - 1) * limit;
+        const status = req.query.status || 'pending'; // pending or remitted
+        
+        const where = { payment_method: 'COD', cod_remittance_status: status };
+        
+        const [orders, totalCount] = await Promise.all([
+            prisma.order.findMany({
+                where,
+                skip,
+                take: limit,
+                orderBy: { created_at: 'desc' },
+                select: { id: true, order_number: true, customer_name: true, total: true, status: true, created_at: true, tracking_number: true, courier_name: true, cod_remittance_status: true }
+            }),
+            prisma.order.count({ where })
+        ]);
+        
+        res.json({
+            success: true,
+            data: {
+                orders,
+                pagination: { page, limit, totalCount, totalPages: Math.ceil(totalCount / limit) }
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ detail: err.message });
+    }
+});
+
+router.patch('/cod-remittance/bulk', async (req, res) => {
+    try {
+        const { orderIds, status } = req.body;
+        if (!orderIds || !Array.isArray(orderIds) || !status) {
+            return res.status(400).json({ detail: "Missing orderIds or status" });
+        }
+        
+        await prisma.order.updateMany({
+            where: { id: { in: orderIds } },
+            data: { cod_remittance_status: status }
+        });
+        
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ detail: err.message });
+    }
+});
+
+
+router.get('/inventory', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 25;
+        const skip = (page - 1) * limit;
+        const search = req.query.search || '';
+        
+        const where = {};
+        if (search) {
+            where.name = { contains: search, mode: 'insensitive' };
+        }
+        
+        const [products, totalCount] = await Promise.all([
+            prisma.product.findMany({
+                where,
+                skip,
+                take: limit,
+                orderBy: { created_at: 'desc' },
+                select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                    status: true,
+                    images: true,
+                    sizes: {
+                        select: { id: true, size: true, stock: true }
+                    }
+                }
+            }),
+            prisma.product.count({ where })
+        ]);
+        
+        res.json({
+            success: true,
+            data: {
+                products,
+                pagination: { page, limit, totalCount, totalPages: Math.ceil(totalCount / limit) }
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ detail: err.message });
+    }
+});
+
+router.patch('/inventory/bulk', async (req, res) => {
+    try {
+        const { updates } = req.body;
+        if (!updates || !Array.isArray(updates)) {
+            return res.status(400).json({ detail: "Missing updates array" });
+        }
+        
+        // updates = [{ id: 'size_id', stock: 10 }, ...]
+        for (const update of updates) {
+            await prisma.productSize.update({
+                where: { id: update.id },
+                data: { stock: parseInt(update.stock) }
+            });
+        }
+        
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ detail: err.message });
+    }
+});
+
+router.post('/orders/:id/book-courier', async (req, res) => {
+    try {
+        const order = await prisma.order.findUnique({ where: { id: req.params.id } });
+        if (!order) return res.status(404).json({ detail: "Order not found" });
+
+        const booking = await courierService.bookParcel(order);
+        
+        await prisma.order.update({
+            where: { id: order.id },
+            data: {
+                tracking_number: booking.awb,
+                courier_awb: booking.awb,
+                courier_name: booking.courier_name,
+                courier_status: 'booked',
+                status: 'packed'
+            }
+        });
+
+        await prisma.orderStatusHistory.create({
+            data: {
+                order_id: order.id,
+                status: 'packed',
+                note: `Automatically booked via ${booking.courier_name}. AWB: ${booking.awb}`
+            }
+        });
+
+        res.json({ success: true, data: booking });
+    } catch (err) {
         res.status(500).json({ detail: err.message });
     }
 });

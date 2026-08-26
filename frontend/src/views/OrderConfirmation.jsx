@@ -31,8 +31,8 @@ export default function OrderConfirmation() {
 
       <div className="bg-white border border-ink-200 rounded-none p-6 mt-8 text-left">
         <div className="flex items-center justify-between border-b border-ink-200 pb-4">
-          <div><span className="font-mono text-xs uppercase tracking-wider text-ink-400">Tracking ID</span><p className="font-display font-semibold text-2xl tracking-tight">{orderNumber}</p></div>
-          {order && <div className="text-right"><span className="font-mono text-xs uppercase tracking-wider text-ink-400">Total</span><p className="font-mono font-bold text-xl text-fire">{fmt(order.total)}</p></div>}
+          <div><span className="font-mono text-xs  tracking-wider text-ink-400">Tracking ID</span><p className="font-display font-semibold text-2xl tracking-tight">{orderNumber}</p></div>
+          {order && <div className="text-right"><span className="font-mono text-xs  tracking-wider text-ink-400">Total</span><p className="font-mono font-bold text-xl text-fire">{fmt(order.total)}</p></div>}
         </div>
 
         <div className="flex justify-between mt-6 relative">
@@ -40,7 +40,7 @@ export default function OrderConfirmation() {
           {[["Placed", Package], ["Verified", CheckCircle2], ["Dispatched", Truck], ["Delivered", MapPin]].map(([l, I], i) => (
             <div key={l} className="relative z-10 flex flex-col items-center gap-2" data-testid={`tracking-timeline-step-${i}`}>
               <div className={`h-9 w-9 grid place-items-center rounded-none ${i === 0 ? "bg-fire text-white" : "bg-white border-2 border-ink-200 text-ink-400"}`}><I size={16} /></div>
-              <span className={`text-[10px] font-bold uppercase tracking-wider ${i === 0 ? "text-obsidian" : "text-ink-400"}`}>{l}</span>
+              <span className={`text-[10px] font-bold  tracking-wider ${i === 0 ? "text-obsidian" : "text-ink-400"}`}>{l}</span>
             </div>
           ))}
         </div>
@@ -70,3 +70,4 @@ export default function OrderConfirmation() {
     </div>
   );
 }
+

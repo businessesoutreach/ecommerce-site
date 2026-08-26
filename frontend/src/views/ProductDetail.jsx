@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, ShoppingBag, Truck, RefreshCw, ShieldCheck, Ruler, ChevronRight, Zap } from "lucide-react";
+import { Heart, ShoppingBag, Truck, RefreshCw, ShieldCheck, Ruler, ChevronRight, Zap, Loader2 } from "lucide-react";
 import { http, fmt, discountPct } from "../lib/api";
 import { useStore } from "../context/StoreContext";
 import ProductCard from "../components/ProductCard";
@@ -18,6 +18,8 @@ export default function ProductDetail() {
   const [activeImg, setActiveImg] = useState(0);
   const [tab, setTab] = useState("details");
   const [loading, setLoading] = useState(true);
+  const [addingToCart, setAddingToCart] = useState(false);
+  const [togglingWishlist, setTogglingWishlist] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -44,10 +46,23 @@ export default function ProductDetail() {
   const variant = p.sizes.find((s) => s.size === size);
   const images = p.images.filter(Boolean);
 
+  const handleAddToCart = async () => {
+    if (!size) return toast.error("Select a size");
+    setAddingToCart(true);
+    await addToCart(p.id, size, 1);
+    setAddingToCart(false);
+  };
+
+  const handleToggleWishlist = async () => {
+    setTogglingWishlist(true);
+    await toggleWishlist(p.id);
+    setTogglingWishlist(false);
+  };
+
   return (
     <div className="pb-28 lg:pb-0">
       <div className="max-w-[1400px] mx-auto px-5 sm:px-8 pt-5">
-        <nav className="flex items-center gap-1.5 text-xs text-ink-400 font-mono uppercase tracking-wide">
+        <nav className="flex items-center gap-1.5 text-xs text-ink-400 font-mono  tracking-wide">
           <Link to="/" className="hover:text-obsidian">Home</Link><ChevronRight size={12} />
           <Link to={`/collections/${p.category_slug}`} className="hover:text-obsidian">{p.category_slug}</Link><ChevronRight size={12} />
           <span className="text-obsidian truncate">{p.name}</span>
@@ -57,16 +72,54 @@ export default function ProductDetail() {
       <div className="max-w-[1400px] mx-auto px-5 sm:px-8 py-6 grid lg:grid-cols-2 gap-8 lg:gap-14">
         {/* gallery */}
         <div className="lg:sticky lg:top-28 lg:self-start">
-          <div className="relative overflow-hidden rounded-none bg-ink-100 aspect-square group">
+          <div className="relative overflow-hidden rounded-none bg-ink-100 aspect-square group flex items-center justify-center">
             <AnimatePresence mode="wait">
-              <motion.img key={activeImg} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} src={images[activeImg]} alt={p.name} data-testid="pdp-main-image" className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700" />
+              {activeImg === 2 ? (
+                <motion.div
+                  key="3d-view"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="w-full h-full relative flex items-center justify-center"
+                >
+                  <motion.img
+                    src={images[2]}
+                    alt={`${p.name} 3D View`}
+                    className="w-[85%] h-[85%] object-contain drop-shadow-[0_20px_20px_rgba(0,0,0,0.25)] z-10"
+                    animate={{ y: [0, -20, 0], rotateX: [0, 5, 0], rotateY: [-5, 5, -5] }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                  />
+                  {/* Fake floor shadow that shrinks when the shoe floats up */}
+                  <motion.div
+                    className="absolute bottom-[10%] left-1/2 -translate-x-1/2 w-[60%] h-[20px] bg-black/20 rounded-[100%] blur-md"
+                    animate={{ scale: [1, 0.7, 1], opacity: [0.6, 0.3, 0.6] }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                  />
+                </motion.div>
+              ) : (
+                <motion.img 
+                  key={activeImg} 
+                  initial={{ opacity: 0 }} 
+                  animate={{ opacity: 1 }} 
+                  exit={{ opacity: 0 }} 
+                  src={images[activeImg]} 
+                  alt={p.name} 
+                  data-testid="pdp-main-image" 
+                  className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700" 
+                />
+              )}
             </AnimatePresence>
-            {pct > 0 && <span className="absolute top-4 left-4 bg-fire text-white font-mono font-bold px-3 py-1.5 rounded-none">-{pct}%</span>}
+            {pct > 0 && <span className="absolute top-4 left-4 bg-fire text-white font-mono font-bold px-3 py-1.5 rounded-none z-20">-{pct}%</span>}
           </div>
           <div className="flex gap-3 mt-3">
             {images.map((im, i) => (
-              <button key={i} onClick={() => setActiveImg(i)} data-testid={`pdp-thumbnail-${i}`} className={`h-20 w-20 rounded-none overflow-hidden border-2 ${activeImg === i ? "border-fire" : "border-transparent"}`}>
+              <button key={i} onClick={() => setActiveImg(i)} data-testid={`pdp-thumbnail-${i}`} className={`relative h-20 w-20 rounded-none overflow-hidden border-2 transition-all ${activeImg === i ? "border-fire" : "border-transparent"}`}>
                 <img src={im} alt="" className="h-full w-full object-cover" />
+                {i === 2 && (
+                  <div className="absolute inset-x-0 bottom-0 bg-black/50 text-white text-[9px] font-bold text-center py-0.5  tracking-widest backdrop-blur-sm">
+                    3D View
+                  </div>
+                )}
               </button>
             ))}
           </div>
@@ -74,7 +127,7 @@ export default function ProductDetail() {
 
         {/* info */}
         <div>
-          <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink-400">{p.brand_slug?.replace("-", " ")}</span>
+          <span className="font-mono text-[11px]  tracking-[0.2em] text-ink-400">{p.brand_slug?.replace("-", " ")}</span>
           <h1 className="font-display tracking-tight leading-none mt-2">{p.name}</h1>
           <div className="flex items-center gap-3 mt-3"><Stars rating={p.avg_rating} count={p.review_count} /></div>
           <div className="flex items-baseline gap-3 mt-5">
@@ -99,18 +152,19 @@ export default function ProductDetail() {
 
           {/* actions */}
           <div className="hidden lg:flex gap-3 mt-8">
-            <button onClick={() => addToCart(p.id, size, 1)} data-testid="pdp-add-to-cart-btn" className="flex-1 bg-obsidian text-white font-display tracking-wider py-4 rounded-none flex items-center justify-center gap-2 hover:bg-fire transition-colors active:scale-[0.99]">
-              <ShoppingBag size={18} /> Add to Bag
+            <button disabled={addingToCart} onClick={handleAddToCart} data-testid="pdp-add-to-cart-btn" className="flex-1 bg-obsidian text-white font-display tracking-wider py-4 rounded-none flex items-center justify-center gap-2 hover:bg-fire transition-colors active:scale-[0.99] disabled:opacity-70 disabled:cursor-wait">
+              {addingToCart ? <Loader2 size={18} className="animate-spin" /> : <ShoppingBag size={18} />} 
+              {addingToCart ? "Adding..." : "Add to Bag"}
             </button>
-            <button onClick={() => toggleWishlist(p.id)} data-testid="pdp-wishlist-toggle" className="h-[56px] w-[56px] grid place-items-center rounded-none border-2 border-obsidian hover:bg-obsidian hover:text-white transition-colors">
-              <Heart size={20} className={inWish ? "fill-fire text-fire" : ""} />
+            <button disabled={togglingWishlist} onClick={handleToggleWishlist} data-testid="pdp-wishlist-toggle" className="h-[56px] w-[56px] grid place-items-center rounded-none border-2 border-obsidian hover:bg-obsidian hover:text-white transition-colors disabled:opacity-70 disabled:cursor-wait">
+              {togglingWishlist ? <Loader2 size={20} className="animate-spin" /> : <Heart size={20} className={inWish ? "fill-fire text-fire" : ""} />}
             </button>
           </div>
 
           {/* trust mini */}
           <div className="grid grid-cols-3 gap-3 mt-8">
             {[[Truck, "Fast COD Delivery"], [RefreshCw, "7-Day Exchange"], [ShieldCheck, "Authentic Grade"]].map(([I, t]) => (
-              <div key={t} className="flex flex-col items-center text-center gap-1.5 border border-ink-200 rounded-none py-4"><I size={18} className="text-fire" /><span className="text-[11px] font-bold uppercase tracking-tight">{t}</span></div>
+              <div key={t} className="flex flex-col items-center text-center gap-1.5 border border-ink-200 rounded-none py-4"><I size={18} className="text-fire" /><span className="text-[11px] font-bold  tracking-tight">{t}</span></div>
             ))}
           </div>
 
@@ -152,11 +206,15 @@ export default function ProductDetail() {
 
       {/* sticky mobile buy bar */}
       <div className="lg:hidden fixed bottom-[68px] inset-x-0 z-30 bg-white border-t border-ink-200 p-3 flex gap-2">
-        <button onClick={() => toggleWishlist(p.id)} className="h-12 w-12 grid place-items-center rounded-none border-2 border-obsidian shrink-0"><Heart size={18} className={inWish ? "fill-fire text-fire" : ""} /></button>
-        <button onClick={() => { if (!size) return toast.error("Select a size"); addToCart(p.id, size, 1); }} data-testid="pdp-add-to-cart-btn-mobile" className="flex-1 bg-obsidian text-white font-display tracking-wider rounded-none flex items-center justify-center gap-2">
-          <ShoppingBag size={17} /> Add to Bag · {fmt(p.base_price)}
+        <button disabled={togglingWishlist} onClick={handleToggleWishlist} className="h-12 w-12 grid place-items-center rounded-none border-2 border-obsidian shrink-0 disabled:opacity-70 disabled:cursor-wait">
+          {togglingWishlist ? <Loader2 size={18} className="animate-spin" /> : <Heart size={18} className={inWish ? "fill-fire text-fire" : ""} />}
+        </button>
+        <button disabled={addingToCart} onClick={handleAddToCart} data-testid="pdp-add-to-cart-btn-mobile" className="flex-1 bg-obsidian text-white font-display tracking-wider rounded-none flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-wait">
+          {addingToCart ? <Loader2 size={17} className="animate-spin" /> : <ShoppingBag size={17} />} 
+          {addingToCart ? "Adding..." : `Add to Bag · ${fmt(p.base_price)}`}
         </button>
       </div>
     </div>
   );
 }
+

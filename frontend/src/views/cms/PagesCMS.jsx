@@ -93,17 +93,17 @@ export default function PagesCMS() {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Page Title *</label>
+              <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Page Title *</label>
               <input placeholder="E.g. About Us" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian" />
             </div>
             <div>
-              <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">URL Slug *</label>
+              <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">URL Slug *</label>
               <input placeholder="E.g. about-us" value={f.slug} onChange={(e) => setF({ ...f, slug: e.target.value })} disabled={editingId !== null} className={`w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian ${editingId ? 'bg-ink-50 text-ink-400' : ''}`} />
             </div>
           </div>
           
           <div>
-            <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2 flex justify-between">
+            <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2 flex justify-between">
               <span>Page Content (HTML) *</span>
               <span className="font-normal normal-case text-ink-400">Supports full HTML markup</span>
             </label>
@@ -114,11 +114,11 @@ export default function PagesCMS() {
             <h4 className="text-sm font-bold text-obsidian mb-3">Search Engine Optimization (SEO)</h4>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Meta Title</label>
+                <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Meta Title</label>
                 <input placeholder="Defaults to Page Title if empty" value={f.seo_title} onChange={(e) => setF({ ...f, seo_title: e.target.value })} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Meta Description</label>
+                <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Meta Description</label>
                 <input placeholder="Short summary for search engines" value={f.seo_description} onChange={(e) => setF({ ...f, seo_description: e.target.value })} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian" />
               </div>
             </div>
@@ -135,7 +135,7 @@ export default function PagesCMS() {
 
       <div className="bg-white border border-ink-200 rounded-none overflow-hidden">
         <table className="w-full text-left">
-          <thead className="bg-ink-50 border-b border-ink-200 text-xs uppercase tracking-wider text-ink-500">
+          <thead className="bg-ink-50 border-b border-ink-200 text-xs  tracking-wider text-ink-500">
             <tr>
               <th className="p-4 font-bold">Page Title</th>
               <th className="p-4 font-bold">URL Route</th>
@@ -171,3 +171,4 @@ export default function PagesCMS() {
     </div>
   );
 }
+

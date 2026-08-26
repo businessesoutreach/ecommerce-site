@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { User, Package, Heart, LogOut, Gift, RotateCcw, X, MapPin, Plus, Trash2 } from "lucide-react";
+import { User, Package, Heart, LogOut, Gift, RotateCcw, X, MapPin, Plus, Trash2, Loader2 } from "lucide-react";
 import { http, fmt } from "../lib/api";
 import { useStore } from "../context/StoreContext";
 import { EmptyState } from "../components/common";
@@ -15,16 +15,27 @@ const LABELS = { placed: "Placed", confirmed: "Verified", packed: "Packed", ship
 function AddressesTab() {
   const [items, setItems] = useState([]);
   const [f, setF] = useState({ full_name: "", phone: "", address_l1: "", province: "Sindh", city: "Karachi", postal_code: "", is_default: false });
+  const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
   const load = () => http.get("/me/addresses").then(({ data }) => setItems(data.data)).catch(() => {});
   useEffect(() => { load(); }, []);
   const save = async () => {
     if (!f.full_name || !f.phone || !f.address_l1) return toast.error("Name, phone & address required");
-    await http.post("/me/addresses", f);
-    toast.success("Address saved");
-    setF({ full_name: "", phone: "", address_l1: "", province: "Sindh", city: "Karachi", postal_code: "", is_default: false });
-    load();
+    setSaving(true);
+    try {
+      await http.post("/me/addresses", f);
+      toast.success("Address saved");
+      setF({ full_name: "", phone: "", address_l1: "", province: "Sindh", city: "Karachi", postal_code: "", is_default: false });
+      load();
+    } finally { setSaving(false); }
   };
-  const del = async (id) => { await http.delete(`/me/addresses/${id}`); load(); };
+  const del = async (id) => { 
+    setDeletingId(id);
+    try {
+      await http.delete(`/me/addresses/${id}`); 
+      load(); 
+    } finally { setDeletingId(null); }
+  };
   const inp = "w-full border border-ink-200 rounded-none px-4 py-2.5 outline-none focus:border-obsidian";
   return (
     <div className="grid lg:grid-cols-5 gap-8 items-start" data-testid="account-addresses">
@@ -38,12 +49,14 @@ function AddressesTab() {
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-display tracking-tight">{a.full_name}</span>
-                  {a.is_default && <span className="font-mono font-bold text-[10px] uppercase tracking-wider bg-obsidian text-white px-2 py-0.5">Default</span>}
+                  {a.is_default && <span className="font-mono font-bold text-[10px]  tracking-wider bg-obsidian text-white px-2 py-0.5">Default</span>}
                 </div>
                 <p className="text-ink-600 text-sm">{a.address_l1}, {a.city}{a.province ? `, ${a.province}` : ""}</p>
                 <p className="text-ink-500 text-sm font-mono mt-1">{a.phone}</p>
               </div>
-              <button onClick={() => del(a.id)} className="text-ink-400 hover:text-fire transition-colors h-fit p-2"><Trash2 size={18} /></button>
+              <button disabled={deletingId === a.id} onClick={() => del(a.id)} className="text-ink-400 hover:text-fire transition-colors h-fit p-2 disabled:opacity-70 disabled:cursor-wait">
+                {deletingId === a.id ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
+              </button>
             </div>
           ))
         )}
@@ -53,20 +66,20 @@ function AddressesTab() {
         <h3 className="font-display tracking-tight mb-5 flex items-center gap-2"><Plus size={18} /> Add New Address</h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-mono uppercase tracking-widest text-ink-400 mb-1.5">Full Name</label>
+            <label className="block text-xs font-mono  tracking-widest text-ink-400 mb-1.5">Full Name</label>
             <input placeholder="Ahmed Khan" value={f.full_name} onChange={(e) => setF({ ...f, full_name: e.target.value })} data-testid="address-fullname" className={inp} />
           </div>
           <div>
-            <label className="block text-xs font-mono uppercase tracking-widest text-ink-400 mb-1.5">Phone Number</label>
+            <label className="block text-xs font-mono  tracking-widest text-ink-400 mb-1.5">Phone Number</label>
             <PhoneInput placeholder="3XX XXXXXXX" value={f.phone} onChange={(val) => setF({ ...f, phone: val })} testid="address-phone" />
           </div>
           <div>
-            <label className="block text-xs font-mono uppercase tracking-widest text-ink-400 mb-1.5">Street Address</label>
+            <label className="block text-xs font-mono  tracking-widest text-ink-400 mb-1.5">Street Address</label>
             <input placeholder="House #, Street, Area" value={f.address_l1} onChange={(e) => setF({ ...f, address_l1: e.target.value })} data-testid="address-line1" className={inp} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-mono uppercase tracking-widest text-ink-400 mb-1.5">Province</label>
+              <label className="block text-xs font-mono  tracking-widest text-ink-400 mb-1.5">Province</label>
               <CustomDropdown 
                 value={f.province} 
                 onChange={(val) => setF({ ...f, province: val, city: "" })} 
@@ -75,7 +88,7 @@ function AddressesTab() {
               />
             </div>
             <div>
-              <label className="block text-xs font-mono uppercase tracking-widest text-ink-400 mb-1.5">City</label>
+              <label className="block text-xs font-mono  tracking-widest text-ink-400 mb-1.5">City</label>
               <CustomDropdown 
                 value={f.city} 
                 onChange={(val) => setF({ ...f, city: val })} 
@@ -84,7 +97,7 @@ function AddressesTab() {
               />
             </div>
             <div className="col-span-2">
-              <label className="block text-xs font-mono uppercase tracking-widest text-ink-400 mb-1.5">Postal Code</label>
+              <label className="block text-xs font-mono  tracking-widest text-ink-400 mb-1.5">Postal Code</label>
               <input placeholder="75000" value={f.postal_code} onChange={(e) => setF({ ...f, postal_code: e.target.value })} className={inp} />
             </div>
           </div>
@@ -92,7 +105,9 @@ function AddressesTab() {
             <input type="checkbox" checked={f.is_default} onChange={(e) => setF({ ...f, is_default: e.target.checked })} className="accent-obsidian w-4 h-4" /> 
             Set as default address
           </label>
-          <button onClick={save} data-testid="address-save" className="w-full mt-2 bg-obsidian text-white font-display tracking-wider py-3.5 hover:bg-fire transition-colors">Save Address</button>
+          <button disabled={saving} onClick={save} data-testid="address-save" className="w-full mt-2 bg-obsidian text-white font-display tracking-wider py-3.5 hover:bg-fire transition-colors flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-wait">
+            {saving ? <><Loader2 size={18} className="animate-spin" /> Saving...</> : "Save Address"}
+          </button>
         </div>
       </div>
     </div>
@@ -150,9 +165,9 @@ function SettingsTab({ user }) {
       <div className="bg-white border border-ink-200 p-8 shadow-sm">
         <h3 className="font-display tracking-tight mb-6">Profile Info</h3>
         <div className="space-y-5">
-          <div><p className="text-xs font-mono uppercase tracking-widest text-ink-400 mb-1.5">Full Name</p><p className="font-bold text-ink-900">{user.name}</p></div>
-          <div><p className="text-xs font-mono uppercase tracking-widest text-ink-400 mb-1.5">Email Address</p><p className="font-bold text-ink-900">{user.email}</p></div>
-          <div><p className="text-xs font-mono uppercase tracking-widest text-ink-400 mb-1.5">Account Role</p><p className="font-bold uppercase text-xs bg-ink-100 text-ink-500 w-fit px-2 py-1">{user.role}</p></div>
+          <div><p className="text-xs font-mono  tracking-widest text-ink-400 mb-1.5">Full Name</p><p className="font-bold text-ink-900">{user.name}</p></div>
+          <div><p className="text-xs font-mono  tracking-widest text-ink-400 mb-1.5">Email Address</p><p className="font-bold text-ink-900">{user.email}</p></div>
+          <div><p className="text-xs font-mono  tracking-widest text-ink-400 mb-1.5">Account Role</p><p className="font-bold  text-xs bg-ink-100 text-ink-500 w-fit px-2 py-1">{user.role}</p></div>
         </div>
       </div>
 
@@ -161,15 +176,15 @@ function SettingsTab({ user }) {
           <h3 className="font-display tracking-tight mb-6">Change Password</h3>
           <form onSubmit={updatePassword} className="space-y-4">
             <div>
-              <label className="block text-xs font-mono uppercase tracking-widest text-ink-400 mb-1.5">Current Password</label>
+              <label className="block text-xs font-mono  tracking-widest text-ink-400 mb-1.5">Current Password</label>
               <input type="password" value={pw.current_password} onChange={(e) => setPw({ ...pw, current_password: e.target.value })} className={inp} placeholder="••••••••" />
             </div>
             <div>
-              <label className="block text-xs font-mono uppercase tracking-widest text-ink-400 mb-1.5">New Password</label>
+              <label className="block text-xs font-mono  tracking-widest text-ink-400 mb-1.5">New Password</label>
               <input type="password" value={pw.new_password} onChange={(e) => setPw({ ...pw, new_password: e.target.value })} className={inp} placeholder="••••••••" />
             </div>
-            <button disabled={loading} className="w-full bg-obsidian text-white font-display tracking-wider py-3.5 mt-2 hover:bg-fire transition-colors disabled:opacity-50">
-              {loading ? "Updating..." : "Update Password"}
+            <button disabled={loading} className="w-full bg-obsidian text-white font-display tracking-wider py-3.5 mt-2 hover:bg-fire transition-colors disabled:opacity-70 disabled:cursor-wait flex items-center justify-center gap-2">
+              {loading ? <><Loader2 size={18} className="animate-spin" /> Updating...</> : "Update Password"}
             </button>
           </form>
         </div>
@@ -186,6 +201,7 @@ export default function Account() {
   const [credit, setCredit] = useState({ balance: 0, ledger: [] });
   const [returnFor, setReturnFor] = useState(null);
   const [reason, setReason] = useState("");
+  const [submittingReturn, setSubmittingReturn] = useState(false);
 
   const loadOrders = () => http.get("/orders").then(({ data }) => setOrders(data.data)).catch(() => {});
   const loadCredit = () => http.get("/me/store-credit").then(({ data }) => setCredit(data.data)).catch(() => {});
@@ -200,6 +216,7 @@ export default function Account() {
 
   const submitReturn = async () => {
     if (!reason.trim()) return toast.error("Please tell us the reason");
+    setSubmittingReturn(true);
     try {
       await http.post(`/orders/${returnFor.id}/return-request`, { reason });
       toast.success("Return request submitted");
@@ -208,6 +225,8 @@ export default function Account() {
       loadOrders();
     } catch (e) {
       toast.error(e.response?.data?.detail || "Could not submit return");
+    } finally {
+      setSubmittingReturn(false);
     }
   };
 
@@ -236,13 +255,13 @@ export default function Account() {
                   <div key={o.id} data-testid={`account-order-${o.order_number}`} className="bg-white border border-ink-200 rounded-none p-5">
                     <div className="flex justify-between items-start">
                       <div><span className="font-mono text-xs text-ink-400">{o.created_at?.slice(0, 10)}</span><p className="font-display font-semibold text-lg">{o.order_number}</p></div>
-                      <span className="bg-fire/10 text-fire font-bold uppercase text-xs px-3 py-1.5 rounded-none">{LABELS[o.status] || o.status}</span>
+                      <span className="bg-fire/10 text-fire font-bold  text-xs px-3 py-1.5 rounded-none">{LABELS[o.status] || o.status}</span>
                     </div>
                     <div className="flex gap-2 mt-3">{o.items.slice(0, 4).map((it, i) => <img key={i} src={it.image_url} alt="" className="h-14 w-14 rounded-none object-cover bg-ink-100" />)}</div>
                     <div className="flex justify-between items-center mt-3 pt-3 border-t border-ink-200">
                       <span className="text-ink-500 text-sm">{o.items.length} item(s) · {o.payment_method}</span>
                       <div className="flex items-center gap-3">
-                        {o.status === "delivered" && <button onClick={() => setReturnFor(o)} data-testid={`account-return-btn-${o.order_number}`} className="flex items-center gap-1.5 text-xs font-bold uppercase border border-ink-200 px-3 py-1.5 rounded-none hover:border-obsidian"><RotateCcw size={13} /> Return</button>}
+                        {o.status === "delivered" && <button onClick={() => setReturnFor(o)} data-testid={`account-return-btn-${o.order_number}`} className="flex items-center gap-1.5 text-xs font-bold  border border-ink-200 px-3 py-1.5 rounded-none hover:border-obsidian"><RotateCcw size={13} /> Return</button>}
                         <span className="font-mono font-bold text-fire">{fmt(o.total)}</span>
                       </div>
                     </div>
@@ -255,7 +274,7 @@ export default function Account() {
           {tab === "credit" && (
             <div>
               <div className="bg-obsidian text-white rounded-none p-6 mb-5" data-testid="account-store-credit-balance">
-                <div className="flex items-center gap-2 mb-1"><Gift size={16} className="text-fire" /><span className="font-mono text-xs uppercase tracking-widest text-white/60">Store Credit Balance</span></div>
+                <div className="flex items-center gap-2 mb-1"><Gift size={16} className="text-fire" /><span className="font-mono text-xs  tracking-widest text-white/60">Store Credit Balance</span></div>
                 <p className="font-display font-semibold text-2xl font-mono">{fmt(credit.balance)}</p>
                 <p className="text-white/50 text-xs mt-2">Apply your balance at checkout to save on your next drop.</p>
               </div>
@@ -285,10 +304,13 @@ export default function Account() {
             <div className="flex justify-between mb-4"><h3 className="font-display">Request Return</h3><button onClick={() => setReturnFor(null)}><X size={20} /></button></div>
             <p className="text-sm text-ink-500 mb-4">Order <b>{returnFor.order_number}</b> · {fmt(returnFor.total)}</p>
             <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={4} placeholder="Reason for return (e.g. size too small, defect)" data-testid="account-return-reason" className="w-full border border-ink-200 rounded-none px-4 py-3 outline-none focus:border-obsidian" />
-            <button onClick={submitReturn} data-testid="account-return-submit" className="w-full bg-obsidian text-white font-display py-3 rounded-none mt-4 hover:bg-fire transition-colors">Submit Request</button>
+            <button disabled={submittingReturn} onClick={submitReturn} data-testid="account-return-submit" className="w-full bg-obsidian text-white font-display py-3 rounded-none mt-4 hover:bg-fire transition-colors disabled:opacity-70 disabled:cursor-wait flex items-center justify-center gap-2">
+              {submittingReturn ? <><Loader2 size={18} className="animate-spin" /> Submitting...</> : "Submit Request"}
+            </button>
           </motion.div>
         </div>
       )}
     </div>
   );
 }
+

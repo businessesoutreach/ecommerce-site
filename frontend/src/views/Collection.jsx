@@ -120,17 +120,24 @@ export default function Collection({ mode }) {
 
   return (
     <div>
-      {/* banner */}
-      <div className="relative h-52 sm:h-72 bg-obsidian overflow-hidden">
-        {video ? (
-          <video src={video} autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover opacity-50" />
-        ) : (
-          <img src={banner} alt={title} className="absolute inset-0 h-full w-full object-cover opacity-30" />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-obsidian to-transparent opacity-80" />
-        <div className="relative max-w-[1400px] mx-auto px-5 sm:px-8 h-full flex flex-col justify-end pb-8">
-          <h1 className="font-display tracking-tight">{title}</h1>
-          {category?.tagline && <p className="text-white/60 mt-1">{category.tagline}</p>}
+      {/* premium text header */}
+      <div className="relative bg-obsidian text-white py-10 sm:py-14 overflow-hidden">
+        {/* Animated background decorations */}
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-fire/40 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/4 pointer-events-none animate-float" />
+        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-blue-500/30 rounded-full blur-[60px] translate-y-1/2 -translate-x-1/4 pointer-events-none animate-float" style={{ animationDelay: "2s" }} />
+        
+        {/* Glow directly behind text */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[50%] h-[70%] bg-white/10 rounded-full blur-[50px] pointer-events-none animate-pulse" />
+
+        <div className="relative max-w-[1400px] mx-auto px-5 sm:px-8 text-center flex flex-col items-center">
+          <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-tight capitalize drop-shadow-2xl bg-gradient-to-r from-white via-fire to-white text-transparent bg-clip-text animate-gradient-x">
+            {title ? title.toLowerCase() : ""}
+          </h1>
+          {category?.tagline && (
+            <p className="text-white/70 mt-3 text-sm sm:text-base max-w-xl mx-auto font-light leading-relaxed drop-shadow-md">
+              {category.tagline}
+            </p>
+          )}
         </div>
       </div>
 
@@ -186,3 +193,4 @@ export default function Collection({ mode }) {
     </div>
   );
 }
+

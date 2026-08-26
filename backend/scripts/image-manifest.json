@@ -1,0 +1,57 @@
+{
+  "hero_1_street_revolution": "https://res.cloudinary.com/p1w5xus9/image/upload/v1787734227/solekicks/banners/hero_1_street_revolution.png",
+  "hero_2_retro_lows": "https://res.cloudinary.com/p1w5xus9/image/upload/v1787734295/solekicks/banners/hero_2_retro_lows.png",
+  "hero_3_cloud_runners": "https://res.cloudinary.com/p1w5xus9/image/upload/v1787734370/solekicks/banners/hero_3_cloud_runners.png",
+  "category_retro": "https://res.cloudinary.com/p1w5xus9/image/upload/v1787734431/solekicks/categories/category_retro.png",
+  "category_streetwear": "https://res.cloudinary.com/p1w5xus9/image/upload/v1787734495/solekicks/categories/category_streetwear.png",
+  "category_runners": "https://res.cloudinary.com/p1w5xus9/image/upload/v1787734563/solekicks/categories/category_runners.png",
+  "category_slides": "https://res.cloudinary.com/p1w5xus9/image/upload/v1787734640/solekicks/categories/category_slides.png",
+  "terrace-classic-white-low": [
+    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787734688/solekicks/products/terrace-classic-white-low/1-side.png",
+    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787734737/solekicks/products/terrace-classic-white-low/2-front.png",
+    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787734791/solekicks/products/terrace-classic-white-low/3-3d.png",
+    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787734856/solekicks/products/terrace-classic-white-low/4-sole.png"
+  ],
+  "aj4-shadow-grail": [
+    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787734905/solekicks/products/aj4-shadow-grail/1-side.png",
+    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787734965/solekicks/products/aj4-shadow-grail/2-front.png",
+    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787735024/solekicks/products/aj4-shadow-grail/3-3d.png",
+    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787735083/solekicks/products/aj4-shadow-grail/4-sole.png"
+  ],
+  "dunk-high-blue-terrace": [
+    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787735128/solekicks/products/dunk-high-blue-terrace/1-side.png",
+    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787735193/solekicks/products/dunk-high-blue-terrace/2-front.png",
+    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787735254/solekicks/products/dunk-high-blue-terrace/3-3d.png",
+    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787735323/solekicks/products/dunk-high-blue-terrace/4-sole.png"
+  ],
+  "oasis-foam-slides": [
+    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787735378/solekicks/products/oasis-foam-slides/1-side.png",
+    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787735442/solekicks/products/oasis-foam-slides/2-front.png",
+    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787735499/solekicks/products/oasis-foam-slides/3-3d.png",
+    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787735546/solekicks/products/oasis-foam-slides/4-sole.png"
+  ],
+  "boost-knit-cloud-runner": [
+    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787735602/solekicks/products/boost-knit-cloud-runner/1-side.png",
+    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787735663/solekicks/products/boost-knit-cloud-runner/2-front.png",
+    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787735723/solekicks/products/boost-knit-cloud-runner/3-3d.png",
+    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787735784/solekicks/products/boost-knit-cloud-runner/4-sole.png"
+  ],
+  "court-master-black-panther": [
+    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787735848/solekicks/products/court-master-black-panther/1-side.png",
+    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787735909/solekicks/products/court-master-black-panther/2-front.png",
+    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787736074/solekicks/products/court-master-black-panther/3-3d.png",
+    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787736161/solekicks/products/court-master-black-panther/4-sole.png"
+  ],
+  "aj1-retro-high-ember": [
+    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787736215/solekicks/products/aj1-retro-high-ember/1-side.png",
+    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787736269/solekicks/products/aj1-retro-high-ember/2-front.png",
+    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787736338/solekicks/products/aj1-retro-high-ember/3-3d.png",
+    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787736405/solekicks/products/aj1-retro-high-ember/4-sole.png"
+  ],
+  "eqt-street-support-adv": [],
+  "velocity-gray-road-runner": [],
+  "studio-athletic-trainer": [],
+  "adi-mono-panel-low": [],
+  "oasis-cloud-slide-mono": [],
+  "cloudstride-marathon-elite": []
+}

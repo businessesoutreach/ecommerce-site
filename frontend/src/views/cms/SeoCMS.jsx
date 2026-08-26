@@ -83,19 +83,19 @@ export default function SeoCMS() {
         
         <div className="space-y-6">
           <div>
-            <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Default Meta Title</label>
+            <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Default Meta Title</label>
             <p className="text-xs text-ink-400 mb-2">Appears in browser tabs and search engine results when a specific page title is not set.</p>
             <input placeholder="E.g. Premium Sneakers & Streetwear | Solekicks" value={f.default_meta_title} onChange={(e) => setF({ ...f, default_meta_title: e.target.value })} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian font-mono text-sm" />
           </div>
           
           <div>
-            <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Default Meta Description</label>
+            <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Default Meta Description</label>
             <p className="text-xs text-ink-400 mb-2">A short summary of your store. Keep it under 160 characters for best results.</p>
             <textarea placeholder="Shop the latest premium sneakers and streetwear..." value={f.default_meta_desc} onChange={(e) => setF({ ...f, default_meta_desc: e.target.value })} rows={3} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian font-mono text-sm" />
           </div>
 
           <div>
-             <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Default OpenGraph (OG) Image</label>
+             <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Default OpenGraph (OG) Image</label>
              <p className="text-xs text-ink-400 mb-2">The image that appears when your store link is shared on social media (Facebook, Twitter, WhatsApp).</p>
              <div className="h-40 w-full sm:w-1/2">
                <ImageInput value={f.default_og_image} onChange={(v) => setF({ ...f, default_og_image: v })} />
@@ -117,3 +117,4 @@ export default function SeoCMS() {
     </div>
   );
 }
+

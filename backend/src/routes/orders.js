@@ -129,6 +129,37 @@ router.post('/', getOptionalUser, async (req, res) => {
             advance_paid = advance_amount;
         }
         
+        let risk_score = 0.0;
+        let risk_flags = [];
+
+        if (payment_method === 'COD') {
+            const phoneStr = (customer_phone || '').replace(/[^0-9]/g, '');
+            if (phoneStr.length < 10 || /^0+$/.test(phoneStr)) {
+                risk_score += 40;
+                risk_flags.push('Suspicious Phone Number');
+            }
+            
+            const previousRejections = await prisma.order.count({
+                where: { customer_phone, status: 'cancelled', payment_method: 'COD' }
+            });
+            if (previousRejections > 0) {
+                risk_score += previousRejections * 20;
+                risk_flags.push(`History of ${previousRejections} cancelled COD orders`);
+            }
+            
+            if ((shipping_address?.address_l1 || '').length < 10) {
+                risk_score += 20;
+                risk_flags.push('Unusually short address');
+            }
+            
+            if (total > 20000 && !advance_required) {
+                risk_score += 15;
+                risk_flags.push('High value COD order without advance');
+            }
+            
+            risk_score = Math.min(risk_score, 100);
+        }
+        
         // Transaction for atomic stock decrement and order creation
         const order = await prisma.$transaction(async (tx) => {
             // Decrement stock
@@ -175,6 +206,8 @@ router.post('/', getOptionalUser, async (req, res) => {
                     payment_status,
                     status: 'placed',
                     customer_note,
+                    risk_score,
+                    risk_flags,
                     items: {
                         create: orderItemsData.map(oi => ({
                             id: uuidv4(),
@@ -331,6 +364,49 @@ router.post('/:order_id/return-request', getOptionalUser, async (req, res) => {
         await notify(o, 'RETURN_REQUESTED', `Return request received for ${o.order_number}. Our team will review it shortly.`);
         
         res.json({ success: true, data: rr });
+    } catch (err) {
+        res.status(500).json({ detail: err.message });
+    }
+});
+
+// Logistics Webhook (Live Updates & RTO)
+router.post('/webhooks/courier', async (req, res) => {
+    try {
+        const { tracking_number, status, reason } = req.body;
+        // status can be 'delivered', 'returned', 'out_for_delivery'
+        
+        const order = await prisma.order.findFirst({ where: { tracking_number } });
+        if (!order) return res.status(404).json({ detail: 'Order not found for this tracking number' });
+        
+        let newStatus = order.status;
+        if (status === 'delivered') newStatus = 'delivered';
+        else if (status === 'returned') newStatus = 'returned';
+        else if (status === 'out_for_delivery') newStatus = 'out_for_delivery';
+        
+        if (newStatus !== order.status) {
+            await prisma.order.update({
+                where: { id: order.id },
+                data: {
+                    status: newStatus,
+                    status_history: {
+                        create: { id: uuidv4(), status: newStatus, note: `Courier Webhook: ${reason || ''}`.trim() }
+                    }
+                }
+            });
+            
+            // Handle RTO (Return to Origin) stock restoration
+            if (newStatus === 'returned') {
+                const items = await prisma.orderItem.findMany({ where: { order_id: order.id } });
+                for (const item of items) {
+                    await prisma.productSize.updateMany({
+                        where: { product_id: item.product_id, size: item.size },
+                        data: { stock: { increment: item.quantity } }
+                    });
+                }
+            }
+        }
+        
+        res.json({ success: true });
     } catch (err) {
         res.status(500).json({ detail: err.message });
     }

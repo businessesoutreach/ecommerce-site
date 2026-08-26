@@ -41,10 +41,11 @@ body {
   height: 9px;
 }
 ::-webkit-scrollbar-track {
-  background: #ededed;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #0a0a0a;
+  background: #d4d4d8;
+  border-radius: 4px;
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -81,4 +82,40 @@ body {
 @keyframes marquee {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
+}
+
+@keyframes gradient-x {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.animate-gradient-x {
+  animation: gradient-x 4s ease infinite;
+  background-size: 200% 200%;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-30px); }
+}
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  
+  #printable-label, #printable-label * {
+    visibility: visible;
+  }
+  
+  #printable-label {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
 }

@@ -102,41 +102,41 @@ export default function HeroSlidesCMS() {
         <h3 className="font-display font-bold text-obsidian mb-4">Add New Slide</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="col-span-1">
-            <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Slide Image *</label>
+            <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Slide Image *</label>
             <ImageInput value={f.image_url} onChange={(v) => setF({ ...f, image_url: v })} />
           </div>
           <div className="col-span-1 md:col-span-2 space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Heading</label>
+                <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Heading</label>
                 <input placeholder="E.g. STREET REVOLUTION" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Badge</label>
+                <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Badge</label>
                 <input placeholder="E.g. NEW DROP" value={f.badge} onChange={(e) => setF({ ...f, badge: e.target.value })} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian" />
               </div>
             </div>
             <div>
-              <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Subtitle</label>
+              <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Subtitle</label>
               <input placeholder="E.g. Discover the new collection" value={f.subtitle} onChange={(e) => setF({ ...f, subtitle: e.target.value })} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Button Text</label>
+                <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Button Text</label>
                 <input placeholder="Shop Now" value={f.cta_text} onChange={(e) => setF({ ...f, cta_text: e.target.value })} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Button URL</label>
+                <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Button URL</label>
                 <input placeholder="/collections/streetwear" value={f.link_url} onChange={(e) => setF({ ...f, link_url: e.target.value })} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4 border-t border-ink-100 pt-4 mt-2">
               <div>
-                <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Start Date (Optional)</label>
+                <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Start Date (Optional)</label>
                 <input type="datetime-local" value={f.start_date} onChange={(e) => setF({ ...f, start_date: e.target.value })} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">End Date (Optional)</label>
+                <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">End Date (Optional)</label>
                 <input type="datetime-local" value={f.end_date} onChange={(e) => setF({ ...f, end_date: e.target.value })} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian" />
               </div>
             </div>
@@ -194,3 +194,4 @@ export default function HeroSlidesCMS() {
     </div>
   );
 }
+

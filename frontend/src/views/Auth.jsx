@@ -5,7 +5,7 @@ import { useStore } from "../context/StoreContext";
 import { http } from "../lib/api";
 import { toast } from "sonner";
 import PhoneInput from "../components/PhoneInput";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 
 function fmtErr(d) {
   if (!d) return "Something went wrong";
@@ -92,7 +92,7 @@ export default function Auth({ mode = "login" }) {
             <button onClick={() => setStep(1)} className="flex items-center gap-2 text-ink-500 hover:text-obsidian mb-6 transition-colors w-fit"><ArrowLeft size={16} /> Back</button>
           )}
 
-          <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-fire font-bold">
+          <span className="font-mono text-[11px]  tracking-[0.25em] text-fire font-bold">
             {view === "login" ? "Welcome Back" : view === "register" ? "Join The Movement" : "Account Recovery"}
           </span>
           <h1 className="font-display tracking-tight mt-2">
@@ -111,7 +111,7 @@ export default function Auth({ mode = "login" }) {
               </button>
               <div className="flex items-center gap-4 my-6">
                 <span className="h-px flex-1 bg-ink-200" />
-                <span className="font-mono text-[11px] uppercase tracking-widest text-ink-400">or</span>
+                <span className="font-mono text-[11px]  tracking-widest text-ink-400">or</span>
                 <span className="h-px flex-1 bg-ink-200" />
               </div>
             </>
@@ -143,8 +143,8 @@ export default function Auth({ mode = "login" }) {
             )}
 
             <div className="pt-2">
-              <button disabled={loading} className="w-full bg-obsidian text-white font-display tracking-wider py-3.5 rounded-none hover:bg-fire transition-colors disabled:opacity-60">
-                {loading ? "Please wait…" : 
+              <button disabled={loading} className="w-full bg-obsidian text-white font-display tracking-wider py-3.5 rounded-none hover:bg-fire transition-colors disabled:opacity-70 disabled:cursor-wait flex items-center justify-center gap-2">
+                {loading ? <><Loader2 size={18} className="animate-spin" /> Please wait…</> : 
                  view === "login" ? "Sign In" : 
                  step === 1 ? (view === "register" ? "Verify Email" : "Send Reset Code") : 
                  (view === "register" ? "Create Account" : "Reset Password")}
@@ -163,3 +163,4 @@ export default function Auth({ mode = "login" }) {
     </div>
   );
 }
+

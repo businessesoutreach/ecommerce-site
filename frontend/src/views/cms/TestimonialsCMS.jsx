@@ -68,17 +68,17 @@ export default function TestimonialsCMS() {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Author Name *</label>
+              <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Author Name *</label>
               <input placeholder="E.g. Ahmed Khan" value={f.author_name} onChange={(e) => setF({ ...f, author_name: e.target.value })} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian" />
             </div>
             <div>
-              <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Author Meta</label>
+              <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Author Meta</label>
               <input placeholder="E.g. Verified Customer" value={f.author_meta} onChange={(e) => setF({ ...f, author_meta: e.target.value })} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian" />
             </div>
           </div>
           
           <div>
-            <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Rating</label>
+            <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Rating</label>
             <select value={f.rating} onChange={(e) => setF({ ...f, rating: e.target.value })} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian bg-white">
               <option value="5">5 Stars</option>
               <option value="4">4 Stars</option>
@@ -89,7 +89,7 @@ export default function TestimonialsCMS() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Testimonial Content *</label>
+            <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Testimonial Content *</label>
             <textarea placeholder="Absolutely love the quality..." value={f.content} onChange={(e) => setF({ ...f, content: e.target.value })} rows={3} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian" />
           </div>
 
@@ -134,3 +134,4 @@ export default function TestimonialsCMS() {
     </div>
   );
 }
+

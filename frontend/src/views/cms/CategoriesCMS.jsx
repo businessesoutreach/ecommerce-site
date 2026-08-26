@@ -93,7 +93,7 @@ export default function CategoriesCMS() {
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="col-span-1">
-             <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Category Banner</label>
+             <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Category Banner</label>
              <div className="h-32">
                <ImageInput value={f.hero_banner_url} onChange={(v) => setF({ ...f, hero_banner_url: v })} />
              </div>
@@ -102,31 +102,31 @@ export default function CategoriesCMS() {
           <div className="col-span-1 md:col-span-3 space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Name *</label>
+                <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Name *</label>
                 <input placeholder="E.g. Retro High" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Slug</label>
+                <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Slug</label>
                 <input placeholder="E.g. retro-high" value={f.slug} onChange={(e) => setF({ ...f, slug: e.target.value })} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian" />
               </div>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Parent Category</label>
+                <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Parent Category</label>
                 <select value={f.parent_id} onChange={(e) => setF({ ...f, parent_id: e.target.value })} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian bg-white">
                   <option value="">-- Top Level --</option>
                   {cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Background Video URL</label>
+                <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Background Video URL</label>
                 <input placeholder="https://... (.mp4)" value={f.hero_video_url} onChange={(e) => setF({ ...f, hero_video_url: e.target.value })} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian" />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Description</label>
+              <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Description</label>
               <textarea placeholder="Category description..." value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} rows={2} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian" />
             </div>
 
@@ -134,11 +134,11 @@ export default function CategoriesCMS() {
               <h4 className="text-sm font-bold text-obsidian mb-3">SEO</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">SEO Title</label>
+                  <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">SEO Title</label>
                   <input placeholder="Meta Title" value={f.seo_title} onChange={(e) => setF({ ...f, seo_title: e.target.value })} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">SEO Description</label>
+                  <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">SEO Description</label>
                   <input placeholder="Meta Description" value={f.seo_description} onChange={(e) => setF({ ...f, seo_description: e.target.value })} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian" />
                 </div>
               </div>
@@ -153,7 +153,7 @@ export default function CategoriesCMS() {
 
       <div className="bg-white border border-ink-200 rounded-none overflow-hidden">
         <table className="w-full text-left">
-          <thead className="bg-ink-50 border-b border-ink-200 text-xs uppercase tracking-wider text-ink-500">
+          <thead className="bg-ink-50 border-b border-ink-200 text-xs  tracking-wider text-ink-500">
             <tr>
               <th className="p-4 font-bold">Image</th>
               <th className="p-4 font-bold">Category</th>
@@ -179,7 +179,7 @@ export default function CategoriesCMS() {
                     </td>
                     <td className="p-4">
                       <div className="font-bold text-obsidian">{c.name}</div>
-                      {c.hero_video_url && <span className="text-[10px] bg-fire/10 text-fire px-2 py-0.5 rounded font-bold uppercase mt-1 inline-block">Has Video</span>}
+                      {c.hero_video_url && <span className="text-[10px] bg-fire/10 text-fire px-2 py-0.5 rounded font-bold  mt-1 inline-block">Has Video</span>}
                     </td>
                     <td className="p-4 text-sm text-ink-600 font-mono">/{c.slug}</td>
                     <td className="p-4 text-sm text-ink-500">{parent ? parent.name : '-'}</td>
@@ -196,3 +196,4 @@ export default function CategoriesCMS() {
     </div>
   );
 }
+

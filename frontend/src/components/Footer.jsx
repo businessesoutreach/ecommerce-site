@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Instagram, Facebook, Twitter, Send, Truck, RefreshCw, ShieldCheck, MessageCircle } from "lucide-react";
+import { Instagram, Facebook, Twitter, Send, Truck, RefreshCw, ShieldCheck, MessageCircle, Loader2 } from "lucide-react";
 import { http } from "../lib/api";
 import { toast } from "sonner";
 
@@ -31,14 +31,18 @@ export function TrustRibbon() {
 
 export default function Footer() {
   const [email, setEmail] = useState("");
+  const [subscribing, setSubscribing] = useState(false);
   const subscribe = async (e) => {
     e.preventDefault();
+    setSubscribing(true);
     try {
       await http.post("/newsletter/subscribe", { email });
       toast.success("You're on the list — welcome to the culture.");
       setEmail("");
     } catch {
       toast.error("Enter a valid email");
+    } finally {
+      setSubscribing(false);
     }
   };
   return (
@@ -71,7 +75,9 @@ export default function Footer() {
             <h4 className="font-display tracking-wider text-sm mb-4">Get 10% off first drop</h4>
             <form onSubmit={subscribe} className="flex gap-2">
               <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required placeholder="your@email.com" data-testid="newsletter-input" className="flex-1 bg-white/10 rounded-none px-4 py-3 text-sm outline-none focus:bg-white/20 placeholder:text-white/40" />
-              <button data-testid="newsletter-submit" className="h-11 w-11 shrink-0 grid place-items-center bg-fire rounded-none hover:bg-fire-hover transition-colors"><Send size={17} /></button>
+              <button disabled={subscribing} data-testid="newsletter-submit" className="h-11 w-11 shrink-0 grid place-items-center bg-fire rounded-none hover:bg-fire-hover transition-colors disabled:opacity-70 disabled:cursor-wait">
+                {subscribing ? <Loader2 size={17} className="animate-spin text-white" /> : <Send size={17} />}
+              </button>
             </form>
             <p className="text-white/40 text-xs mt-4 mb-2">We ship & accept</p>
             <div className="flex flex-wrap gap-2">

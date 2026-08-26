@@ -29,6 +29,7 @@ export default function Checkout() {
   const [coupon, setCoupon] = useState("");
   const [discount, setDiscount] = useState(0);
   const [couponMsg, setCouponMsg] = useState("");
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
   const [placing, setPlacing] = useState(false);
   const [credit, setCredit] = useState(0);
   const [useCredit, setUseCredit] = useState(false);
@@ -69,6 +70,7 @@ export default function Checkout() {
 
   const applyCoupon = async () => {
     if (!coupon) return;
+    setApplyingCoupon(true);
     try {
       const { data } = await http.post("/checkout/apply-coupon", { code: coupon, subtotal });
       setDiscount(data.data.discount);
@@ -76,6 +78,8 @@ export default function Checkout() {
     } catch (e) {
       setDiscount(0);
       setCouponMsg(e.response?.data?.detail || "Invalid coupon");
+    } finally {
+      setApplyingCoupon(false);
     }
   };
 
@@ -122,7 +126,7 @@ export default function Checkout() {
 
 
   if (cart.items.length === 0 && !placing) {
-    return <div className="max-w-lg mx-auto px-5 py-20 text-center"><h2 className="font-display">Your bag is empty</h2><button onClick={() => navigate("/")} className="mt-6 bg-obsidian text-white font-bold uppercase px-8 py-4 rounded-none">Continue Shopping</button></div>;
+    return <div className="max-w-lg mx-auto px-5 py-20 text-center"><h2 className="font-display">Your bag is empty</h2><button onClick={() => navigate("/")} className="mt-6 bg-obsidian text-white font-bold  px-8 py-4 rounded-none">Continue Shopping</button></div>;
   }
 
   return (
@@ -152,7 +156,7 @@ export default function Checkout() {
                       <div className="flex items-center justify-between"><span className="font-display font-semibold text-sm tracking-wider">{a.label || 'Home'}</span>{a.is_default && <span className="text-[10px] font-bold tracking-wider bg-ink-100 px-2 py-0.5 text-ink-800">Default</span>}</div>
                       <p className="text-ink-500 text-xs mt-2">{a.address_l1}, {a.city}</p>
                       <p className="text-ink-400 text-xs mt-1 font-mono">{a.phone}</p>
-                      {active && <div className="mt-3 text-xs font-bold text-obsidian uppercase tracking-wide flex items-center gap-1"><Check size={14}/> Selected</div>}
+                      {active && <div className="mt-3 text-xs font-bold text-obsidian  tracking-wide flex items-center gap-1"><Check size={14}/> Selected</div>}
                     </button>
                   );
                 })}
@@ -228,8 +232,10 @@ export default function Checkout() {
             ))}
           </div>
           <div className="flex gap-2 mb-4">
-            <div className="flex-1 flex items-center border border-ink-200 rounded-none px-3"><Tag size={15} className="text-ink-400" /><input value={coupon} onChange={(e) => setCoupon(e.target.value.toUpperCase())} placeholder="Promo code" data-testid="checkout-coupon-input" className="flex-1 px-2 py-2.5 outline-none text-sm font-mono uppercase" /></div>
-            <button onClick={applyCoupon} data-testid="checkout-apply-coupon-btn" className="bg-obsidian text-white font-bold uppercase text-sm px-4 rounded-none hover:bg-fire transition-colors">Apply</button>
+            <div className="flex-1 flex items-center border border-ink-200 rounded-none px-3"><Tag size={15} className="text-ink-400" /><input value={coupon} onChange={(e) => setCoupon(e.target.value.toUpperCase())} placeholder="Promo code" data-testid="checkout-coupon-input" className="flex-1 px-2 py-2.5 outline-none text-sm font-mono " /></div>
+            <button disabled={applyingCoupon} onClick={applyCoupon} data-testid="checkout-apply-coupon-btn" className="bg-obsidian text-white font-bold  text-sm px-4 rounded-none hover:bg-fire transition-colors disabled:opacity-70 disabled:cursor-wait min-w-[75px] grid place-items-center">
+              {applyingCoupon ? <Loader2 size={16} className="animate-spin" /> : "Apply"}
+            </button>
           </div>
           {couponMsg && <p className={`text-xs mb-3 ${discount > 0 ? "text-green-600" : "text-fire"}`}>{couponMsg}</p>}
           {user && credit > 0 && (
@@ -256,3 +262,4 @@ export default function Checkout() {
     </div>
   );
 }
+

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Home, Megaphone, Tag, Layers, Zap, FileText, Search, LayoutDashboard, Package, ShoppingCart, Ticket, Star, Users, LogOut, TrendingUp, AlertTriangle, Plus, Trash2, X, RotateCcw, DollarSign, Image as ImageIcon, Upload, MessageCircle, Search as SearchIcon, Filter, MoreVertical, Eye, Download, Printer, CheckCircle, Truck, MapPin, Edit, Copy, Activity } from "lucide-react";
+import { Home, Megaphone, Tag, Layers, Zap, FileText, Search, LayoutDashboard, Package, ShoppingCart, Ticket, Star, Users, LogOut, TrendingUp, AlertTriangle, Plus, Trash2, X, RotateCcw, DollarSign, Image as ImageIcon, Upload, MessageCircle, Search as SearchIcon, Filter, MoreVertical, Eye, Download, Printer, CheckCircle, Truck, MapPin, Edit, Copy, Activity, Loader2 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell } from "recharts";
 import { http, fmt, imgUrl, waLink } from "../lib/api";
 import { useStore } from "../context/StoreContext";
@@ -28,21 +28,41 @@ export default function Admin() {
   useEffect(() => {
     if (!user) navigate("/login");
     else if (user.role !== "admin" && user.role !== "staff") { toast.error("Admin access only"); navigate("/"); }
-  }, [user]);
+    else if (user.role === "staff" && ["overview", "refunds", "coupons", "cms", "audit_logs"].includes(tab)) setTab("orders");
+  }, [user, tab]);
 
   if (!user || (user.role !== "admin" && user.role !== "staff")) return null;
 
-  const NAV = [["overview", "Overview", LayoutDashboard], ["orders", "Orders", ShoppingCart], ["products", "Products", Package], ["returns", "Returns", RotateCcw], ["refunds", "Refunds", DollarSign], ["coupons", "Coupons", Ticket], ["reviews", "Reviews", Star], ["customers", "Customers", Users], ["cms", "Hero & CMS", ImageIcon]];
+  const NAV = [
+    ["overview", "Overview", LayoutDashboard],
+    ["orders", "Orders", ShoppingCart],
+    ["cod", "COD Tracking", Truck],
+    ["inventory", "Inventory", Layers],
+    ["products", "Products", Package],
+    ["pos", "POS", Plus],
+    ["returns", "Returns", RotateCcw],
+    ["refunds", "Refunds", DollarSign],
+    ["coupons", "Coupons", Ticket],
+    ["reviews", "Reviews", Star],
+    ["customers", "Customers", Users],
+    ["bundles", "Bundles", Tag],
+    ["cms", "Hero & CMS", ImageIcon],
+    ["profitability", "Profitability", TrendingUp],
+    ["audit_logs", "Audit Logs", FileText]
+  ].filter(([k]) => {
+    if (user.role === 'admin') return true;
+    return !['overview', 'refunds', 'coupons', 'cms', 'audit_logs', 'profitability'].includes(k);
+  });
 
   return (
     <div className="min-h-screen bg-ink-100 flex" data-testid="admin-dashboard">
       {tab !== "cms" && (
-        <aside className="w-16 lg:w-60 bg-ink-50 border-r border-ink-200 min-h-screen sticky top-0 flex flex-col shrink-0">
-          <div className="px-4 py-3 lg:px-6 lg:py-4 border-b border-ink-200">
+        <aside className="w-16 lg:w-60 bg-ink-50 border-r border-ink-200 h-screen sticky top-0 flex flex-col shrink-0">
+          <div className="px-4 py-3 lg:px-6 lg:py-4 border-b border-ink-200 shrink-0">
             <span className="font-display font-bold text-obsidian tracking-tighter hidden lg:block">SOLEKICKS<span className="text-fire">.</span></span>
             <span className="lg:hidden font-display font-semibold text-fire text-center block">S.</span>
           </div>
-          <nav className="flex-1 p-2 lg:p-3 space-y-1">
+          <nav className="flex-1 p-2 lg:p-3 space-y-1 overflow-y-auto custom-scrollbar">
             {NAV.map(([k, l, I]) => (
               <button key={k} onClick={() => setTab(k)} data-testid={`admin-nav-${k}`} className={`w-full flex items-center justify-center lg:justify-start gap-3 px-3 py-2.5 font-bold text-sm transition-colors ${tab === k ? "bg-white text-fire border border-ink-200 shadow-sm" : "text-ink-500 hover:text-obsidian hover:bg-ink-100/50 border border-transparent"}`}>
                 <I size={18} />
@@ -50,7 +70,7 @@ export default function Admin() {
               </button>
             ))}
           </nav>
-          <button onClick={() => { logout(); navigate("/"); }} className="m-3 flex items-center justify-center lg:justify-start gap-3 px-3 py-3 text-ink-500 hover:text-fire hover:bg-ink-100/50 font-bold uppercase text-sm transition-colors border border-transparent">
+          <button onClick={() => { logout(); navigate("/"); }} className="m-3 flex items-center justify-center lg:justify-start gap-3 px-3 py-3 text-ink-500 hover:text-fire hover:bg-ink-100/50 font-bold  text-sm transition-colors border border-transparent">
             <LogOut size={18} />
             <span className="hidden lg:block">Logout</span>
           </button>
@@ -60,13 +80,19 @@ export default function Admin() {
       <main className={`flex-1 overflow-x-hidden ${tab === 'cms' ? 'h-screen' : 'p-5 lg:p-8 min-w-0'}`}>
         {tab === "overview" && <Overview setTab={setTab} />}
         {tab === "orders" && <Orders />}
+        {tab === "cod" && <CodTracking />}
+        {tab === "inventory" && <InventoryManagement />}
         {tab === "products" && <Products />}
+        {tab === "pos" && <PosSystem />}
         {tab === "returns" && <Returns />}
         {tab === "refunds" && <Refunds />}
         {tab === "coupons" && <Coupons />}
         {tab === "reviews" && <Reviews />}
         {tab === "customers" && <Customers />}
+        {tab === "bundles" && <BundlesManager />}
         {tab === "cms" && <Cms setTab={setTab} />}
+        {tab === "profitability" && <ProfitabilityAnalytics />}
+        {tab === "audit_logs" && <AuditLogs />}
       </main>
     </div>
   );
@@ -92,30 +118,35 @@ function Overview({ setTab }) {
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
         <h1 className="font-display tracking-tight text-2xl font-semibold">Dashboard</h1>
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => setTab("products")} className="px-3 py-1.5 text-xs font-bold uppercase border border-ink-200 bg-white hover:bg-obsidian hover:text-white transition-colors">+ Add Product</button>
-          <button onClick={() => setTab("coupons")} className="px-3 py-1.5 text-xs font-bold uppercase border border-ink-200 bg-white hover:bg-obsidian hover:text-white transition-colors">+ Create Coupon</button>
-          <button onClick={() => setTab("orders")} className="px-3 py-1.5 text-xs font-bold uppercase bg-obsidian text-white hover:bg-fire transition-colors">View Orders</button>
+          <button onClick={() => setTab("products")} className="px-3 py-1.5 text-xs font-bold  border border-ink-200 bg-white hover:bg-obsidian hover:text-white transition-colors">+ Add Product</button>
+          <button onClick={() => setTab("coupons")} className="px-3 py-1.5 text-xs font-bold  border border-ink-200 bg-white hover:bg-obsidian hover:text-white transition-colors">+ Create Coupon</button>
+          <button onClick={() => setTab("orders")} className="px-3 py-1.5 text-xs font-bold  bg-obsidian text-white hover:bg-fire transition-colors">View Orders</button>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         <div className="bg-white rounded-none p-5 border border-ink-200">
-           <div className="flex justify-between items-start"><span className="font-mono text-xs uppercase tracking-wider text-ink-400">Total Revenue</span><DollarSign size={18} className="text-fire" /></div>
+           <div className="flex justify-between items-start"><span className="font-mono text-xs  tracking-wider text-ink-400">Collected Revenue</span><DollarSign size={18} className="text-green-500" /></div>
            <p className="font-display font-semibold text-2xl mt-2">{fmt(kpis.revenue.value)}</p>
            <Trend val={kpis.revenue.trend} />
         </div>
         <div className="bg-white rounded-none p-5 border border-ink-200">
-           <div className="flex justify-between items-start"><span className="font-mono text-xs uppercase tracking-wider text-ink-400">Orders</span><ShoppingCart size={18} className="text-fire" /></div>
+           <div className="flex justify-between items-start"><span className="font-mono text-xs  tracking-wider text-ink-400">Pending COD</span><Truck size={18} className="text-orange-500" /></div>
+           <p className="font-display font-semibold text-2xl mt-2">{fmt(kpis.pending_cod?.value || 0)}</p>
+           <span className="text-xs font-mono font-bold text-ink-400">Awaiting Remittance</span>
+        </div>
+        <div className="bg-white rounded-none p-5 border border-ink-200">
+           <div className="flex justify-between items-start"><span className="font-mono text-xs  tracking-wider text-ink-400">Orders</span><ShoppingCart size={18} className="text-fire" /></div>
            <p className="font-display font-semibold text-2xl mt-2">{kpis.orders.value}</p>
            <Trend val={kpis.orders.trend} />
         </div>
         <div className="bg-white rounded-none p-5 border border-ink-200">
-           <div className="flex justify-between items-start"><span className="font-mono text-xs uppercase tracking-wider text-ink-400">Customers</span><Users size={18} className="text-fire" /></div>
+           <div className="flex justify-between items-start"><span className="font-mono text-xs  tracking-wider text-ink-400">Customers</span><Users size={18} className="text-fire" /></div>
            <p className="font-display font-semibold text-2xl mt-2">{kpis.customers.value}</p>
            <Trend val={kpis.customers.trend} />
         </div>
         <div className="bg-white rounded-none p-5 border border-ink-200">
-           <div className="flex justify-between items-start"><span className="font-mono text-xs uppercase tracking-wider text-ink-400">Avg Order Value</span><Package size={18} className="text-fire" /></div>
+           <div className="flex justify-between items-start"><span className="font-mono text-xs  tracking-wider text-ink-400">Avg Order Value</span><Package size={18} className="text-fire" /></div>
            <p className="font-display font-semibold text-2xl mt-2">{fmt(kpis.aov.value)}</p>
            <Trend val={kpis.aov.trend} />
         </div>
@@ -146,7 +177,7 @@ function Overview({ setTab }) {
           <h3 className="font-display text-lg font-semibold mb-4">Top Selling Products</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
-              <thead className="bg-ink-100 font-mono text-[10px] uppercase text-ink-500">
+              <thead className="bg-ink-100 font-mono text-[10px]  text-ink-500">
                 <tr><th className="p-3">Product</th><th className="p-3">Sold</th><th className="p-3">Revenue</th></tr>
               </thead>
               <tbody>
@@ -160,7 +191,7 @@ function Overview({ setTab }) {
               </tbody>
             </table>
           </div>
-          <button onClick={() => setTab("products")} className="w-full text-center text-xs font-bold uppercase mt-4 text-ink-500 hover:text-obsidian">View All Products</button>
+          <button onClick={() => setTab("products")} className="w-full text-center text-xs font-bold  mt-4 text-ink-500 hover:text-obsidian">View All Products</button>
         </div>
         
         <div className="bg-white rounded-none p-5 border border-ink-200">
@@ -190,11 +221,11 @@ function Overview({ setTab }) {
         <div className="lg:col-span-2 bg-white rounded-none p-5 border border-ink-200">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-display text-lg font-semibold">Recent Orders</h3>
-            <button onClick={() => setTab("orders")} className="text-xs font-bold uppercase text-fire hover:underline">View All</button>
+            <button onClick={() => setTab("orders")} className="text-xs font-bold  text-fire hover:underline">View All</button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
-              <thead className="bg-ink-100 font-mono text-[10px] uppercase text-ink-500">
+              <thead className="bg-ink-100 font-mono text-[10px]  text-ink-500">
                 <tr><th className="p-3">Order</th><th className="p-3">Customer</th><th className="p-3">Total</th><th className="p-3">Status</th><th className="p-3 hidden sm:table-cell">Date</th></tr>
               </thead>
               <tbody>
@@ -203,7 +234,7 @@ function Overview({ setTab }) {
                     <td className="p-3 font-mono font-bold text-fire">#{o.order_number}</td>
                     <td className="p-3">{o.customer_name}</td>
                     <td className="p-3">{fmt(o.total)}</td>
-                    <td className="p-3"><span className="text-[10px] font-bold uppercase tracking-wider bg-ink-100 px-2 py-1">{o.status}</span></td>
+                    <td className="p-3"><span className="text-[10px] font-bold  tracking-wider bg-ink-100 px-2 py-1">{o.status}</span></td>
                     <td className="p-3 hidden sm:table-cell text-ink-400 font-mono text-xs">{new Date(o.created_at).toLocaleDateString()}</td>
                   </tr>
                 ))}
@@ -236,23 +267,23 @@ function Overview({ setTab }) {
             <ul className="space-y-3 text-sm">
               <li className="flex justify-between items-center">
                 <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-fire"></span> {needs_attention.pending_orders} pending orders</span>
-                <button onClick={() => setTab("orders")} className="text-xs text-ink-400 hover:text-obsidian uppercase font-bold">View</button>
+                <button onClick={() => setTab("orders")} className="text-xs text-ink-400 hover:text-obsidian  font-bold">View</button>
               </li>
               <li className="flex justify-between items-center">
                 <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-orange-400"></span> {needs_attention.low_stock} products low stock</span>
-                <button onClick={() => setTab("products")} className="text-xs text-ink-400 hover:text-obsidian uppercase font-bold">View</button>
+                <button onClick={() => setTab("products")} className="text-xs text-ink-400 hover:text-obsidian  font-bold">View</button>
               </li>
               <li className="flex justify-between items-center">
                 <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-red-600"></span> {needs_attention.failed_payments} failed payments</span>
-                <button onClick={() => setTab("orders")} className="text-xs text-ink-400 hover:text-obsidian uppercase font-bold">View</button>
+                <button onClick={() => setTab("orders")} className="text-xs text-ink-400 hover:text-obsidian  font-bold">View</button>
               </li>
               <li className="flex justify-between items-center">
                 <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-yellow-400"></span> {needs_attention.pending_reviews} pending reviews</span>
-                <button onClick={() => setTab("reviews")} className="text-xs text-ink-400 hover:text-obsidian uppercase font-bold">View</button>
+                <button onClick={() => setTab("reviews")} className="text-xs text-ink-400 hover:text-obsidian  font-bold">View</button>
               </li>
               <li className="flex justify-between items-center">
                 <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-orange-500"></span> {needs_attention.refund_requests} refund requests</span>
-                <button onClick={() => setTab("refunds")} className="text-xs text-ink-400 hover:text-obsidian uppercase font-bold">View</button>
+                <button onClick={() => setTab("refunds")} className="text-xs text-ink-400 hover:text-obsidian  font-bold">View</button>
               </li>
             </ul>
           </div>
@@ -292,6 +323,70 @@ function Orders() {
 
   const toggleSelect = (id) => setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   const selectAll = () => setSelected(selected.length === data.orders.length ? [] : data.orders.map(o => o.id));
+
+  const printPackingSlips = () => {
+    const selectedOrders = data.orders.filter(o => selected.includes(o.id));
+    if (selectedOrders.length === 0) return toast.error('No orders selected');
+    const html = `
+      <!DOCTYPE html><html><head><title>Packing Slips</title><style>
+        @page { size: A5; margin: 10mm; }
+        body { font-family: Arial, sans-serif; font-size: 11px; color: #111; }
+        .slip { page-break-after: always; padding: 10px; border: 1px solid #ccc; }
+        .slip:last-child { page-break-after: avoid; }
+        .header { display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #111; padding-bottom: 8px; margin-bottom: 10px; }
+        .logo { font-size: 18px; font-weight: 900; letter-spacing: -1px; }
+        .dot { color: #FF3B30; }
+        .order-num { font-size: 16px; font-weight: bold; font-family: monospace; }
+        .section { margin: 8px 0; }
+        .label { font-size: 9px; text-transform: uppercase; color: #666; font-weight: bold; letter-spacing: 1px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+        th { background: #f0f0f0; padding: 5px 8px; text-align: left; font-size: 9px; text-transform: uppercase; }
+        td { padding: 5px 8px; border-bottom: 1px solid #eee; }
+        .total-row td { font-weight: bold; border-top: 2px solid #111; }
+        .barcode { text-align: center; font-family: monospace; font-size: 14px; letter-spacing: 4px; margin-top: 10px; border: 1px solid #ccc; padding: 6px; }
+      </style></head><body>
+      ${selectedOrders.map(o => `
+        <div class="slip">
+          <div class="header">
+            <div class="logo">SOLEKICKS<span class="dot">.</span></div>
+            <div class="order-num">#${o.order_number}</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="section">
+              <div class="label">Ship To</div>
+              <strong>${o.customer_name}</strong><br>
+              ${o.shipping_address?.address_l1 || ''}<br>
+              ${o.shipping_address?.address_l2 ? o.shipping_address.address_l2 + '<br>' : ''}
+              ${o.shipping_address?.city || ''}, ${o.shipping_address?.province || ''}<br>
+              ${o.customer_phone}
+            </div>
+            <div class="section">
+              <div class="label">Order Info</div>
+              Date: ${new Date(o.created_at).toLocaleDateString()}<br>
+              Payment: <strong>${o.payment_status}</strong><br>
+              Method: ${o.payment_method}<br>
+              ${o.tracking_number ? 'Tracking: <strong>' + o.tracking_number + '</strong>' : ''}
+            </div>
+          </div>
+          <table>
+            <thead><tr><th>Item</th><th>Size</th><th>Qty</th><th>Price</th></tr></thead>
+            <tbody>
+              ${(o.items || []).map(it => `
+                <tr><td>${it.product_name}</td><td>${it.size}</td><td>${it.quantity}</td><td>Rs. ${it.unit_price?.toLocaleString()}</td></tr>
+              `).join('')}
+              <tr class="total-row"><td colspan="3">Total</td><td>Rs. ${o.total?.toLocaleString()}</td></tr>
+            </tbody>
+          </table>
+          <div class="barcode">${o.order_number}</div>
+        </div>
+      `).join('')}
+      </body></html>
+    `;
+    const win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
+    win.onload = () => { win.print(); };
+  };
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -344,8 +439,8 @@ function Orders() {
           <p className="text-sm text-ink-500">Manage and process customer orders</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={exportOrders} className="px-3 py-1.5 text-xs font-bold uppercase border border-ink-200 bg-white hover:bg-obsidian hover:text-white transition-colors flex items-center gap-2"><Download size={14}/> Export</button>
-          <button onClick={() => toast.success("Create Order coming soon!")} className="px-3 py-1.5 text-xs font-bold uppercase bg-obsidian text-white hover:bg-fire transition-colors">+ Create Order</button>
+          <button onClick={exportOrders} className="px-3 py-1.5 text-xs font-bold  border border-ink-200 bg-white hover:bg-obsidian hover:text-white transition-colors flex items-center gap-2"><Download size={14}/> Export</button>
+          <button onClick={() => toast.success("Create Order coming soon!")} className="px-3 py-1.5 text-xs font-bold  bg-obsidian text-white hover:bg-fire transition-colors">+ Create Order</button>
         </div>
       </div>
 
@@ -385,7 +480,7 @@ function Orders() {
             <option value="7d">Last 7 days</option>
             <option value="30d">Last 30 days</option>
           </select>
-          <button onClick={resetFilters} className="text-sm font-bold text-ink-500 hover:text-fire uppercase px-3 py-2">Reset</button>
+          <button onClick={resetFilters} className="text-sm font-bold text-ink-500 hover:text-fire  px-3 py-2">Reset</button>
         </div>
       </div>
 
@@ -394,8 +489,9 @@ function Orders() {
         <div className="bg-obsidian text-white p-3 flex justify-between items-center mb-4 sticky top-0 z-10 shadow-lg">
           <span className="font-bold text-sm">{selected.length} orders selected</span>
           <div className="flex gap-2">
-            <button onClick={() => bulkUpdateStatus('processing')} className="px-3 py-1.5 text-xs font-bold uppercase bg-white/10 hover:bg-white/20 transition-colors">Mark Processing</button>
-            <button onClick={() => bulkUpdateStatus('shipped')} className="px-3 py-1.5 text-xs font-bold uppercase bg-white/10 hover:bg-white/20 transition-colors">Mark Shipped</button>
+            <button onClick={printPackingSlips} className="px-3 py-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 transition-colors flex items-center gap-1.5"><Printer size={13}/> Print Slips</button>
+            <button onClick={() => bulkUpdateStatus('processing')} className="px-3 py-1.5 text-xs font-bold  bg-white/10 hover:bg-white/20 transition-colors">Mark Processing</button>
+            <button onClick={() => bulkUpdateStatus('shipped')} className="px-3 py-1.5 text-xs font-bold  bg-white/10 hover:bg-white/20 transition-colors">Mark Shipped</button>
           </div>
         </div>
       )}
@@ -404,7 +500,7 @@ function Orders() {
       <div className="bg-white border border-ink-200 overflow-x-auto min-h-[400px]">
         {loading ? <div className="p-10 flex justify-center"><div className="w-6 h-6 border-2 border-obsidian border-t-transparent rounded-full animate-spin"></div></div> : (
           <table className="w-full text-sm text-left">
-            <thead className="bg-ink-100 font-mono text-[10px] uppercase text-ink-500">
+            <thead className="bg-ink-100 font-mono text-[10px]  text-ink-500">
               <tr>
                 <th className="p-3 w-10"><input type="checkbox" checked={data.orders.length > 0 && selected.length === data.orders.length} onChange={selectAll} className="accent-obsidian" /></th>
                 <th className="p-3">Order</th>
@@ -429,10 +525,10 @@ function Orders() {
                   <td className="p-3 font-mono">{o.items?.length || 0}</td>
                   <td className="p-3 font-mono font-bold text-fire">{fmt(o.total)}</td>
                   <td className="p-3">
-                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 ${o.payment_status==='paid'?'bg-green-100 text-green-700':o.payment_status==='failed'?'bg-red-100 text-red-700':'bg-yellow-100 text-yellow-700'}`}>{o.payment_status}</span>
+                    <span className={`text-[10px] font-bold  tracking-wider px-2 py-0.5 ${o.payment_status==='paid'?'bg-green-100 text-green-700':o.payment_status==='failed'?'bg-red-100 text-red-700':'bg-yellow-100 text-yellow-700'}`}>{o.payment_status}</span>
                   </td>
                   <td className="p-3">
-                    <span className="text-[10px] font-bold uppercase tracking-wider bg-ink-100 text-obsidian px-2 py-0.5">{o.status}</span>
+                    <span className="text-[10px] font-bold  tracking-wider bg-ink-100 text-obsidian px-2 py-0.5">{o.status}</span>
                   </td>
                   <td className="p-3 text-ink-500 font-mono text-xs">{new Date(o.created_at).toLocaleDateString()}</td>
                   <td className="p-3 text-center" onClick={e => e.stopPropagation()}>
@@ -464,13 +560,21 @@ function Orders() {
 function OrderDetailsDrawer({ order, onClose, onUpdate }) {
   const [status, setStatus] = useState(order.status);
   const [note, setNote] = useState(order.customer_note || "");
+  const [trackingNumber, setTrackingNumber] = useState(order.tracking_number || "");
+  const [courierName, setCourierName] = useState(order.courier_name || "");
   const [savingNote, setSavingNote] = useState(false);
   const [refundOrder, setRefundOrder] = useState(null);
 
   const updateStatus = async (newStatus) => {
     setStatus(newStatus);
-    await http.patch(`/admin/orders/${order.id}/status`, { status: newStatus });
+    await http.patch(`/admin/orders/${order.id}/status`, { status: newStatus, tracking_number: trackingNumber, courier_name: courierName });
     toast.success("Order status updated");
+    onUpdate();
+  };
+  
+  const saveTracking = async () => {
+    await http.patch(`/admin/orders/${order.id}/status`, { status, tracking_number: trackingNumber, courier_name: courierName });
+    toast.success("Tracking updated");
     onUpdate();
   };
 
@@ -479,6 +583,18 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
     await http.patch(`/admin/orders/${order.id}/note`, { note });
     setSavingNote(false);
     toast.success("Note saved");
+  };
+
+  const bookCourier = async () => {
+    try {
+      const res = await http.post(`/admin/orders/${order.id}/book-courier`);
+      setTrackingNumber(res.data.data.awb);
+      setCourierName(res.data.data.courier_name);
+      toast.success("Courier booked successfully via API");
+      onUpdate();
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "Failed to book courier");
+    }
   };
 
   const STEPS = ["placed", "confirmed", "processing", "shipped", "delivered"];
@@ -495,12 +611,12 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
           <div>
             <h2 className="font-display font-semibold text-2xl flex items-center gap-3">
               Order #{order.order_number}
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-ink-100 text-obsidian px-2 py-1 align-middle">{order.status}</span>
+              <span className="text-[10px] font-bold  tracking-wider bg-ink-100 text-obsidian px-2 py-1 align-middle">{order.status}</span>
             </h2>
             <p className="text-sm text-ink-500 mt-1 font-mono">Placed {new Date(order.created_at).toLocaleString()}</p>
           </div>
           <div className="flex gap-2 items-center">
-            <select value={status} onChange={(e) => updateStatus(e.target.value)} className="border border-ink-200 px-3 py-1.5 text-sm font-bold uppercase bg-white focus:outline-none">
+            <select value={status} onChange={(e) => updateStatus(e.target.value)} className="border border-ink-200 px-3 py-1.5 text-sm font-bold  bg-white focus:outline-none">
               {ORDER_STATES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
             <button onClick={() => window.print()} className="p-2 border border-ink-200 hover:bg-ink-100 text-ink-600"><Printer size={18}/></button>
@@ -512,7 +628,7 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
           {/* Timeline */}
           {(!['cancelled', 'refunded', 'failed'].includes(order.status)) && (
             <div className="bg-white border border-ink-200 p-6">
-              <h3 className="font-display font-semibold mb-6 uppercase text-sm tracking-wider text-ink-500">Order Timeline</h3>
+              <h3 className="font-display font-semibold mb-6  text-sm tracking-wider text-ink-500">Order Timeline</h3>
               <div className="flex justify-between relative">
                 <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-0.5 bg-ink-100 -z-10"></div>
                 {STEPS.map((step, i) => {
@@ -523,7 +639,7 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
                       <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 ${isCompleted ? 'bg-obsidian border-obsidian text-white' : 'bg-white border-ink-200 text-ink-300'}`}>
                         {isCompleted ? <CheckCircle size={14}/> : <div className="w-2 h-2 rounded-full bg-ink-200"/>}
                       </div>
-                      <span className={`text-[10px] font-bold uppercase ${isCurrent ? 'text-obsidian' : 'text-ink-400'}`}>{step}</span>
+                      <span className={`text-[10px] font-bold  ${isCurrent ? 'text-obsidian' : 'text-ink-400'}`}>{step}</span>
                     </div>
                   );
                 })}
@@ -541,9 +657,26 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
                   <p className="font-bold">{order.customer_name}</p>
                   {order.shipping_address?.email && <p className="text-ink-500">{order.shipping_address.email}</p>}
                   <p className="text-ink-500 font-mono mt-1">{order.customer_phone}</p>
-                  <a href={waLink(order.customer_phone, `Hi ${order.customer_name}, update on your SOLEKICKS order ${order.order_number}:`)} target="_blank" rel="noreferrer" className="text-xs font-bold uppercase text-[#25D366] hover:underline mt-2 inline-block">WhatsApp Customer</a>
+                  <a href={waLink(order.customer_phone, `Hi ${order.customer_name}, update on your SOLEKICKS order ${order.order_number}:`)} target="_blank" rel="noreferrer" className="text-xs font-bold  text-[#25D366] hover:underline mt-2 inline-block">WhatsApp Customer</a>
                 </div>
               </div>
+              
+              {order.payment_method === 'COD' && (
+                <div className="mt-4 pt-4 border-t border-ink-100">
+                  <h4 className="text-xs font-bold text-ink-400 mb-2">COD Risk Analysis</h4>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-sm">Risk Score:</span>
+                    <span className={`font-mono font-bold px-2 py-0.5 rounded ${order.risk_score > 50 ? 'bg-red-100 text-fire' : order.risk_score > 20 ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}>
+                      {order.risk_score || 0}/100
+                    </span>
+                  </div>
+                  {order.risk_flags?.length > 0 && (
+                    <ul className="text-xs text-fire list-disc list-inside">
+                      {order.risk_flags.map((flag, idx) => <li key={idx}>{flag}</li>)}
+                    </ul>
+                  )}
+                </div>
+              )}
 
               <hr className="border-ink-100" />
 
@@ -558,12 +691,17 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
                   <p>{order.shipping_address?.postal_code}</p>
                 </div>
                 
-                {order.tracking_number && (
-                  <div className="mt-4 pt-4 border-t border-ink-100">
-                    <p className="text-xs font-bold uppercase text-ink-400 mb-1">Tracking Info</p>
-                    <p className="text-sm"><span className="font-semibold">{order.courier_name}</span> - <span className="font-mono">{order.tracking_number}</span></p>
+                <div className="mt-4 pt-4 border-t border-ink-100">
+                  <p className="text-xs font-bold text-ink-400 mb-2">Tracking Info</p>
+                  <div className="space-y-2">
+                    <input type="text" placeholder="Courier (e.g. TCS)" value={courierName} onChange={e => setCourierName(e.target.value)} className="w-full border border-ink-200 px-3 py-2 text-sm focus:outline-none focus:border-obsidian" />
+                    <input type="text" placeholder="Tracking Number / AWB" value={trackingNumber} onChange={e => setTrackingNumber(e.target.value)} className="w-full border border-ink-200 px-3 py-2 text-sm focus:outline-none focus:border-obsidian font-mono" />
+                    <div className="flex gap-2 mt-2">
+                      <button onClick={saveTracking} className="px-3 py-1.5 bg-obsidian text-white text-xs font-bold hover:bg-fire transition-colors">Save Tracking</button>
+                      <button onClick={bookCourier} className="px-3 py-1.5 border border-fire text-fire text-xs font-bold hover:bg-fire hover:text-white transition-colors">Auto-Book Courier API</button>
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
 
               <hr className="border-ink-100" />
@@ -573,7 +711,7 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
                 <h3 className="font-display font-semibold flex items-center gap-2 mb-4"><DollarSign size={16}/> Payment Information</h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between"><span className="text-ink-500">Method</span><span className="font-semibold capitalize">{order.payment_method}</span></div>
-                  <div className="flex justify-between"><span className="text-ink-500">Status</span><span className={`font-bold uppercase tracking-wider text-[10px] px-2 py-0.5 ${order.payment_status==='paid'?'bg-green-100 text-green-700':'bg-yellow-100 text-yellow-700'}`}>{order.payment_status}</span></div>
+                  <div className="flex justify-between"><span className="text-ink-500">Status</span><span className={`font-bold  tracking-wider text-[10px] px-2 py-0.5 ${order.payment_status==='paid'?'bg-green-100 text-green-700':'bg-yellow-100 text-yellow-700'}`}>{order.payment_status}</span></div>
                   {order.paymentTransactions && order.paymentTransactions[0] && (
                     <div className="flex justify-between"><span className="text-ink-500">Transaction</span><span className="font-mono text-xs">{order.paymentTransactions[0].session_id.substring(0,20)}...</span></div>
                   )}
@@ -585,15 +723,15 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
             <div className="space-y-6">
 
               <div className="bg-white border border-ink-200 p-6">
-                <h3 className="font-display font-semibold mb-4 uppercase text-sm tracking-wider text-ink-500">Internal Notes</h3>
+                <h3 className="font-display font-semibold mb-4  text-sm tracking-wider text-ink-500">Internal Notes</h3>
                 <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Add a private note about this order..." className="w-full border border-ink-200 p-3 text-sm focus:outline-none focus:border-obsidian min-h-[100px] rounded-none mb-3 resize-none" />
-                <button onClick={saveNote} disabled={savingNote} className="px-4 py-2 bg-obsidian text-white text-xs font-bold uppercase disabled:opacity-50">Save Note</button>
+                <button onClick={saveNote} disabled={savingNote} className="px-4 py-2 bg-obsidian text-white text-xs font-bold  disabled:opacity-50">Save Note</button>
               </div>
 
               <div className="bg-white border border-ink-200 p-6 border-l-4 border-l-fire">
                 <h3 className="font-display font-semibold mb-2">Process Refund</h3>
                 <p className="text-xs text-ink-500 mb-4">Full or partial refunds can be processed here.</p>
-                <button onClick={() => setRefundOrder(order)} className="px-4 py-2 border border-fire text-fire text-xs font-bold uppercase hover:bg-fire hover:text-white transition-colors w-full">Initiate Refund</button>
+                <button onClick={() => setRefundOrder(order)} className="px-4 py-2 border border-fire text-fire text-xs font-bold  hover:bg-fire hover:text-white transition-colors w-full">Initiate Refund</button>
               </div>
             </div>
           </div>
@@ -605,7 +743,7 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
-                <thead className="bg-ink-50 font-mono text-[10px] uppercase text-ink-500">
+                <thead className="bg-ink-50 font-mono text-[10px]  text-ink-500">
                   <tr><th className="p-4" colSpan={2}>Product</th><th className="p-4 text-center">Qty</th><th className="p-4 text-right">Price</th><th className="p-4 text-right">Total</th></tr>
                 </thead>
                 <tbody>
@@ -637,10 +775,66 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
         </div>
       </motion.div>
       {refundOrder && <RefundModal order={refundOrder} onClose={() => setRefundOrder(null)} onDone={() => { setRefundOrder(null); onUpdate(); }} />}
+      <ShippingLabel order={order} />
     </div>
   );
 }
 
+function ShippingLabel({ order }) {
+  if (!order) return null;
+  return (
+    <div id="printable-label" className="hidden print:block p-8 bg-white text-black font-sans w-[4in] min-h-[6in] border-2 border-black box-border">
+      <div className="border-b-2 border-black pb-4 mb-4 text-center">
+        <h1 className="text-3xl font-black uppercase tracking-widest">SOLEKICKS</h1>
+        <p className="text-sm font-bold mt-1">Premium Sneaker Fulfillment</p>
+      </div>
+      
+      <div className="flex justify-between items-end border-b-2 border-black pb-4 mb-4">
+        <div>
+          <p className="text-xs font-bold uppercase text-gray-500">Order Number</p>
+          <p className="text-2xl font-black font-mono">#{order.order_number}</p>
+        </div>
+        <div className="text-right">
+          <p className="text-xs font-bold uppercase text-gray-500">Date</p>
+          <p className="text-sm font-bold">{new Date(order.created_at).toLocaleDateString()}</p>
+        </div>
+      </div>
+      
+      <div className="mb-6">
+        <p className="text-xs font-bold uppercase text-gray-500 mb-1">Ship To:</p>
+        <p className="text-xl font-bold">{order.customer_name}</p>
+        <p className="text-base mt-1">{order.shipping_address?.address_l1}</p>
+        {order.shipping_address?.address_l2 && <p className="text-base">{order.shipping_address.address_l2}</p>}
+        <p className="text-base font-bold mt-1">{order.shipping_address?.city}, {order.shipping_address?.province}</p>
+        <p className="text-base">{order.shipping_address?.postal_code}</p>
+        <p className="text-base font-bold mt-2 pt-2 border-t border-dashed border-gray-300">TEL: {order.customer_phone}</p>
+      </div>
+
+      <div className="border-t-4 border-black pt-4 mb-4">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-sm font-bold uppercase">Payment Mode</span>
+          <span className={`text-lg font-black uppercase ${order.payment_method === 'COD' ? 'border-2 border-black px-2' : ''}`}>{order.payment_method}</span>
+        </div>
+        {order.payment_method === 'COD' && (
+          <div className="flex justify-between items-center bg-black text-white p-2">
+            <span className="font-bold uppercase">COD Amount To Collect</span>
+            <span className="text-2xl font-black">{fmt(order.total)}</span>
+          </div>
+        )}
+      </div>
+      
+      <div className="border-t-2 border-black pt-4">
+        <p className="text-xs font-bold uppercase text-gray-500 mb-2">Package Contents ({order.items?.length || 0} Items)</p>
+        {order.items?.map((item, i) => (
+          <div key={i} className="flex justify-between text-sm mb-1">
+            <span className="font-bold truncate pr-2">{item.quantity}x {item.product_name}</span>
+            <span className="font-mono flex-shrink-0">Size: {item.size}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function Products() {
   const [data, setData] = useState({ products: [], pagination: {}, stats: {} });
@@ -738,12 +932,12 @@ function Products() {
     <div>
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h1 className="font-display tracking-tight text-2xl font-semibold uppercase">Products</h1>
+          <h1 className="font-display tracking-tight text-2xl font-semibold ">Products</h1>
           <p className="text-sm text-ink-500">Manage your product catalog</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={exportCSV} className="px-3 py-1.5 text-xs font-bold uppercase border border-ink-200 bg-white hover:bg-obsidian hover:text-white transition-colors flex items-center gap-2"><Download size={14}/> Export</button>
-          <button onClick={() => { setEditing(null); setShowForm(true); }} className="px-3 py-1.5 text-xs font-bold uppercase bg-obsidian text-white hover:bg-fire transition-colors">+ Add Product</button>
+          <button onClick={exportCSV} className="px-3 py-1.5 text-xs font-bold  border border-ink-200 bg-white hover:bg-obsidian hover:text-white transition-colors flex items-center gap-2"><Download size={14}/> Export</button>
+          <button onClick={() => { setEditing(null); setShowForm(true); }} className="px-3 py-1.5 text-xs font-bold  bg-obsidian text-white hover:bg-fire transition-colors">+ Add Product</button>
         </div>
       </div>
 
@@ -751,7 +945,7 @@ function Products() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         {STATS.map(s => (
           <div key={s.label} className="bg-white p-4 border border-ink-200 flex flex-col justify-between">
-            <span className="text-xs font-bold text-ink-400 uppercase tracking-wider">{s.label}</span>
+            <span className="text-xs font-bold text-ink-400  tracking-wider">{s.label}</span>
             <span className={`text-2xl font-mono font-black mt-2 ${s.color}`}>{s.count}</span>
           </div>
         ))}
@@ -789,7 +983,7 @@ function Products() {
             <option value="50_100">50 - 100</option>
             <option value="100_500">100 - 500</option>
           </select>
-          <button onClick={resetFilters} className="text-sm font-bold text-ink-500 hover:text-fire uppercase px-3 py-2">Reset</button>
+          <button onClick={resetFilters} className="text-sm font-bold text-ink-500 hover:text-fire  px-3 py-2">Reset</button>
         </div>
       </div>
 
@@ -798,9 +992,9 @@ function Products() {
         <div className="bg-obsidian text-white p-3 flex justify-between items-center mb-4 sticky top-0 z-10 shadow-lg">
           <span className="font-bold text-sm">{selected.length} products selected</span>
           <div className="flex gap-2">
-            <button onClick={() => bulkUpdate('status', 'active')} className="px-3 py-1.5 text-xs font-bold uppercase bg-white/10 hover:bg-green-600 transition-colors">Activate</button>
-            <button onClick={() => bulkUpdate('status', 'draft')} className="px-3 py-1.5 text-xs font-bold uppercase bg-white/10 hover:bg-yellow-600 transition-colors">Deactivate</button>
-            <button onClick={() => bulkUpdate('delete')} className="px-3 py-1.5 text-xs font-bold uppercase bg-white/10 hover:bg-fire transition-colors">Delete</button>
+            <button onClick={() => bulkUpdate('status', 'active')} className="px-3 py-1.5 text-xs font-bold  bg-white/10 hover:bg-green-600 transition-colors">Activate</button>
+            <button onClick={() => bulkUpdate('status', 'draft')} className="px-3 py-1.5 text-xs font-bold  bg-white/10 hover:bg-yellow-600 transition-colors">Deactivate</button>
+            <button onClick={() => bulkUpdate('delete')} className="px-3 py-1.5 text-xs font-bold  bg-white/10 hover:bg-fire transition-colors">Delete</button>
           </div>
         </div>
       )}
@@ -809,7 +1003,7 @@ function Products() {
       <div className="bg-white border border-ink-200 overflow-x-auto min-h-[400px]">
         {loading ? <div className="p-10 flex justify-center"><div className="w-6 h-6 border-2 border-obsidian border-t-transparent rounded-full animate-spin"></div></div> : (
           <table className="w-full text-sm text-left">
-            <thead className="bg-ink-100 font-mono text-[10px] uppercase text-ink-500">
+            <thead className="bg-ink-100 font-mono text-[10px]  text-ink-500">
               <tr>
                 <th className="p-3 w-10"><input type="checkbox" checked={data.products?.length > 0 && selected.length === data.products?.length} onChange={selectAll} className="accent-obsidian" /></th>
                 <th className="p-3">Product</th>
@@ -838,7 +1032,7 @@ function Products() {
                       <span className={`font-mono font-bold ${stock === 0 ? 'text-fire' : stock < 10 ? 'text-yellow-600' : 'text-obsidian'}`}>{stock}</span>
                     </td>
                     <td className="p-3">
-                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 ${p.status==='active'?'bg-green-100 text-green-700':p.status==='draft'?'bg-yellow-100 text-yellow-700':'bg-ink-100 text-ink-500'}`}>{p.status}</span>
+                      <span className={`text-[10px] font-bold  tracking-wider px-2 py-0.5 ${p.status==='active'?'bg-green-100 text-green-700':p.status==='draft'?'bg-yellow-100 text-yellow-700':'bg-ink-100 text-ink-500'}`}>{p.status}</span>
                     </td>
                     <td className="p-3 text-center relative group" onClick={e => e.stopPropagation()}>
                       <button className="p-1 text-ink-400 hover:text-obsidian"><MoreVertical size={16}/></button>
@@ -888,11 +1082,11 @@ function ProductDetailsDrawer({ product, onClose, onEdit, onUpdate }) {
           <div>
             <h2 className="font-display font-semibold text-2xl flex items-center gap-3">
               {product.name}
-              <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 align-middle ${product.status==='active'?'bg-green-100 text-green-700':'bg-yellow-100 text-yellow-700'}`}>{product.status}</span>
+              <span className={`text-[10px] font-bold  tracking-wider px-2 py-1 align-middle ${product.status==='active'?'bg-green-100 text-green-700':'bg-yellow-100 text-yellow-700'}`}>{product.status}</span>
             </h2>
           </div>
           <div className="flex gap-2 items-center">
-            <button onClick={onEdit} className="px-3 py-1.5 border border-ink-200 hover:bg-ink-100 text-xs font-bold uppercase flex items-center gap-2"><Edit size={14}/> Edit</button>
+            <button onClick={onEdit} className="px-3 py-1.5 border border-ink-200 hover:bg-ink-100 text-xs font-bold  flex items-center gap-2"><Edit size={14}/> Edit</button>
             <button onClick={onClose} className="p-2 text-ink-400 hover:text-fire"><X size={20}/></button>
           </div>
         </div>
@@ -910,7 +1104,7 @@ function ProductDetailsDrawer({ product, onClose, onEdit, onUpdate }) {
 
             <div className="space-y-6">
               <div className="bg-white border border-ink-200 p-6 space-y-4">
-                <h3 className="font-display font-semibold mb-2 uppercase text-sm tracking-wider text-ink-500">Product Information</h3>
+                <h3 className="font-display font-semibold mb-2  text-sm tracking-wider text-ink-500">Product Information</h3>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div><span className="text-ink-500 block text-xs">SKU</span><span className="font-mono">{product.slug}</span></div>
                   <div><span className="text-ink-500 block text-xs">Category</span><span className="capitalize">{product.category_slug}</span></div>
@@ -925,9 +1119,9 @@ function ProductDetailsDrawer({ product, onClose, onEdit, onUpdate }) {
               </div>
               
               <div className="bg-white border border-ink-200 p-6">
-                 <h3 className="font-display font-semibold mb-4 uppercase text-sm tracking-wider text-ink-500">Variants (Size / Stock)</h3>
+                 <h3 className="font-display font-semibold mb-4  text-sm tracking-wider text-ink-500">Variants (Size / Stock)</h3>
                  <table className="w-full text-sm">
-                   <thead className="bg-ink-50"><tr><th className="p-2 text-left text-xs uppercase text-ink-500">Size</th><th className="p-2 text-right text-xs uppercase text-ink-500">Stock</th></tr></thead>
+                   <thead className="bg-ink-50"><tr><th className="p-2 text-left text-xs  text-ink-500">Size</th><th className="p-2 text-right text-xs  text-ink-500">Stock</th></tr></thead>
                    <tbody>
                      {product.sizes?.map((s,i) => (
                        <tr key={i} className="border-t border-ink-100">
@@ -977,7 +1171,7 @@ function MultiImageInput({ images, onChange }) {
     <div data-testid="admin-product-gallery">
       <div className="flex items-center justify-between mb-2">
         <label className="font-display text-xs tracking-wide text-ink-500">Product Gallery <span className="text-ink-400 normal-case font-normal">· drag to reorder · first = cover</span></label>
-        <label data-testid="admin-product-gallery-upload" className="flex items-center gap-1.5 bg-obsidian text-white text-xs font-bold uppercase px-3 py-2 rounded-none cursor-pointer hover:bg-fire transition-colors">
+        <label data-testid="admin-product-gallery-upload" className="flex items-center gap-1.5 bg-obsidian text-white text-xs font-bold  px-3 py-2 rounded-none cursor-pointer hover:bg-fire transition-colors">
           <Upload size={14} /> {busy ? "Uploading…" : "Upload"}
           <input type="file" accept="image/*" multiple onChange={addFiles} className="hidden" />
         </label>
@@ -995,7 +1189,7 @@ function MultiImageInput({ images, onChange }) {
               className="relative group aspect-square rounded-none overflow-hidden border-2 border-ink-200 cursor-grab active:cursor-grabbing"
             >
               <img src={im} alt="" className="h-full w-full object-cover pointer-events-none" />
-              {i === 0 && <span className="absolute top-0.5 left-0.5 bg-fire text-white text-[8px] font-bold uppercase px-1 rounded">Cover</span>}
+              {i === 0 && <span className="absolute top-0.5 left-0.5 bg-fire text-white text-[8px] font-bold  px-1 rounded">Cover</span>}
               <button type="button" onClick={() => remove(i)} data-testid={`admin-gallery-remove-${i}`} className="absolute top-0.5 right-0.5 h-5 w-5 grid place-items-center rounded-none bg-obsidian/80 text-white sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"><X size={11} /></button>
               <span className="absolute bottom-0.5 right-1 text-white text-[9px] font-mono font-bold drop-shadow">{i + 1}</span>
             </div>
@@ -1006,7 +1200,7 @@ function MultiImageInput({ images, onChange }) {
       )}
       <div className="flex gap-2">
         <input value={url} onChange={(e) => setUrl(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addUrl())} placeholder="Paste image URL…" className="flex-1 border border-ink-200 rounded-none px-4 py-2 outline-none focus:border-obsidian text-sm" />
-        <button type="button" onClick={addUrl} className="border border-ink-200 text-xs font-bold uppercase px-3 rounded-none hover:border-obsidian">Add</button>
+        <button type="button" onClick={addUrl} className="border border-ink-200 text-xs font-bold  px-3 rounded-none hover:border-obsidian">Add</button>
       </div>
     </div>
   );
@@ -1017,6 +1211,7 @@ function ProductForm({ product, onClose, onSaved }) {
   const [f, setF] = useState({
     name: product?.name || "", category_slug: product?.category_slug || "retro",
     brand_slug: product?.brand_slug || "airvault", base_price: product?.base_price || "",
+    cost_price: product?.cost_price || "",
     compare_at_price: product?.compare_at_price || "", flash_sale_price: product?.flash_sale_price || "",
     description: product?.description || "",
     is_new_arrival: product?.is_new_arrival ?? true, is_best_seller: product?.is_best_seller ?? false,
@@ -1037,7 +1232,8 @@ function ProductForm({ product, onClose, onSaved }) {
     setSaving(true);
     const payload = {
       name: f.name, category_slug: f.category_slug, brand_slug: f.brand_slug,
-      base_price: Number(f.base_price), compare_at_price: f.compare_at_price ? Number(f.compare_at_price) : null,
+      base_price: Number(f.base_price), cost_price: f.cost_price ? Number(f.cost_price) : 0, 
+      compare_at_price: f.compare_at_price ? Number(f.compare_at_price) : null,
       flash_sale_price: f.flash_sale_price ? Number(f.flash_sale_price) : null,
       description: f.description || f.name, images, hover_image: images[1] || images[0],
       sizes,
@@ -1065,7 +1261,7 @@ function ProductForm({ product, onClose, onSaved }) {
         
         {/* Header */}
         <div className="bg-white border-b border-ink-200 p-6 flex justify-between items-center shrink-0">
-          <h2 className="font-display font-semibold text-2xl uppercase tracking-tight">{isEdit ? "Edit Product" : "Add Product"}</h2>
+          <h2 className="font-display font-semibold text-2xl  tracking-tight">{isEdit ? "Edit Product" : "Add Product"}</h2>
           <button onClick={onClose} className="p-2 text-ink-400 hover:text-fire hover:bg-fire/10 rounded-full transition-colors"><X size={20} /></button>
         </div>
 
@@ -1076,13 +1272,13 @@ function ProductForm({ product, onClose, onSaved }) {
               
               {/* Basic Info */}
               <div className="bg-white border border-ink-200 p-6 space-y-4">
-                <h3 className="font-display font-semibold flex items-center gap-2 mb-4 uppercase text-sm tracking-wider text-ink-500">Basic Information</h3>
+                <h3 className="font-display font-semibold flex items-center gap-2 mb-4  text-sm tracking-wider text-ink-500">Basic Information</h3>
                 <div>
-                  <label className="block text-xs font-bold text-ink-500 uppercase mb-1">Product Name</label>
+                  <label className="block text-xs font-bold text-ink-500  mb-1">Product Name</label>
                   <input placeholder="e.g. Nike Air Max 270" value={f.name} onChange={set("name")} className="w-full border border-ink-200 rounded-none px-4 py-2.5 outline-none focus:border-obsidian font-bold" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-ink-500 uppercase mb-1">Description</label>
+                  <label className="block text-xs font-bold text-ink-500  mb-1">Description</label>
                   <textarea placeholder="Product description..." value={f.description} onChange={set("description")} rows={4} className="w-full border border-ink-200 rounded-none px-4 py-2.5 outline-none focus:border-obsidian" />
                 </div>
               </div>
@@ -1094,11 +1290,11 @@ function ProductForm({ product, onClose, onSaved }) {
 
               {/* Variants / Inventory */}
               <div className="bg-white border border-ink-200 p-6 space-y-4">
-                <h3 className="font-display font-semibold flex items-center gap-2 mb-4 uppercase text-sm tracking-wider text-ink-500">Inventory (Sizes)</h3>
+                <h3 className="font-display font-semibold flex items-center gap-2 mb-4  text-sm tracking-wider text-ink-500">Inventory (Sizes)</h3>
                 <div className="grid grid-cols-4 md:grid-cols-7 gap-3">
                   {sizes.map((s, i) => (
                     <div key={i} className="text-center border border-ink-100 p-2 bg-ink-50">
-                      <div className="text-[10px] font-bold text-ink-500 uppercase mb-2 bg-ink-200 px-1 py-0.5 inline-block">EU {s.size}</div>
+                      <div className="text-[10px] font-bold text-ink-500  mb-2 bg-ink-200 px-1 py-0.5 inline-block">EU {s.size}</div>
                       <input type="number" min="0" value={s.stock} onChange={(e) => {
                         const next = [...sizes];
                         next[i] = { ...next[i], stock: Number(e.target.value) };
@@ -1114,37 +1310,41 @@ function ProductForm({ product, onClose, onSaved }) {
             <div className="space-y-6">
               {/* Organization */}
               <div className="bg-white border border-ink-200 p-6 space-y-4">
-                <h3 className="font-display font-semibold flex items-center gap-2 mb-4 uppercase text-sm tracking-wider text-ink-500">Organization</h3>
+                <h3 className="font-display font-semibold flex items-center gap-2 mb-4  text-sm tracking-wider text-ink-500">Organization</h3>
                 <div>
-                  <label className="block text-xs font-bold text-ink-500 uppercase mb-1">Category</label>
+                  <label className="block text-xs font-bold text-ink-500  mb-1">Category</label>
                   <select value={f.category_slug} onChange={set("category_slug")} className="w-full border border-ink-200 rounded-none px-4 py-2.5 bg-white capitalize"><option value="retro">Retro</option><option value="streetwear">Streetwear</option><option value="runners">Runners</option><option value="slides">Slides</option></select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-ink-500 uppercase mb-1">Brand</label>
+                  <label className="block text-xs font-bold text-ink-500  mb-1">Brand</label>
                   <select value={f.brand_slug} onChange={set("brand_slug")} className="w-full border border-ink-200 rounded-none px-4 py-2.5 bg-white capitalize"><option value="airvault">AirVault</option><option value="terrace-co">Terrace Co</option><option value="cloudstride">CloudStride</option><option value="oasis">Oasis</option></select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-ink-500 uppercase mb-1">Status</label>
+                  <label className="block text-xs font-bold text-ink-500  mb-1">Status</label>
                   <select value={f.status} onChange={set("status")} className="w-full border border-ink-200 rounded-none px-4 py-2.5 bg-white capitalize font-bold text-obsidian"><option value="active">Active</option><option value="draft">Draft</option><option value="archived">Archived</option></select>
                 </div>
               </div>
 
               {/* Pricing */}
               <div className="bg-white border border-ink-200 p-6 space-y-4">
-                <h3 className="font-display font-semibold flex items-center gap-2 mb-4 uppercase text-sm tracking-wider text-ink-500">Pricing</h3>
+                <h3 className="font-display font-semibold flex items-center gap-2 mb-4  text-sm tracking-wider text-ink-500">Pricing</h3>
                 <div>
-                  <label className="block text-xs font-bold text-ink-500 uppercase mb-1">Base Price</label>
+                  <label className="block text-xs font-bold text-ink-500  mb-1">Base Price</label>
                   <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 font-mono">$</span><input type="number" value={f.base_price} onChange={set("base_price")} className="w-full pl-7 pr-4 py-2.5 border border-ink-200 outline-none focus:border-obsidian font-mono font-bold" /></div>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-ink-500 uppercase mb-1">Compare At Price</label>
+                  <label className="block text-xs font-bold text-ink-500  mb-1">Compare At Price</label>
                   <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 font-mono">$</span><input type="number" value={f.compare_at_price} onChange={set("compare_at_price")} className="w-full pl-7 pr-4 py-2.5 border border-ink-200 outline-none focus:border-obsidian font-mono" /></div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-ink-500  mb-1">Cost Price (COGS)</label>
+                  <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 font-mono">$</span><input type="number" value={f.cost_price} onChange={set("cost_price")} className="w-full pl-7 pr-4 py-2.5 border border-ink-200 outline-none focus:border-obsidian font-mono" /></div>
                 </div>
               </div>
 
               {/* Tags/Flags */}
               <div className="bg-white border border-ink-200 p-6 space-y-3">
-                <h3 className="font-display font-semibold flex items-center gap-2 mb-4 uppercase text-sm tracking-wider text-ink-500">Storefront Tags</h3>
+                <h3 className="font-display font-semibold flex items-center gap-2 mb-4  text-sm tracking-wider text-ink-500">Storefront Tags</h3>
                 {[["is_new_arrival", "New Arrival"], ["is_best_seller", "Best Seller"], ["is_flash_sale", "Flash Sale"], ["is_featured", "Featured"]].map(([k, l]) => (
                   <label key={k} className="flex items-center gap-3 cursor-pointer"><input type="checkbox" checked={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.checked })} className="accent-obsidian w-4 h-4" /> <span className="text-sm font-bold">{l}</span></label>
                 ))}
@@ -1154,10 +1354,16 @@ function ProductForm({ product, onClose, onSaved }) {
         </div>
 
         {/* Footer Actions */}
-        <div className="bg-white border-t border-ink-200 p-6 flex justify-end gap-3 shrink-0">
-          <button onClick={onClose} className="px-6 py-3 border border-ink-200 font-bold uppercase text-xs hover:bg-ink-50 transition-colors">Cancel</button>
-          <button onClick={() => save('draft')} disabled={saving} className="px-6 py-3 border border-obsidian font-bold uppercase text-xs hover:bg-ink-100 transition-colors disabled:opacity-50 text-obsidian">Save Draft</button>
-          <button onClick={() => save('active')} disabled={saving} className="px-6 py-3 bg-obsidian text-white font-bold uppercase text-xs hover:bg-fire transition-colors disabled:opacity-50">Publish Product</button>
+        <div className="bg-ink-50 border-t border-ink-200 px-8 py-5 flex items-center justify-between sticky bottom-0 z-10">
+          <button onClick={onClose} className="text-ink-500 font-bold  text-xs hover:text-obsidian transition-colors">Cancel</button>
+          <div className="flex gap-3">
+            <button onClick={() => save('draft')} disabled={saving} className="px-6 py-3 border border-obsidian font-bold  text-xs hover:bg-ink-100 transition-colors disabled:opacity-70 disabled:cursor-wait text-obsidian flex items-center gap-2">
+              {saving ? <Loader2 size={14} className="animate-spin" /> : null} Save Draft
+            </button>
+            <button onClick={() => save('active')} disabled={saving} className="px-6 py-3 bg-obsidian text-white font-bold  text-xs hover:bg-fire transition-colors disabled:opacity-70 disabled:cursor-wait flex items-center gap-2">
+              {saving ? <Loader2 size={14} className="animate-spin" /> : null} Publish Product
+            </button>
+          </div>
         </div>
       </motion.div>
     </div>
@@ -1226,16 +1432,16 @@ function Coupons() {
     <div>
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h1 className="font-display tracking-tight text-2xl font-semibold uppercase">Coupons</h1>
+          <h1 className="font-display tracking-tight text-2xl font-semibold ">Coupons</h1>
           <p className="text-sm text-ink-500">Create and manage discount codes</p>
         </div>
-        <button onClick={() => setShowCreate(true)} className="bg-obsidian text-white font-bold uppercase px-4 py-2 hover:bg-fire transition-colors flex items-center gap-2"><Plus size={16}/> Create Coupon</button>
+        <button onClick={() => setShowCreate(true)} className="bg-obsidian text-white font-bold  px-4 py-2 hover:bg-fire transition-colors flex items-center gap-2"><Plus size={16}/> Create Coupon</button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         {STATS.map(s => (
           <div key={s.label} className="bg-white p-4 border border-ink-200 flex flex-col justify-between">
-            <span className="text-xs font-bold text-ink-400 uppercase tracking-wider">{s.label}</span>
+            <span className="text-xs font-bold text-ink-400  tracking-wider">{s.label}</span>
             <span className={`text-2xl font-mono font-black mt-2 ${s.color}`}>{s.count}</span>
           </div>
         ))}
@@ -1244,7 +1450,7 @@ function Coupons() {
       <div className="bg-white p-4 border border-ink-200 mb-6 flex flex-col lg:flex-row gap-4 items-center">
         <form onSubmit={handleSearch} className="flex-1 relative w-full">
           <SearchIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
-          <input type="text" placeholder="Search coupon code..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className="w-full pl-9 pr-4 py-2 border border-ink-200 text-sm focus:border-obsidian focus:outline-none rounded-none uppercase font-mono" />
+          <input type="text" placeholder="Search coupon code..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className="w-full pl-9 pr-4 py-2 border border-ink-200 text-sm focus:border-obsidian focus:outline-none rounded-none  font-mono" />
         </form>
         <div className="flex flex-wrap gap-2 w-full lg:w-auto">
           <select value={query.status} onChange={(e) => setQuery({ ...query, status: e.target.value, page: 1 })} className="border border-ink-200 px-3 py-2 text-sm focus:outline-none rounded-none bg-white">
@@ -1258,14 +1464,14 @@ function Coupons() {
             <option value="percentage">Percentage</option>
             <option value="flat">Flat Amount</option>
           </select>
-          <button onClick={resetFilters} className="text-sm font-bold text-ink-500 hover:text-fire uppercase px-3 py-2">Reset</button>
+          <button onClick={resetFilters} className="text-sm font-bold text-ink-500 hover:text-fire  px-3 py-2">Reset</button>
         </div>
       </div>
 
       <div className="bg-white border border-ink-200 overflow-x-auto min-h-[400px]">
         {loading ? <div className="p-10 flex justify-center"><div className="w-6 h-6 border-2 border-obsidian border-t-transparent rounded-full animate-spin"></div></div> : (
           <table className="w-full text-sm text-left">
-            <thead className="bg-ink-100 font-mono text-[10px] uppercase text-ink-500">
+            <thead className="bg-ink-100 font-mono text-[10px]  text-ink-500">
               <tr>
                 <th className="p-3 w-10"><input type="checkbox" checked={data.coupons?.length > 0 && selected.length === data.coupons?.length} onChange={selectAll} className="accent-obsidian" /></th>
                 <th className="p-3">Coupon Code</th>
@@ -1290,10 +1496,10 @@ function Coupons() {
                   </td>
                   <td className="p-3 text-ink-500">{c.expires_at ? new Date(c.expires_at).toLocaleDateString() : '—'}</td>
                   <td className="p-3">
-                    {c.status === 'active' && <span className="text-[10px] font-bold uppercase px-2 py-0.5 bg-green-100 text-green-700 flex items-center w-fit gap-1"><div className="w-1.5 h-1.5 rounded-full bg-green-600"></div> Active</span>}
-                    {c.status === 'disabled' && <span className="text-[10px] font-bold uppercase px-2 py-0.5 bg-ink-200 text-ink-600 flex items-center w-fit gap-1"><div className="w-1.5 h-1.5 rounded-full bg-ink-500"></div> Disabled</span>}
-                    {c.status === 'expired' && <span className="text-[10px] font-bold uppercase px-2 py-0.5 bg-red-100 text-red-700 flex items-center w-fit gap-1"><div className="w-1.5 h-1.5 rounded-full bg-red-600"></div> Expired</span>}
-                    {c.status === 'scheduled' && <span className="text-[10px] font-bold uppercase px-2 py-0.5 bg-yellow-100 text-yellow-700 flex items-center w-fit gap-1"><div className="w-1.5 h-1.5 rounded-full bg-yellow-600"></div> Scheduled</span>}
+                    {c.status === 'active' && <span className="text-[10px] font-bold  px-2 py-0.5 bg-green-100 text-green-700 flex items-center w-fit gap-1"><div className="w-1.5 h-1.5 rounded-full bg-green-600"></div> Active</span>}
+                    {c.status === 'disabled' && <span className="text-[10px] font-bold  px-2 py-0.5 bg-ink-200 text-ink-600 flex items-center w-fit gap-1"><div className="w-1.5 h-1.5 rounded-full bg-ink-500"></div> Disabled</span>}
+                    {c.status === 'expired' && <span className="text-[10px] font-bold  px-2 py-0.5 bg-red-100 text-red-700 flex items-center w-fit gap-1"><div className="w-1.5 h-1.5 rounded-full bg-red-600"></div> Expired</span>}
+                    {c.status === 'scheduled' && <span className="text-[10px] font-bold  px-2 py-0.5 bg-yellow-100 text-yellow-700 flex items-center w-fit gap-1"><div className="w-1.5 h-1.5 rounded-full bg-yellow-600"></div> Scheduled</span>}
                   </td>
                   <td className="p-3 text-right font-mono font-bold text-green-700">{fmt(c.revenue_generated)}</td>
                   <td className="p-3 text-center relative group" onClick={e => e.stopPropagation()}>
@@ -1365,57 +1571,57 @@ function CreateCouponForm({ onClose, onCreated }) {
         className="w-full max-w-lg bg-ink-50 h-full overflow-y-auto flex flex-col shadow-2xl border-l border-ink-200" onClick={e => e.stopPropagation()}>
         
         <div className="bg-white border-b border-ink-200 p-6 flex justify-between items-center sticky top-0 z-10">
-          <h2 className="font-display font-semibold text-xl uppercase">Create Coupon</h2>
+          <h2 className="font-display font-semibold text-xl ">Create Coupon</h2>
           <button onClick={onClose} className="p-2 text-ink-400 hover:text-fire"><X size={20}/></button>
         </div>
 
         <div className="p-6 space-y-6 flex-1">
           <div className="flex gap-2 flex-wrap">
             {presets.map(p => (
-              <button key={p.label} type="button" onClick={() => setF({...f, ...p.set})} className="px-3 py-1.5 border border-ink-200 bg-white hover:bg-ink-100 text-xs font-bold uppercase transition-colors">{p.label}</button>
+              <button key={p.label} type="button" onClick={() => setF({...f, ...p.set})} className="px-3 py-1.5 border border-ink-200 bg-white hover:bg-ink-100 text-xs font-bold  transition-colors">{p.label}</button>
             ))}
           </div>
 
           <div className="bg-white border border-ink-200 p-6 space-y-4">
-            <h3 className="font-display font-semibold uppercase text-sm tracking-wider text-ink-500 border-b border-ink-100 pb-2">Basic Information</h3>
+            <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500 border-b border-ink-100 pb-2">Basic Information</h3>
             <div>
-              <label className="block text-xs font-bold text-ink-500 uppercase mb-1">Coupon Code</label>
-              <input type="text" placeholder="e.g. SUMMER20" value={f.code} onChange={e => setF({...f, code: e.target.value.toUpperCase().replace(/\s/g, '')})} className="w-full border border-ink-200 px-3 py-2 outline-none focus:border-obsidian font-mono uppercase" />
+              <label className="block text-xs font-bold text-ink-500  mb-1">Coupon Code</label>
+              <input type="text" placeholder="e.g. SUMMER20" value={f.code} onChange={e => setF({...f, code: e.target.value.toUpperCase().replace(/\s/g, '')})} className="w-full border border-ink-200 px-3 py-2 outline-none focus:border-obsidian font-mono " />
             </div>
             
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-ink-500 uppercase mb-1">Discount Type</label>
+                <label className="block text-xs font-bold text-ink-500  mb-1">Discount Type</label>
                 <div className="flex gap-2">
                   <button type="button" onClick={() => setF({...f, type: 'percentage'})} className={`flex-1 py-2 text-sm font-bold border ${f.type==='percentage'?'bg-obsidian text-white border-obsidian':'bg-white text-ink-500 border-ink-200'}`}>%</button>
                   <button type="button" onClick={() => setF({...f, type: 'flat'})} className={`flex-1 py-2 text-sm font-bold border ${f.type==='flat'?'bg-obsidian text-white border-obsidian':'bg-white text-ink-500 border-ink-200'}`}>$</button>
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-bold text-ink-500 uppercase mb-1">Value</label>
+                <label className="block text-xs font-bold text-ink-500  mb-1">Value</label>
                 <input type="number" placeholder="e.g. 20" value={f.value} onChange={e => setF({...f, value: e.target.value})} className="w-full border border-ink-200 px-3 py-2 outline-none focus:border-obsidian" />
               </div>
             </div>
           </div>
 
           <div className="bg-white border border-ink-200 p-6 space-y-4">
-            <h3 className="font-display font-semibold uppercase text-sm tracking-wider text-ink-500 border-b border-ink-100 pb-2">Usage Restrictions</h3>
+            <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500 border-b border-ink-100 pb-2">Usage Restrictions</h3>
             
             <div>
-              <label className="block text-xs font-bold text-ink-500 uppercase mb-1">Minimum Order Amount</label>
+              <label className="block text-xs font-bold text-ink-500  mb-1">Minimum Order Amount</label>
               <input type="number" placeholder="e.g. 50" value={f.min_order_value} onChange={e => setF({...f, min_order_value: e.target.value})} className="w-full border border-ink-200 px-3 py-2 outline-none focus:border-obsidian" />
             </div>
             
             <div>
-              <label className="block text-xs font-bold text-ink-500 uppercase mb-1">Total Usage Limit (Leave blank for unlimited)</label>
+              <label className="block text-xs font-bold text-ink-500  mb-1">Total Usage Limit (Leave blank for unlimited)</label>
               <input type="number" placeholder="e.g. 1000" value={f.max_uses} onChange={e => setF({...f, max_uses: e.target.value})} className="w-full border border-ink-200 px-3 py-2 outline-none focus:border-obsidian" />
             </div>
           </div>
 
           <div className="bg-white border border-ink-200 p-6 space-y-4">
-            <h3 className="font-display font-semibold uppercase text-sm tracking-wider text-ink-500 border-b border-ink-100 pb-2">Validity</h3>
+            <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500 border-b border-ink-100 pb-2">Validity</h3>
             <div>
-              <label className="block text-xs font-bold text-ink-500 uppercase mb-1">Expiry Date & Time (Leave blank to never expire)</label>
+              <label className="block text-xs font-bold text-ink-500  mb-1">Expiry Date & Time (Leave blank to never expire)</label>
               <input type="datetime-local" value={f.expires_at} onChange={e => setF({...f, expires_at: e.target.value})} className="w-full border border-ink-200 px-3 py-2 outline-none focus:border-obsidian" />
             </div>
           </div>
@@ -1426,9 +1632,11 @@ function CreateCouponForm({ onClose, onCreated }) {
 
         </div>
 
-        <div className="bg-white border-t border-ink-200 p-4 sticky bottom-0 z-10 flex justify-end gap-3">
-          <button onClick={onClose} className="px-6 py-2 border border-ink-200 text-sm font-bold uppercase hover:bg-ink-50">Cancel</button>
-          <button onClick={save} disabled={saving} className="px-6 py-2 bg-obsidian text-white text-sm font-bold uppercase hover:bg-fire transition-colors disabled:opacity-50">Create Coupon</button>
+        <div className="bg-ink-50 border-t border-ink-200 p-6 flex justify-end gap-3 sticky bottom-0">
+          <button onClick={onClose} className="px-6 py-2 border border-ink-200 text-ink-600 text-sm font-bold  hover:bg-ink-100 transition-colors">Cancel</button>
+          <button onClick={save} disabled={saving} className="px-6 py-2 bg-obsidian text-white text-sm font-bold  hover:bg-fire transition-colors disabled:opacity-70 disabled:cursor-wait flex items-center gap-2">
+            {saving ? <Loader2 size={16} className="animate-spin" /> : null} Create Coupon
+          </button>
         </div>
       </motion.div>
     </div>
@@ -1460,11 +1668,11 @@ function CouponDetailsDrawer({ coupon, onClose }) {
         
         <div className="bg-white border-b border-ink-200 p-6 flex justify-between items-start sticky top-0 z-10">
           <div>
-            <h2 className="font-mono font-bold text-3xl uppercase flex items-center gap-3">
+            <h2 className="font-mono font-bold text-3xl  flex items-center gap-3">
               {data.code}
-              {data.status === 'active' && <span className="text-xs font-bold uppercase px-2 py-1 bg-green-100 text-green-700 flex items-center w-fit gap-1 align-middle tracking-wider"><div className="w-2 h-2 rounded-full bg-green-600"></div> Active</span>}
-              {data.status === 'disabled' && <span className="text-xs font-bold uppercase px-2 py-1 bg-ink-200 text-ink-600 flex items-center w-fit gap-1 align-middle tracking-wider"><div className="w-2 h-2 rounded-full bg-ink-500"></div> Disabled</span>}
-              {data.status === 'expired' && <span className="text-xs font-bold uppercase px-2 py-1 bg-red-100 text-red-700 flex items-center w-fit gap-1 align-middle tracking-wider"><div className="w-2 h-2 rounded-full bg-red-600"></div> Expired</span>}
+              {data.status === 'active' && <span className="text-xs font-bold  px-2 py-1 bg-green-100 text-green-700 flex items-center w-fit gap-1 align-middle tracking-wider"><div className="w-2 h-2 rounded-full bg-green-600"></div> Active</span>}
+              {data.status === 'disabled' && <span className="text-xs font-bold  px-2 py-1 bg-ink-200 text-ink-600 flex items-center w-fit gap-1 align-middle tracking-wider"><div className="w-2 h-2 rounded-full bg-ink-500"></div> Disabled</span>}
+              {data.status === 'expired' && <span className="text-xs font-bold  px-2 py-1 bg-red-100 text-red-700 flex items-center w-fit gap-1 align-middle tracking-wider"><div className="w-2 h-2 rounded-full bg-red-600"></div> Expired</span>}
             </h2>
             <p className="text-sm text-ink-500 font-bold mt-1 bg-ink-100 w-fit px-2 py-0.5 rounded">{data.type === 'percentage' ? `${data.value}% OFF` : `${fmt(data.value)} OFF`}</p>
           </div>
@@ -1474,28 +1682,28 @@ function CouponDetailsDrawer({ coupon, onClose }) {
         <div className="p-6 space-y-6 flex-1">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-white border border-ink-200 p-4 text-center">
-              <span className="block text-[10px] font-bold text-ink-400 uppercase mb-1">Redemptions</span>
+              <span className="block text-[10px] font-bold text-ink-400  mb-1">Redemptions</span>
               <span className="font-mono text-xl font-bold">{data.used_count}</span>
             </div>
             <div className="bg-white border border-ink-200 p-4 text-center">
-              <span className="block text-[10px] font-bold text-ink-400 uppercase mb-1">Usage Limit</span>
+              <span className="block text-[10px] font-bold text-ink-400  mb-1">Usage Limit</span>
               <span className="font-mono text-xl font-bold">{data.max_uses || '∞'}</span>
             </div>
             <div className="bg-white border border-ink-200 p-4 text-center">
-              <span className="block text-[10px] font-bold text-ink-400 uppercase mb-1">Discount Given</span>
+              <span className="block text-[10px] font-bold text-ink-400  mb-1">Discount Given</span>
               <span className="font-mono text-xl font-bold text-fire">{fmt(data.total_discount)}</span>
             </div>
             <div className="bg-white border border-ink-200 p-4 text-center">
-              <span className="block text-[10px] font-bold text-ink-400 uppercase mb-1">Revenue Generated</span>
+              <span className="block text-[10px] font-bold text-ink-400  mb-1">Revenue Generated</span>
               <span className="font-mono text-xl font-bold text-green-700">{fmt(data.revenue_generated)}</span>
             </div>
           </div>
 
           <div className="bg-white border border-ink-200 p-6 space-y-4">
-            <h3 className="font-display font-semibold uppercase text-sm tracking-wider text-ink-500 border-b border-ink-100 pb-2">Recent Usage</h3>
+            <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500 border-b border-ink-100 pb-2">Recent Usage</h3>
             {data.recent_usage?.length > 0 ? (
               <table className="w-full text-sm text-left">
-                <thead className="bg-ink-50 text-[10px] uppercase text-ink-500"><tr><th className="p-2">Customer</th><th className="p-2">Order</th><th className="p-2 text-right">Discount</th><th className="p-2">Date</th></tr></thead>
+                <thead className="bg-ink-50 text-[10px]  text-ink-500"><tr><th className="p-2">Customer</th><th className="p-2">Order</th><th className="p-2 text-right">Discount</th><th className="p-2">Date</th></tr></thead>
                 <tbody>
                   {data.recent_usage.map(o => (
                     <tr key={o.id} className="border-b border-ink-100 last:border-0">
@@ -1612,7 +1820,7 @@ function Reviews() {
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {statCards.map((s, i) => (
           <div key={i} className="bg-white p-4 border border-ink-200 shadow-sm relative overflow-hidden group hover:border-fire transition-colors">
-            <div className="text-xs font-bold uppercase tracking-wider text-ink-500 mb-2">{s.label}</div>
+            <div className="text-xs font-bold  tracking-wider text-ink-500 mb-2">{s.label}</div>
             <div className="text-2xl lg:text-3xl font-display font-semibold flex items-baseline gap-2">
               {s.value}
               {s.sub && <span className="text-xs text-ink-400 font-normal">{s.sub}</span>}
@@ -1624,7 +1832,7 @@ function Reviews() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 bg-white border border-ink-200 p-6">
-          <h3 className="font-display font-semibold uppercase text-sm tracking-wider text-ink-500 mb-6">Rating Distribution</h3>
+          <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500 mb-6">Rating Distribution</h3>
           <div className="space-y-3">
             {[5, 4, 3, 2, 1].map(star => {
               const count = data?.stats?.ratingDist?.[star] || 0;
@@ -1648,7 +1856,7 @@ function Reviews() {
 
         <div className="lg:col-span-2 bg-white border border-ink-200 p-6">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="font-display font-semibold uppercase text-sm tracking-wider text-ink-500">Review Trend</h3>
+            <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500">Review Trend</h3>
             <div className="flex gap-2">
               <button onClick={() => setChartMode('count')} className={`px-2 py-1 text-xs font-bold ${chartMode === 'count' ? 'bg-ink-100 text-obsidian' : 'text-ink-400 hover:bg-ink-50'}`}>Volume</button>
               <button onClick={() => setChartMode('avgRating')} className={`px-2 py-1 text-xs font-bold ${chartMode === 'avgRating' ? 'bg-ink-100 text-obsidian' : 'text-ink-400 hover:bg-ink-50'}`}>Average Rating</button>
@@ -1708,7 +1916,7 @@ function Reviews() {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="bg-ink-50 text-ink-500 font-display uppercase tracking-wider text-xs">
+            <thead className="bg-ink-50 text-ink-500 font-display  tracking-wider text-xs">
               <tr>
                 <th className="p-4 font-semibold">Customer</th>
                 <th className="p-4 font-semibold">Review</th>
@@ -1729,7 +1937,7 @@ function Reviews() {
                   <tr key={r.id} className="hover:bg-ink-50/50 transition-colors group">
                     <td className="p-4">
                       <div className="font-bold text-obsidian">{r.customer_name}</div>
-                      {r.order_id && <div className="text-[10px] uppercase font-bold text-green-600 flex items-center gap-1 mt-1"><CheckCircle size={10}/> Verified</div>}
+                      {r.order_id && <div className="text-[10px]  font-bold text-green-600 flex items-center gap-1 mt-1"><CheckCircle size={10}/> Verified</div>}
                     </td>
                     <td className="p-4 max-w-xs">
                       <div className="text-obsidian font-medium truncate">{r.comment || "No comment provided"}</div>
@@ -1747,7 +1955,7 @@ function Reviews() {
                     </td>
                     <td className="p-4 whitespace-nowrap">{renderStars(r.rating)}</td>
                     <td className="p-4">
-                      <span className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${r.status === 'approved' ? 'bg-green-100 text-green-700' : r.status === 'pending' ? 'bg-amber-100 text-amber-700' : r.status === 'reported' ? 'bg-red-100 text-red-700' : 'bg-ink-200 text-ink-600'}`}>
+                      <span className={`px-2 py-1 text-[10px] font-bold  tracking-wider ${r.status === 'approved' ? 'bg-green-100 text-green-700' : r.status === 'pending' ? 'bg-amber-100 text-amber-700' : r.status === 'reported' ? 'bg-red-100 text-red-700' : 'bg-ink-200 text-ink-600'}`}>
                         {r.status}
                       </span>
                     </td>
@@ -1777,7 +1985,7 @@ function Reviews() {
       {/* Product Rating Analytics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
         <div className="bg-white border border-ink-200 p-6">
-          <h3 className="font-display font-semibold uppercase text-sm tracking-wider text-ink-500 mb-6 flex items-center gap-2"><Star size={16} className="text-yellow-500"/> Products With Best Ratings</h3>
+          <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500 mb-6 flex items-center gap-2"><Star size={16} className="text-yellow-500"/> Products With Best Ratings</h3>
           <div className="space-y-4">
             {productsData.best?.map((p, i) => (
               <div key={p.id} className="flex justify-between items-center border-b border-ink-100 pb-3 last:border-0">
@@ -1796,7 +2004,7 @@ function Reviews() {
         </div>
         
         <div className="bg-white border border-ink-200 p-6">
-          <h3 className="font-display font-semibold uppercase text-sm tracking-wider text-ink-500 mb-6 flex items-center gap-2"><AlertTriangle size={16} className="text-red-500"/> Products Needing Attention</h3>
+          <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500 mb-6 flex items-center gap-2"><AlertTriangle size={16} className="text-red-500"/> Products Needing Attention</h3>
           <div className="space-y-4">
             {productsData.attention?.map((p, i) => (
               <div key={p.id} className="flex justify-between items-center border-b border-ink-100 pb-3 last:border-0">
@@ -1834,7 +2042,7 @@ function Reviews() {
                     <div className="font-bold text-lg text-obsidian">{viewReview.customer_name}</div>
                     <div className="text-xs text-ink-400">{new Date(viewReview.created_at).toLocaleDateString()} at {new Date(viewReview.created_at).toLocaleTimeString()}</div>
                   </div>
-                  <span className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${viewReview.status === 'approved' ? 'bg-green-100 text-green-700' : viewReview.status === 'pending' ? 'bg-amber-100 text-amber-700' : viewReview.status === 'reported' ? 'bg-red-100 text-red-700' : 'bg-ink-200 text-ink-600'}`}>
+                  <span className={`px-2 py-1 text-[10px] font-bold  tracking-wider ${viewReview.status === 'approved' ? 'bg-green-100 text-green-700' : viewReview.status === 'pending' ? 'bg-amber-100 text-amber-700' : viewReview.status === 'reported' ? 'bg-red-100 text-red-700' : 'bg-ink-200 text-ink-600'}`}>
                     {viewReview.status}
                   </span>
                 </div>
@@ -1847,15 +2055,15 @@ function Reviews() {
               {/* Associations */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="border border-ink-200 p-4">
-                  <div className="text-[10px] font-bold uppercase text-ink-400 mb-1">Product</div>
+                  <div className="text-[10px] font-bold  text-ink-400 mb-1">Product</div>
                   <div className="font-bold text-sm truncate">{viewReview.product?.name || 'Unknown'}</div>
                 </div>
                 <div className="border border-ink-200 p-4">
-                  <div className="text-[10px] font-bold uppercase text-ink-400 mb-1">Order</div>
+                  <div className="text-[10px] font-bold  text-ink-400 mb-1">Order</div>
                   {viewReview.order_id ? (
                     <div>
                       <div className="font-bold text-sm">#{viewReview.order?.order_number || viewReview.order_id.substring(0,6)}</div>
-                      <div className="text-[10px] text-green-600 font-bold uppercase flex items-center gap-1 mt-1"><CheckCircle size={10}/> Verified</div>
+                      <div className="text-[10px] text-green-600 font-bold  flex items-center gap-1 mt-1"><CheckCircle size={10}/> Verified</div>
                     </div>
                   ) : (
                     <div className="text-sm text-ink-400">Unverified / Guest</div>
@@ -1865,7 +2073,7 @@ function Reviews() {
 
               {/* Admin Reply */}
               <div>
-                <h4 className="font-display font-semibold uppercase text-sm tracking-wider text-ink-500 mb-3">Admin Reply</h4>
+                <h4 className="font-display font-semibold  text-sm tracking-wider text-ink-500 mb-3">Admin Reply</h4>
                 {viewReview.admin_reply ? (
                   <div className="bg-obsidian text-white p-4 text-sm relative">
                     <div className="absolute top-0 right-0 p-2 text-white/50 opacity-20"><MessageCircle size={40} /></div>
@@ -1883,7 +2091,7 @@ function Reviews() {
                     <button 
                       onClick={() => sendReply(viewReview.id)}
                       disabled={!replyText.trim()}
-                      className="w-full bg-obsidian text-white py-3 font-bold text-sm uppercase tracking-wider hover:bg-fire transition-colors disabled:opacity-50"
+                      className="w-full bg-obsidian text-white py-3 font-bold text-sm  tracking-wider hover:bg-fire transition-colors disabled:opacity-50"
                     >
                       Send Reply & Approve
                     </button>
@@ -1895,7 +2103,7 @@ function Reviews() {
               {/* Report Info */}
               {viewReview.status === 'reported' && viewReview.report_reason && (
                 <div className="bg-red-50 border border-red-200 p-4">
-                  <div className="text-[10px] font-bold uppercase text-red-500 mb-1">Report Reason</div>
+                  <div className="text-[10px] font-bold  text-red-500 mb-1">Report Reason</div>
                   <div className="text-sm text-red-700">{viewReview.report_reason}</div>
                 </div>
               )}
@@ -1903,9 +2111,9 @@ function Reviews() {
 
             {/* Actions Footer */}
             <div className="p-6 border-t border-ink-200 bg-ink-50 grid grid-cols-3 gap-2">
-              <button onClick={() => moderateReview(viewReview.id, 'approved')} className="bg-green-600 text-white py-2 text-xs font-bold uppercase hover:bg-green-700">Approve</button>
-              <button onClick={() => moderateReview(viewReview.id, 'rejected')} className="bg-ink-600 text-white py-2 text-xs font-bold uppercase hover:bg-obsidian">Reject</button>
-              <button onClick={() => moderateReview(viewReview.id, 'reported')} className="bg-red-600 text-white py-2 text-xs font-bold uppercase hover:bg-red-700">Flag Spam</button>
+              <button onClick={() => moderateReview(viewReview.id, 'approved')} className="bg-green-600 text-white py-2 text-xs font-bold  hover:bg-green-700">Approve</button>
+              <button onClick={() => moderateReview(viewReview.id, 'rejected')} className="bg-ink-600 text-white py-2 text-xs font-bold  hover:bg-obsidian">Reject</button>
+              <button onClick={() => moderateReview(viewReview.id, 'reported')} className="bg-red-600 text-white py-2 text-xs font-bold  hover:bg-red-700">Flag Spam</button>
             </div>
           </div>
         </div>
@@ -1935,7 +2143,7 @@ function AdminImageInput({ value, onChange, testid }) {
   return (
     <div className="flex gap-2 items-center">
       <input placeholder="Image URL or upload →" value={value} onChange={(e) => onChange(e.target.value)} className="flex-1 border border-ink-200 rounded-none px-4 py-2.5 outline-none focus:border-obsidian text-sm" />
-      <label data-testid={testid} className="shrink-0 flex items-center gap-1.5 bg-obsidian text-white text-xs font-bold uppercase px-3 py-2.5 rounded-none cursor-pointer hover:bg-fire transition-colors">
+      <label data-testid={testid} className="shrink-0 flex items-center gap-1.5 bg-obsidian text-white text-xs font-bold  px-3 py-2.5 rounded-none cursor-pointer hover:bg-fire transition-colors">
         <Upload size={14} /> {busy ? "…" : "Upload"}
         <input type="file" accept="image/*" onChange={handle} className="hidden" />
       </label>
@@ -2016,7 +2224,7 @@ function Returns() {
     <div>
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h1 className="font-display tracking-tight text-2xl font-semibold uppercase">Returns & Refunds</h1>
+          <h1 className="font-display tracking-tight text-2xl font-semibold ">Returns & Refunds</h1>
           <p className="text-sm text-ink-500">Manage customer return requests and refunds</p>
         </div>
       </div>
@@ -2024,7 +2232,7 @@ function Returns() {
       <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
         {STATS.map(s => (
           <div key={s.label} className="bg-white p-4 border border-ink-200 flex flex-col justify-between">
-            <span className="text-[10px] font-bold text-ink-500 uppercase tracking-wider">{s.label}</span>
+            <span className="text-[10px] font-bold text-ink-500  tracking-wider">{s.label}</span>
             <span className={`text-xl font-mono font-black mt-2 ${s.color}`}>{s.count}</span>
           </div>
         ))}
@@ -2033,7 +2241,7 @@ function Returns() {
       <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
         {['all', 'pending', 'approved', 'processing', 'refunded'].map(tab => (
           <button key={tab} onClick={() => setQuery({...query, status: tab, page: 1})}
-            className={`px-4 py-2 text-sm font-bold uppercase transition-colors whitespace-nowrap ${query.status === tab ? 'bg-obsidian text-white' : 'bg-white text-ink-500 border border-ink-200 hover:bg-ink-50'}`}>
+            className={`px-4 py-2 text-sm font-bold  transition-colors whitespace-nowrap ${query.status === tab ? 'bg-obsidian text-white' : 'bg-white text-ink-500 border border-ink-200 hover:bg-ink-50'}`}>
             {tab}
           </button>
         ))}
@@ -2054,14 +2262,14 @@ function Returns() {
             <option value="Changed mind">Changed mind</option>
             <option value="Other">Other</option>
           </select>
-          <button onClick={() => { setSearchInput(""); setQuery({ page: 1, limit: 25, search: "", status: "all", reason: "all" }); }} className="text-sm font-bold text-ink-500 hover:text-fire uppercase px-3 py-2">Reset</button>
+          <button onClick={() => { setSearchInput(""); setQuery({ page: 1, limit: 25, search: "", status: "all", reason: "all" }); }} className="text-sm font-bold text-ink-500 hover:text-fire  px-3 py-2">Reset</button>
         </div>
       </div>
 
       <div className="bg-white border border-ink-200 overflow-x-auto min-h-[400px]">
         {loading ? <div className="p-10 flex justify-center"><div className="w-6 h-6 border-2 border-obsidian border-t-transparent rounded-full animate-spin"></div></div> : (
           <table className="w-full text-sm text-left">
-            <thead className="bg-ink-100 font-mono text-[10px] uppercase text-ink-500">
+            <thead className="bg-ink-100 font-mono text-[10px]  text-ink-500">
               <tr>
                 <th className="p-3">Return</th>
                 <th className="p-3">Order</th>
@@ -2084,11 +2292,11 @@ function Returns() {
                   <td className="p-3 text-xs">{r.reason}</td>
                   <td className="p-3 text-right font-mono font-bold">{fmt(r.refund_amount > 0 ? r.refund_amount : r.total_amount)}</td>
                   <td className="p-3">
-                    {r.status === 'pending' && <span className="text-[10px] font-bold uppercase px-2 py-0.5 bg-yellow-100 text-yellow-700">Pending</span>}
-                    {r.status === 'approved' && <span className="text-[10px] font-bold uppercase px-2 py-0.5 bg-blue-100 text-blue-700">Approved</span>}
-                    {r.status === 'rejected' && <span className="text-[10px] font-bold uppercase px-2 py-0.5 bg-ink-200 text-ink-600">Rejected</span>}
-                    {r.status === 'processing' && <span className="text-[10px] font-bold uppercase px-2 py-0.5 bg-purple-100 text-purple-700">Processing</span>}
-                    {r.status === 'refunded' && <span className="text-[10px] font-bold uppercase px-2 py-0.5 bg-green-100 text-green-700">Refunded</span>}
+                    {r.status === 'pending' && <span className="text-[10px] font-bold  px-2 py-0.5 bg-yellow-100 text-yellow-700">Pending</span>}
+                    {r.status === 'approved' && <span className="text-[10px] font-bold  px-2 py-0.5 bg-blue-100 text-blue-700">Approved</span>}
+                    {r.status === 'rejected' && <span className="text-[10px] font-bold  px-2 py-0.5 bg-ink-200 text-ink-600">Rejected</span>}
+                    {r.status === 'processing' && <span className="text-[10px] font-bold  px-2 py-0.5 bg-purple-100 text-purple-700">Processing</span>}
+                    {r.status === 'refunded' && <span className="text-[10px] font-bold  px-2 py-0.5 bg-green-100 text-green-700">Refunded</span>}
                   </td>
                   <td className="p-3 text-ink-500 text-xs">{new Date(r.created_at).toLocaleDateString()}</td>
                   <td className="p-3 text-center">
@@ -2158,7 +2366,7 @@ function ReturnDetailsDrawer({ returnId, onClose, onUpdate }) {
         
         <div className="bg-white border-b border-ink-200 p-6 flex justify-between items-start sticky top-0 z-10">
           <div>
-            <h2 className="font-display font-semibold text-2xl uppercase">Return Request</h2>
+            <h2 className="font-display font-semibold text-2xl ">Return Request</h2>
             <p className="text-sm font-mono text-ink-500 mt-1">Order {data.order_number}</p>
           </div>
           <button onClick={onClose} className="p-2 text-ink-400 hover:text-fire"><X size={20}/></button>
@@ -2167,34 +2375,34 @@ function ReturnDetailsDrawer({ returnId, onClose, onUpdate }) {
         <div className="p-6 space-y-6 flex-1">
           
           <div className="bg-white border border-ink-200 p-6 flex items-center justify-between">
-            <span className="font-bold uppercase text-ink-500 text-sm">Status:</span>
-            {data.status === 'pending' && <span className="font-bold uppercase px-3 py-1 bg-yellow-100 text-yellow-700 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-yellow-600"></div> Pending</span>}
-            {data.status === 'approved' && <span className="font-bold uppercase px-3 py-1 bg-blue-100 text-blue-700 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-blue-600"></div> Approved</span>}
-            {data.status === 'rejected' && <span className="font-bold uppercase px-3 py-1 bg-ink-200 text-ink-600 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-ink-500"></div> Rejected</span>}
-            {data.status === 'processing' && <span className="font-bold uppercase px-3 py-1 bg-purple-100 text-purple-700 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-purple-600"></div> Processing</span>}
-            {data.status === 'refunded' && <span className="font-bold uppercase px-3 py-1 bg-green-100 text-green-700 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-green-600"></div> Refunded</span>}
+            <span className="font-bold  text-ink-500 text-sm">Status:</span>
+            {data.status === 'pending' && <span className="font-bold  px-3 py-1 bg-yellow-100 text-yellow-700 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-yellow-600"></div> Pending</span>}
+            {data.status === 'approved' && <span className="font-bold  px-3 py-1 bg-blue-100 text-blue-700 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-blue-600"></div> Approved</span>}
+            {data.status === 'rejected' && <span className="font-bold  px-3 py-1 bg-ink-200 text-ink-600 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-ink-500"></div> Rejected</span>}
+            {data.status === 'processing' && <span className="font-bold  px-3 py-1 bg-purple-100 text-purple-700 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-purple-600"></div> Processing</span>}
+            {data.status === 'refunded' && <span className="font-bold  px-3 py-1 bg-green-100 text-green-700 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-green-600"></div> Refunded</span>}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-white border border-ink-200 p-4">
-              <span className="block text-[10px] font-bold text-ink-400 uppercase mb-2">Customer</span>
+              <span className="block text-[10px] font-bold text-ink-400  mb-2">Customer</span>
               <p className="font-bold text-sm">{data.customer_name}</p>
               <p className="text-xs text-ink-500">{data.order?.email || data.customer_phone}</p>
             </div>
             <div className="bg-white border border-ink-200 p-4">
-              <span className="block text-[10px] font-bold text-ink-400 uppercase mb-2">Product</span>
+              <span className="block text-[10px] font-bold text-ink-400  mb-2">Product</span>
               <p className="font-bold text-sm">{data.product_name || "Entire Order"}</p>
               {data.product_id && <p className="text-xs text-ink-500">Qty: {data.quantity}</p>}
             </div>
           </div>
 
           <div className="bg-white border border-ink-200 p-6">
-            <span className="block text-[10px] font-bold text-ink-400 uppercase mb-2">Customer Reason</span>
+            <span className="block text-[10px] font-bold text-ink-400  mb-2">Customer Reason</span>
             <p className="text-sm font-semibold">{data.reason}</p>
           </div>
 
           <div className="bg-white border border-ink-200 p-6 space-y-4">
-            <h3 className="font-display font-semibold uppercase text-sm tracking-wider text-ink-500 border-b border-ink-100 pb-2">Return Timeline</h3>
+            <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500 border-b border-ink-100 pb-2">Return Timeline</h3>
             <div className="space-y-4 pl-2">
               <div className="relative pl-6 border-l-2 border-green-500 pb-2">
                 <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white"><Check size={10}/></div>
@@ -2225,18 +2433,18 @@ function ReturnDetailsDrawer({ returnId, onClose, onUpdate }) {
 
           {data.status === 'pending' && (
             <div className="bg-white border border-ink-200 p-6 space-y-4">
-               <h3 className="font-display font-semibold uppercase text-sm tracking-wider text-ink-500 border-b border-ink-100 pb-2">Admin Decision</h3>
+               <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500 border-b border-ink-100 pb-2">Admin Decision</h3>
                <div>
-                  <label className="block text-xs font-bold text-ink-500 uppercase mb-1">Approved Refund Amount</label>
+                  <label className="block text-xs font-bold text-ink-500  mb-1">Approved Refund Amount</label>
                   <input type="number" value={refundAmount} onChange={e => setRefundAmount(e.target.value)} className="w-full border border-ink-200 px-3 py-2 outline-none focus:border-obsidian" />
                </div>
                <div>
-                  <label className="block text-xs font-bold text-ink-500 uppercase mb-1">Admin Note (Sent to customer)</label>
+                  <label className="block text-xs font-bold text-ink-500  mb-1">Admin Note (Sent to customer)</label>
                   <textarea value={adminNote} onChange={e => setAdminNote(e.target.value)} placeholder="Reason for approval/rejection..." className="w-full border border-ink-200 px-3 py-2 outline-none focus:border-obsidian min-h-[80px]"></textarea>
                </div>
                <div className="flex gap-3 pt-2">
-                 <button onClick={() => processUpdate('rejected')} disabled={saving} className="flex-1 px-4 py-3 border border-ink-200 text-ink-600 font-bold uppercase hover:bg-ink-50 disabled:opacity-50">Reject Return</button>
-                 <button onClick={() => processUpdate('approved')} disabled={saving} className="flex-1 px-4 py-3 bg-obsidian text-white font-bold uppercase hover:bg-fire disabled:opacity-50 transition-colors">Approve Return</button>
+                 <button onClick={() => processUpdate('rejected')} disabled={saving} className="flex-1 px-4 py-3 border border-ink-200 text-ink-600 font-bold  hover:bg-ink-50 disabled:opacity-50">Reject Return</button>
+                 <button onClick={() => processUpdate('approved')} disabled={saving} className="flex-1 px-4 py-3 bg-obsidian text-white font-bold  hover:bg-fire disabled:opacity-50 transition-colors">Approve Return</button>
                </div>
             </div>
           )}
@@ -2244,20 +2452,20 @@ function ReturnDetailsDrawer({ returnId, onClose, onUpdate }) {
           {data.status === 'approved' && (
              <div className="bg-white border border-ink-200 p-6">
                <p className="text-sm mb-4">The return has been approved. Waiting for the product to be received back from the customer.</p>
-               <button onClick={() => processUpdate('processing')} disabled={saving} className="w-full px-4 py-3 bg-obsidian text-white font-bold uppercase hover:bg-fire transition-colors disabled:opacity-50">Mark Product Received</button>
+               <button onClick={() => processUpdate('processing')} disabled={saving} className="w-full px-4 py-3 bg-obsidian text-white font-bold  hover:bg-fire transition-colors disabled:opacity-50">Mark Product Received</button>
              </div>
           )}
 
           {data.status === 'processing' && (
              <div className="bg-white border border-ink-200 p-6 space-y-4">
-               <h3 className="font-display font-semibold uppercase text-sm tracking-wider text-ink-500 border-b border-ink-100 pb-2">Process Refund</h3>
+               <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500 border-b border-ink-100 pb-2">Process Refund</h3>
                
                <div className="p-4 bg-ink-50 border border-ink-200 mb-4">
                  <div className="flex justify-between text-sm mb-2"><span className="text-ink-500">Refund Amount:</span><span className="font-mono font-bold">{fmt(refundAmount)}</span></div>
-                 <div className="flex justify-between text-sm"><span className="text-ink-500">Refund Method:</span><span className="font-bold uppercase">Original Payment</span></div>
+                 <div className="flex justify-between text-sm"><span className="text-ink-500">Refund Method:</span><span className="font-bold ">Original Payment</span></div>
                </div>
 
-               <button onClick={() => processUpdate('refunded')} disabled={saving} className="w-full px-4 py-3 bg-green-600 text-white font-bold uppercase hover:bg-green-700 transition-colors disabled:opacity-50">Process Refund</button>
+               <button onClick={() => processUpdate('refunded')} disabled={saving} className="w-full px-4 py-3 bg-green-600 text-white font-bold  hover:bg-green-700 transition-colors disabled:opacity-50">Process Refund</button>
              </div>
           )}
 
@@ -2265,7 +2473,7 @@ function ReturnDetailsDrawer({ returnId, onClose, onUpdate }) {
              <div className="bg-green-50 border border-green-200 p-6 flex items-start gap-4">
                <CheckCircle size={24} className="text-green-600 mt-1 flex-shrink-0" />
                <div>
-                  <h4 className="font-bold text-green-800 mb-1 uppercase">Refund Processed</h4>
+                  <h4 className="font-bold text-green-800 mb-1 ">Refund Processed</h4>
                   <p className="text-sm text-green-700">Amount: <span className="font-mono">{fmt(data.refund_amount)}</span></p>
                   <p className="text-xs text-green-600 mt-2">The refund has been successfully issued to the customer.</p>
                </div>
@@ -2317,7 +2525,7 @@ function Refunds() {
     <div>
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h1 className="font-display tracking-tight text-2xl font-semibold uppercase">Refunds</h1>
+          <h1 className="font-display tracking-tight text-2xl font-semibold ">Refunds</h1>
           <p className="text-sm text-ink-500">Track and manage customer refunds and financial transactions</p>
         </div>
       </div>
@@ -2325,7 +2533,7 @@ function Refunds() {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         {STATS.map(s => (
           <div key={s.label} className="bg-white p-4 border border-ink-200 flex flex-col justify-between">
-            <span className="text-[10px] font-bold text-ink-500 uppercase tracking-wider">{s.label}</span>
+            <span className="text-[10px] font-bold text-ink-500  tracking-wider">{s.label}</span>
             <span className={`text-xl font-mono font-black mt-2 ${s.color}`}>{s.count}</span>
             {s.sub && <span className="text-[10px] text-ink-400 mt-1">{s.sub}</span>}
           </div>
@@ -2335,10 +2543,10 @@ function Refunds() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <div className="lg:col-span-2 bg-white border border-ink-200 p-6">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="font-display font-semibold uppercase text-sm tracking-wider text-ink-500">Refund Overview (7D)</h3>
+            <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500">Refund Overview (7D)</h3>
             <div className="flex bg-ink-50 border border-ink-200 rounded-none p-1">
-              <button onClick={() => setChartMode('amount')} className={`px-3 py-1 text-xs font-bold uppercase ${chartMode === 'amount' ? 'bg-white shadow border border-ink-100' : 'text-ink-500'}`}>Amount</button>
-              <button onClick={() => setChartMode('count')} className={`px-3 py-1 text-xs font-bold uppercase ${chartMode === 'count' ? 'bg-white shadow border border-ink-100' : 'text-ink-500'}`}>Count</button>
+              <button onClick={() => setChartMode('amount')} className={`px-3 py-1 text-xs font-bold  ${chartMode === 'amount' ? 'bg-white shadow border border-ink-100' : 'text-ink-500'}`}>Amount</button>
+              <button onClick={() => setChartMode('count')} className={`px-3 py-1 text-xs font-bold  ${chartMode === 'count' ? 'bg-white shadow border border-ink-100' : 'text-ink-500'}`}>Count</button>
             </div>
           </div>
           <div className="h-64">
@@ -2358,7 +2566,7 @@ function Refunds() {
         </div>
 
         <div className="bg-white border border-ink-200 p-6">
-          <h3 className="font-display font-semibold uppercase text-sm tracking-wider text-ink-500 mb-6">Refund Status</h3>
+          <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500 mb-6">Refund Status</h3>
           <div className="h-48">
             {data.donutData?.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
@@ -2405,14 +2613,14 @@ function Refunds() {
             <option value="cod">COD</option>
             <option value="wallet">Wallet</option>
           </select>
-          <button onClick={() => { setSearchInput(""); setQuery({ page: 1, limit: 25, search: "", status: "all", method: "all" }); }} className="text-sm font-bold text-ink-500 hover:text-fire uppercase px-3 py-2">Reset</button>
+          <button onClick={() => { setSearchInput(""); setQuery({ page: 1, limit: 25, search: "", status: "all", method: "all" }); }} className="text-sm font-bold text-ink-500 hover:text-fire  px-3 py-2">Reset</button>
         </div>
       </div>
 
       <div className="bg-white border border-ink-200 overflow-x-auto min-h-[400px]">
         {loading ? <div className="p-10 flex justify-center"><div className="w-6 h-6 border-2 border-obsidian border-t-transparent rounded-full animate-spin"></div></div> : (
           <table className="w-full text-sm text-left">
-            <thead className="bg-ink-100 font-mono text-[10px] uppercase text-ink-500">
+            <thead className="bg-ink-100 font-mono text-[10px]  text-ink-500">
               <tr>
                 <th className="p-3">Refund ID</th>
                 <th className="p-3">Order</th>
@@ -2431,13 +2639,13 @@ function Refunds() {
                   <td className="p-3 font-mono">{r.order_number}</td>
                   <td className="p-3 font-bold">{r.customer_name}</td>
                   <td className="p-3 text-right font-mono font-bold">{fmt(r.amount)}</td>
-                  <td className="p-3 text-xs uppercase">{r.method}</td>
+                  <td className="p-3 text-xs ">{r.method}</td>
                   <td className="p-3">
-                    {r.status === 'pending' && <span className="text-[10px] font-bold uppercase px-2 py-0.5 bg-yellow-100 text-yellow-700">Pending</span>}
-                    {r.status === 'processing' && <span className="text-[10px] font-bold uppercase px-2 py-0.5 bg-purple-100 text-purple-700">Processing</span>}
-                    {r.status === 'completed' && <span className="text-[10px] font-bold uppercase px-2 py-0.5 bg-green-100 text-green-700">Completed</span>}
-                    {r.status === 'failed' && <span className="text-[10px] font-bold uppercase px-2 py-0.5 bg-red-100 text-red-700">Failed</span>}
-                    {r.status === 'cancelled' && <span className="text-[10px] font-bold uppercase px-2 py-0.5 bg-ink-200 text-ink-600">Cancelled</span>}
+                    {r.status === 'pending' && <span className="text-[10px] font-bold  px-2 py-0.5 bg-yellow-100 text-yellow-700">Pending</span>}
+                    {r.status === 'processing' && <span className="text-[10px] font-bold  px-2 py-0.5 bg-purple-100 text-purple-700">Processing</span>}
+                    {r.status === 'completed' && <span className="text-[10px] font-bold  px-2 py-0.5 bg-green-100 text-green-700">Completed</span>}
+                    {r.status === 'failed' && <span className="text-[10px] font-bold  px-2 py-0.5 bg-red-100 text-red-700">Failed</span>}
+                    {r.status === 'cancelled' && <span className="text-[10px] font-bold  px-2 py-0.5 bg-ink-200 text-ink-600">Cancelled</span>}
                   </td>
                   <td className="p-3 text-ink-500 text-xs">{new Date(r.created_at).toLocaleDateString()}</td>
                   <td className="p-3 text-center">
@@ -2503,14 +2711,14 @@ function RefundDetailsDrawer({ refundId, onClose, onUpdate }) {
         
         <div className="bg-white border-b border-ink-200 p-6 flex justify-between items-start sticky top-0 z-10">
           <div>
-            <h2 className="font-mono font-bold text-xl uppercase text-ink-500 mb-1">Refund #{data.id.split('-')[0]}</h2>
+            <h2 className="font-mono font-bold text-xl  text-ink-500 mb-1">Refund #{data.id.split('-')[0]}</h2>
             <div className="flex items-center gap-3">
               <span className="font-display font-black text-4xl">{fmt(data.amount)}</span>
-              {data.status === 'pending' && <span className="font-bold uppercase px-3 py-1 bg-yellow-100 text-yellow-700">Pending</span>}
-              {data.status === 'processing' && <span className="font-bold uppercase px-3 py-1 bg-purple-100 text-purple-700">Processing</span>}
-              {data.status === 'completed' && <span className="font-bold uppercase px-3 py-1 bg-green-100 text-green-700">Completed</span>}
-              {data.status === 'failed' && <span className="font-bold uppercase px-3 py-1 bg-red-100 text-red-700">Failed</span>}
-              {data.status === 'cancelled' && <span className="font-bold uppercase px-3 py-1 bg-ink-200 text-ink-600">Cancelled</span>}
+              {data.status === 'pending' && <span className="font-bold  px-3 py-1 bg-yellow-100 text-yellow-700">Pending</span>}
+              {data.status === 'processing' && <span className="font-bold  px-3 py-1 bg-purple-100 text-purple-700">Processing</span>}
+              {data.status === 'completed' && <span className="font-bold  px-3 py-1 bg-green-100 text-green-700">Completed</span>}
+              {data.status === 'failed' && <span className="font-bold  px-3 py-1 bg-red-100 text-red-700">Failed</span>}
+              {data.status === 'cancelled' && <span className="font-bold  px-3 py-1 bg-ink-200 text-ink-600">Cancelled</span>}
             </div>
             {data.processed_at && <p className="text-xs text-ink-500 font-mono mt-2">Processed {new Date(data.processed_at).toLocaleString()}</p>}
           </div>
@@ -2521,26 +2729,26 @@ function RefundDetailsDrawer({ refundId, onClose, onUpdate }) {
           
           <div className="bg-white border border-ink-200 p-6 grid grid-cols-2 gap-y-4">
             <div>
-              <span className="block text-[10px] font-bold text-ink-400 uppercase mb-1">Customer</span>
+              <span className="block text-[10px] font-bold text-ink-400  mb-1">Customer</span>
               <p className="font-bold text-sm">{data.customer_name}</p>
               <p className="text-xs text-ink-500">{data.order?.email}</p>
             </div>
             <div>
-              <span className="block text-[10px] font-bold text-ink-400 uppercase mb-1">Order</span>
+              <span className="block text-[10px] font-bold text-ink-400  mb-1">Order</span>
               <p className="font-bold font-mono text-sm">{data.order_number}</p>
             </div>
             <div>
-              <span className="block text-[10px] font-bold text-ink-400 uppercase mb-1">Refund Reason</span>
+              <span className="block text-[10px] font-bold text-ink-400  mb-1">Refund Reason</span>
               <p className="text-sm">{data.reason}</p>
             </div>
             <div>
-              <span className="block text-[10px] font-bold text-ink-400 uppercase mb-1">Payment Method</span>
-              <p className="font-bold uppercase text-sm">{data.method}</p>
+              <span className="block text-[10px] font-bold text-ink-400  mb-1">Payment Method</span>
+              <p className="font-bold  text-sm">{data.method}</p>
             </div>
           </div>
 
           <div className="bg-white border border-ink-200 p-6 space-y-4">
-            <h3 className="font-display font-semibold uppercase text-sm tracking-wider text-ink-500 border-b border-ink-100 pb-2">Refund Breakdown</h3>
+            <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500 border-b border-ink-100 pb-2">Refund Breakdown</h3>
             <div className="space-y-2 font-mono text-sm">
               <div className="flex justify-between text-ink-500"><span>Original Order Total</span><span>{fmt(data.order?.total || 0)}</span></div>
               <div className="flex justify-between text-ink-500"><span>Previously Refunded</span><span>{fmt(data.previously_refunded || 0)}</span></div>
@@ -2549,9 +2757,9 @@ function RefundDetailsDrawer({ refundId, onClose, onUpdate }) {
           </div>
 
           <div className="bg-white border border-ink-200 p-6 space-y-4">
-            <h3 className="font-display font-semibold uppercase text-sm tracking-wider text-ink-500 border-b border-ink-100 pb-2">Payment Information</h3>
+            <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500 border-b border-ink-100 pb-2">Payment Information</h3>
             <div className="space-y-2 text-sm font-mono">
-              <div className="flex justify-between text-ink-500"><span>Provider</span><span className="uppercase">{data.method === 'card' ? 'Stripe' : data.method}</span></div>
+              <div className="flex justify-between text-ink-500"><span>Provider</span><span className="">{data.method === 'card' ? 'Stripe' : data.method}</span></div>
               <div className="flex justify-between text-ink-500"><span>Original Transaction</span><span>{data.order?.payment_session_id || '—'}</span></div>
               <div className="flex justify-between text-ink-500"><span>Refund Transaction</span><span>{data.external_ref || '—'}</span></div>
             </div>
@@ -2564,8 +2772,8 @@ function RefundDetailsDrawer({ refundId, onClose, onUpdate }) {
 
           {(data.status === 'pending' || data.status === 'failed') && (
              <div className="flex gap-3 pt-4">
-               <button onClick={processCancel} disabled={saving} className="flex-1 px-4 py-3 border border-ink-200 text-ink-600 font-bold uppercase hover:bg-ink-50 disabled:opacity-50">Cancel</button>
-               <button onClick={processRetry} disabled={saving} className="flex-[2] px-4 py-3 bg-obsidian text-white font-bold uppercase hover:bg-fire disabled:opacity-50 transition-colors">
+               <button onClick={processCancel} disabled={saving} className="flex-1 px-4 py-3 border border-ink-200 text-ink-600 font-bold  hover:bg-ink-50 disabled:opacity-50">Cancel</button>
+               <button onClick={processRetry} disabled={saving} className="flex-[2] px-4 py-3 bg-obsidian text-white font-bold  hover:bg-fire disabled:opacity-50 transition-colors">
                  {data.status === 'failed' ? 'Retry Refund' : 'Process Refund'}
                </button>
              </div>
@@ -2617,7 +2825,7 @@ function Cms({ setTab }) {
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-display font-bold text-obsidian tracking-tight">Storefront CMS</h2>
           </div>
-          <button onClick={() => setTab("overview")} className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold uppercase border border-ink-200 bg-white hover:bg-obsidian hover:text-white transition-colors mb-6">
+          <button onClick={() => setTab("overview")} className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold  border border-ink-200 bg-white hover:bg-obsidian hover:text-white transition-colors mb-6">
             &larr; Go to Dashboard
           </button>
           <nav className="space-y-1">
@@ -2713,7 +2921,7 @@ function Customers() {
     <div>
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h1 className="font-display tracking-tight text-2xl font-semibold uppercase">Customers</h1>
+          <h1 className="font-display tracking-tight text-2xl font-semibold ">Customers</h1>
           <p className="text-sm text-ink-500">Manage customers and their accounts</p>
         </div>
       </div>
@@ -2722,7 +2930,7 @@ function Customers() {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         {STATS.map(s => (
           <div key={s.label} className="bg-white p-4 border border-ink-200 flex flex-col justify-between">
-            <span className="text-xs font-bold text-ink-400 uppercase tracking-wider">{s.label}</span>
+            <span className="text-xs font-bold text-ink-400  tracking-wider">{s.label}</span>
             <span className={`text-2xl font-mono font-black mt-2 ${s.color}`}>{s.count}</span>
           </div>
         ))}
@@ -2730,7 +2938,7 @@ function Customers() {
 
       {/* Chart */}
       <div className="bg-white border border-ink-200 p-6 mb-6">
-        <h3 className="font-display text-sm uppercase tracking-wider text-ink-500 mb-4">User Growth (Last 7 Days)</h3>
+        <h3 className="font-display text-sm  tracking-wider text-ink-500 mb-4">User Growth (Last 7 Days)</h3>
         <div className="h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data.chart || []}>
@@ -2756,7 +2964,7 @@ function Customers() {
             <option value="active">Active</option>
             <option value="blocked">Blocked</option>
           </select>
-          <button onClick={resetFilters} className="text-sm font-bold text-ink-500 hover:text-fire uppercase px-3 py-2">Reset</button>
+          <button onClick={resetFilters} className="text-sm font-bold text-ink-500 hover:text-fire  px-3 py-2">Reset</button>
         </div>
       </div>
 
@@ -2765,8 +2973,8 @@ function Customers() {
         <div className="bg-obsidian text-white p-3 flex justify-between items-center mb-4 sticky top-0 z-10 shadow-lg">
           <span className="font-bold text-sm">{selected.length} customers selected</span>
           <div className="flex gap-2">
-            <button onClick={() => bulkUpdate('unblock')} className="px-3 py-1.5 text-xs font-bold uppercase bg-white/10 hover:bg-green-600 transition-colors">Unblock</button>
-            <button onClick={() => bulkUpdate('block')} className="px-3 py-1.5 text-xs font-bold uppercase bg-white/10 hover:bg-fire transition-colors">Block</button>
+            <button onClick={() => bulkUpdate('unblock')} className="px-3 py-1.5 text-xs font-bold  bg-white/10 hover:bg-green-600 transition-colors">Unblock</button>
+            <button onClick={() => bulkUpdate('block')} className="px-3 py-1.5 text-xs font-bold  bg-white/10 hover:bg-fire transition-colors">Block</button>
           </div>
         </div>
       )}
@@ -2775,7 +2983,7 @@ function Customers() {
       <div className="bg-white border border-ink-200 overflow-x-auto min-h-[400px]">
         {loading ? <div className="p-10 flex justify-center"><div className="w-6 h-6 border-2 border-obsidian border-t-transparent rounded-full animate-spin"></div></div> : (
           <table className="w-full text-sm text-left">
-            <thead className="bg-ink-100 font-mono text-[10px] uppercase text-ink-500">
+            <thead className="bg-ink-100 font-mono text-[10px]  text-ink-500">
               <tr>
                 <th className="p-3 w-10"><input type="checkbox" checked={data.users?.length > 0 && selected.length === data.users?.length} onChange={selectAll} className="accent-obsidian" /></th>
                 <th className="p-3">Customer</th>
@@ -2799,7 +3007,7 @@ function Customers() {
                   <td className="p-3 text-center font-mono font-bold">{u.orders_count}</td>
                   <td className="p-3 font-mono font-bold">{fmt(u.total_spent)}</td>
                   <td className="p-3">
-                    {u.is_blocked ? <span className="text-[10px] font-bold uppercase px-2 py-0.5 bg-red-100 text-red-700">Blocked</span> : <span className="text-[10px] font-bold uppercase px-2 py-0.5 bg-green-100 text-green-700">Active</span>}
+                    {u.is_blocked ? <span className="text-[10px] font-bold  px-2 py-0.5 bg-red-100 text-red-700">Blocked</span> : <span className="text-[10px] font-bold  px-2 py-0.5 bg-green-100 text-green-700">Active</span>}
                   </td>
                   <td className="p-3 text-xs text-ink-500">{new Date(u.created_at).toLocaleDateString()}</td>
                   <td className="p-3 text-center relative group" onClick={e => e.stopPropagation()}>
@@ -2861,7 +3069,7 @@ function CustomerDetailsDrawer({ user: initialUser, onClose, onUpdate }) {
             <div>
               <h2 className="font-display font-semibold text-2xl flex items-center gap-3">
                 {user.name}
-                {user.is_blocked ? <span className="text-[10px] font-bold uppercase px-2 py-0.5 bg-red-100 text-red-700 align-middle">Blocked</span> : <span className="text-[10px] font-bold uppercase px-2 py-0.5 bg-green-100 text-green-700 align-middle">Active</span>}
+                {user.is_blocked ? <span className="text-[10px] font-bold  px-2 py-0.5 bg-red-100 text-red-700 align-middle">Blocked</span> : <span className="text-[10px] font-bold  px-2 py-0.5 bg-green-100 text-green-700 align-middle">Active</span>}
               </h2>
               <p className="text-sm text-ink-500 font-mono">{user.email}</p>
             </div>
@@ -2873,21 +3081,21 @@ function CustomerDetailsDrawer({ user: initialUser, onClose, onUpdate }) {
           {/* Customer Stats */}
           <div className="grid grid-cols-4 gap-4">
             <div className="bg-white border border-ink-200 p-4 text-center">
-              <span className="block text-xs font-bold text-ink-400 uppercase mb-1">Orders</span>
+              <span className="block text-xs font-bold text-ink-400  mb-1">Orders</span>
               <span className="font-mono text-xl font-bold">{user.total_orders}</span>
             </div>
             <div className="bg-white border border-ink-200 p-4 text-center col-span-2">
-              <span className="block text-xs font-bold text-ink-400 uppercase mb-1">Total Spent</span>
+              <span className="block text-xs font-bold text-ink-400  mb-1">Total Spent</span>
               <span className="font-mono text-xl font-bold">{fmt(user.total_spent)}</span>
             </div>
             <div className="bg-white border border-ink-200 p-4 text-center">
-              <span className="block text-xs font-bold text-ink-400 uppercase mb-1">Avg Order</span>
+              <span className="block text-xs font-bold text-ink-400  mb-1">Avg Order</span>
               <span className="font-mono text-xl font-bold">{fmt(user.avg_order)}</span>
             </div>
           </div>
 
           <div className="bg-white border border-ink-200 p-6 space-y-4">
-            <h3 className="font-display font-semibold uppercase text-sm tracking-wider text-ink-500 mb-4">Personal Information</h3>
+            <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500 mb-4">Personal Information</h3>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div><span className="text-ink-500 block text-xs mb-1">Name</span><span className="font-bold">{user.name}</span></div>
               <div><span className="text-ink-500 block text-xs mb-1">Email</span><span>{user.email}</span></div>
@@ -2897,12 +3105,12 @@ function CustomerDetailsDrawer({ user: initialUser, onClose, onUpdate }) {
           </div>
 
           <div className="bg-white border border-ink-200 p-6 space-y-4">
-            <h3 className="font-display font-semibold uppercase text-sm tracking-wider text-ink-500 mb-4">Saved Addresses</h3>
+            <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500 mb-4">Saved Addresses</h3>
             {user.addresses?.length > 0 ? (
               <div className="grid gap-3">
                 {user.addresses.map(a => (
                   <div key={a.id} className="border border-ink-100 p-3 bg-ink-50 text-sm">
-                    <span className="font-bold text-xs uppercase bg-ink-200 px-2 py-0.5 inline-block mb-2">{a.is_default ? 'Default Address' : 'Address'}</span>
+                    <span className="font-bold text-xs  bg-ink-200 px-2 py-0.5 inline-block mb-2">{a.is_default ? 'Default Address' : 'Address'}</span>
                     <p className="font-bold">{a.first_name} {a.last_name}</p>
                     <p>{a.address_line1} {a.address_line2}</p>
                     <p>{a.city}, {a.province} {a.postal_code}</p>
@@ -2914,10 +3122,10 @@ function CustomerDetailsDrawer({ user: initialUser, onClose, onUpdate }) {
           </div>
 
           <div className="bg-white border border-ink-200 p-6 space-y-4">
-            <h3 className="font-display font-semibold uppercase text-sm tracking-wider text-ink-500 mb-4">Recent Orders</h3>
+            <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500 mb-4">Recent Orders</h3>
             {user.orders?.length > 0 ? (
               <table className="w-full text-sm text-left">
-                <thead className="bg-ink-50 text-[10px] uppercase text-ink-500"><tr><th className="p-2">Order</th><th className="p-2">Date</th><th className="p-2 text-right">Total</th><th className="p-2">Status</th></tr></thead>
+                <thead className="bg-ink-50 text-[10px]  text-ink-500"><tr><th className="p-2">Order</th><th className="p-2">Date</th><th className="p-2 text-right">Total</th><th className="p-2">Status</th></tr></thead>
                 <tbody>
                   {user.orders.map(o => (
                     <tr key={o.id} className="border-b border-ink-100 last:border-0">
@@ -2925,7 +3133,7 @@ function CustomerDetailsDrawer({ user: initialUser, onClose, onUpdate }) {
                       <td className="p-2 text-ink-500">{new Date(o.created_at).toLocaleDateString()}</td>
                       <td className="p-2 text-right font-mono font-bold">{fmt(o.total)}</td>
                       <td className="p-2">
-                        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 ${o.status==='delivered'?'bg-green-100 text-green-700':'bg-ink-100 text-obsidian'}`}>{o.status}</span>
+                        <span className={`text-[10px] font-bold  px-2 py-0.5 ${o.status==='delivered'?'bg-green-100 text-green-700':'bg-ink-100 text-obsidian'}`}>{o.status}</span>
                       </td>
                     </tr>
                   ))}
@@ -2978,13 +3186,17 @@ function StoreSettings() {
           </label>
           {f.flash_sale_active && (
             <div>
-              <label className="block text-xs font-mono uppercase tracking-widest text-ink-400 mb-1.5">End Time</label>
+              <label className="block text-xs font-mono  tracking-widest text-ink-400 mb-1.5">End Time</label>
               <input type="datetime-local" value={f.flash_sale_end_time} onChange={(e) => setF({ ...f, flash_sale_end_time: e.target.value })} className="border border-ink-200 px-4 py-2 outline-none focus:border-obsidian" />
             </div>
           )}
-          <button onClick={save} disabled={saving} className="bg-obsidian text-white font-bold uppercase px-6 py-2.5 hover:bg-fire transition-colors disabled:opacity-50">Save Settings</button>
         </div>
       </div>
+      <div className="bg-ink-50 border-t border-ink-200 p-8 flex justify-end sticky bottom-0 z-10">
+          <button onClick={save} disabled={saving} className="bg-obsidian text-white font-bold  px-6 py-2.5 hover:bg-fire transition-colors disabled:opacity-70 disabled:cursor-wait flex items-center gap-2">
+            {saving ? <Loader2 size={16} className="animate-spin" /> : null} Save Settings
+          </button>
+        </div>
     </div>
   );
 }
@@ -3022,10 +3234,637 @@ function CategoriesManager() {
             <h4 className="font-display tracking-tight">{c.name}</h4>
             <p className="font-mono text-xs text-ink-400 mb-2">/{c.slug}</p>
             {c.hero_banner_url && <img src={c.hero_banner_url} alt="" className="h-16 w-full object-cover mb-1 bg-ink-100" />}
-            {c.hero_video_url && <span className="text-[10px] bg-fire/10 text-fire px-2 py-0.5 rounded font-bold uppercase">Has Video</span>}
+            {c.hero_video_url && <span className="text-[10px] bg-fire/10 text-fire px-2 py-0.5 rounded font-bold ">Has Video</span>}
             <button onClick={() => del(c.id)} className="absolute top-4 right-4 text-ink-400 hover:text-fire"><Trash2 size={16}/></button>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function CodTracking() {
+  const [orders, setOrders] = useState([]);
+  const [status, setStatus] = useState("pending");
+  const [selected, setSelected] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchOrders = () => {
+    setLoading(true);
+    http.get(`/admin/cod-remittance?status=${status}`)
+      .then(({ data }) => setOrders(data.data.orders))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { fetchOrders(); }, [status]);
+
+  const toggleAll = () => {
+    if (selected.length === orders.length) setSelected([]);
+    else setSelected(orders.map(o => o.id));
+  };
+
+  const toggleOne = (id) => {
+    setSelected(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
+  };
+
+  const markRemitted = () => {
+    if (!selected.length) return;
+    const promise = http.patch('/admin/cod-remittance/bulk', { orderIds: selected, status: 'remitted' })
+      .then(() => {
+        setSelected([]);
+        fetchOrders();
+      });
+    toast.promise(promise, {
+      loading: "Updating status...",
+      success: "Orders marked as remitted",
+      error: "Failed to update status"
+    });
+  };
+
+  return (
+    <div className="pb-10">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="font-display tracking-tight text-2xl font-semibold">COD Remittance Tracking</h1>
+        <div className="flex gap-2">
+          {status === 'pending' && selected.length > 0 && (
+            <button onClick={markRemitted} className="px-4 py-2 bg-green-500 text-white font-bold text-sm flex items-center gap-2">
+              <CheckCircle size={16} /> Mark {selected.length} as Remitted
+            </button>
+          )}
+        </div>
+      </div>
+      
+      <div className="flex gap-4 mb-6 border-b border-ink-200">
+        {['pending', 'remitted'].map(s => (
+          <button key={s} onClick={() => { setStatus(s); setSelected([]); }} className={`pb-3 px-2 font-bold text-sm capitalize ${status === s ? 'text-fire border-b-2 border-fire' : 'text-ink-400 hover:text-obsidian'}`}>
+            {s}
+          </button>
+        ))}
+      </div>
+
+      <div className="bg-white border border-ink-200">
+        <table className="w-full text-sm text-left">
+          <thead className="bg-ink-100 font-mono text-[10px] text-ink-500">
+            <tr>
+              {status === 'pending' && <th className="p-4 w-10"><input type="checkbox" checked={selected.length === orders.length && orders.length > 0} onChange={toggleAll} /></th>}
+              <th className="p-4">Order</th>
+              <th className="p-4">Customer</th>
+              <th className="p-4">Courier</th>
+              <th className="p-4">Tracking AWB</th>
+              <th className="p-4 text-right">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr><td colSpan="6" className="p-8 text-center"><Loader2 className="animate-spin mx-auto text-ink-400" /></td></tr>
+            ) : orders.length === 0 ? (
+              <tr><td colSpan="6" className="p-8 text-center text-ink-500">No {status} COD orders found.</td></tr>
+            ) : orders.map(o => (
+              <tr key={o.id} className="border-b border-ink-100 last:border-0 hover:bg-ink-50">
+                {status === 'pending' && <td className="p-4"><input type="checkbox" checked={selected.includes(o.id)} onChange={() => toggleOne(o.id)} /></td>}
+                <td className="p-4 font-mono font-bold">{o.order_number}</td>
+                <td className="p-4">{o.customer_name}</td>
+                <td className="p-4"><span className="px-2 py-1 bg-ink-100 text-xs font-bold rounded-none">{o.courier_name || 'N/A'}</span></td>
+                <td className="p-4 font-mono text-xs text-ink-500">{o.tracking_number || 'N/A'}</td>
+                <td className="p-4 text-right font-display font-semibold">{fmt(o.total)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+
+function InventoryManagement() {
+  const [data, setData] = useState({ products: [], pagination: {} });
+  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState({ page: 1, limit: 50, search: "" });
+  const [searchInput, setSearchInput] = useState("");
+  const [updates, setUpdates] = useState({});
+
+  const fetchInventory = () => {
+    setLoading(true);
+    const q = new URLSearchParams(query).toString();
+    http.get(`/admin/inventory?${q}`)
+      .then(({ data }) => setData(data.data))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { fetchInventory(); }, [query]);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setQuery(prev => ({ ...prev, search: searchInput, page: 1 }));
+  };
+
+  const handleStockChange = (sizeId, val) => {
+    setUpdates(prev => ({ ...prev, [sizeId]: val }));
+  };
+
+  const saveUpdates = async () => {
+    const payload = Object.entries(updates).map(([id, stock]) => ({ id, stock }));
+    if (payload.length === 0) return;
+    
+    const promise = http.patch('/admin/inventory/bulk', { updates: payload })
+      .then(() => {
+        setUpdates({});
+        fetchInventory();
+      });
+    toast.promise(promise, {
+      loading: "Saving inventory...",
+      success: "Inventory updated",
+      error: "Failed to update inventory"
+    });
+  };
+
+  const pendingChanges = Object.keys(updates).length;
+
+  return (
+    <div className="pb-10">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+        <div>
+          <h1 className="font-display tracking-tight text-2xl font-semibold">Inventory Tracking</h1>
+          <p className="text-sm text-ink-500">Quickly view and update stock across all variants</p>
+        </div>
+        {pendingChanges > 0 && (
+          <button onClick={saveUpdates} className="px-4 py-2 bg-obsidian text-white font-bold text-sm flex items-center gap-2 hover:bg-fire transition-colors shadow-lg animate-pulse">
+            <CheckCircle size={16} /> Save {pendingChanges} Changes
+          </button>
+        )}
+      </div>
+
+      <div className="bg-white p-4 border border-ink-200 mb-6 flex gap-4 items-center">
+        <form onSubmit={handleSearch} className="flex-1 relative w-full lg:w-1/3">
+          <SearchIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
+          <input type="text" placeholder="Search product name..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className="w-full pl-9 pr-4 py-2 border border-ink-200 text-sm focus:border-obsidian focus:outline-none rounded-none" />
+        </form>
+      </div>
+
+      <div className="bg-white border border-ink-200 overflow-x-auto min-h-[500px]">
+        {loading ? <div className="p-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-ink-400" /></div> : (
+          <table className="w-full text-sm text-left">
+            <thead className="bg-ink-100 font-mono text-[10px] text-ink-500 uppercase">
+              <tr>
+                <th className="p-3 w-16">Image</th>
+                <th className="p-3">Product Name</th>
+                <th className="p-3">Status</th>
+                <th className="p-3">Variants (Stock)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.products.length === 0 ? <tr><td colSpan="4" className="p-10 text-center text-ink-400">No products found.</td></tr> : data.products.map(p => {
+                const totalStock = p.sizes.reduce((sum, s) => sum + s.stock, 0);
+                return (
+                <tr key={p.id} className="border-b border-ink-100 last:border-0 hover:bg-ink-50">
+                  <td className="p-3">
+                    {p.images?.[0] ? <img src={imgUrl(p.images[0])} alt="" className="w-12 h-12 object-cover bg-ink-100 border border-ink-200" /> : <div className="w-12 h-12 bg-ink-100 border border-ink-200 flex items-center justify-center text-ink-300"><ImageIcon size={16}/></div>}
+                  </td>
+                  <td className="p-3">
+                    <div className="font-bold text-obsidian">{p.name}</div>
+                    <div className="text-xs text-ink-400 font-mono">Total Stock: {totalStock}</div>
+                  </td>
+                  <td className="p-3">
+                    <span className={`text-[10px] font-bold tracking-wider px-2 py-0.5 ${p.status==='active'?'bg-green-100 text-green-700':p.status==='draft'?'bg-yellow-100 text-yellow-700':'bg-ink-200 text-ink-600'}`}>{p.status}</span>
+                  </td>
+                  <td className="p-3">
+                    <div className="flex flex-wrap gap-2">
+                      {p.sizes.map(s => {
+                        const currentVal = updates[s.id] !== undefined ? updates[s.id] : s.stock;
+                        const isLow = currentVal <= 5 && currentVal > 0;
+                        const isOut = currentVal == 0;
+                        const isChanged = updates[s.id] !== undefined;
+                        return (
+                          <div key={s.id} className={`flex items-center border ${isChanged ? 'border-fire shadow-sm' : isOut ? 'border-red-200 bg-red-50' : isLow ? 'border-orange-200 bg-orange-50' : 'border-ink-200 bg-white'}`}>
+                            <span className="px-2 py-1 bg-ink-50 border-r border-ink-200 font-mono text-xs font-bold text-ink-600 w-10 text-center">{s.size}</span>
+                            <input type="number" min="0" value={currentVal} onChange={(e) => handleStockChange(s.id, e.target.value)} className="w-14 px-2 py-1 text-sm font-mono focus:outline-none focus:bg-ink-100 bg-transparent text-center" />
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </td>
+                </tr>
+              )})}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {data.pagination?.totalPages > 1 && (
+        <div className="flex justify-between items-center mt-6">
+          <div className="text-sm text-ink-500">Showing page {data.pagination.page} of {data.pagination.totalPages} ({data.pagination.totalCount} products)</div>
+          <div className="flex gap-1">
+            <button disabled={query.page === 1} onClick={() => setQuery({...query, page: query.page - 1})} className="px-3 py-1.5 border border-ink-200 bg-white hover:bg-ink-50 disabled:opacity-50 text-sm font-bold">Prev</button>
+            <button disabled={query.page === data.pagination.totalPages} onClick={() => setQuery({...query, page: query.page + 1})} className="px-3 py-1.5 border border-ink-200 bg-white hover:bg-ink-50 disabled:opacity-50 text-sm font-bold">Next</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AuditLogs() {
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    http.get("/admin/audit-logs").then((res) => {
+      setLogs(res.data.data);
+      setLoading(false);
+    }).catch(() => toast.error("Failed to load audit logs"));
+  }, []);
+
+  return (
+    <div>
+      <div className="flex justify-between items-start mb-6">
+        <div>
+          <h1 className="font-display tracking-tight text-2xl font-semibold ">Audit Logs</h1>
+          <p className="text-sm text-ink-500">Track all actions performed by staff and admins.</p>
+        </div>
+      </div>
+      <div className="bg-white border border-ink-200 overflow-x-auto min-h-[400px]">
+        {loading ? <div className="p-10 flex justify-center"><Loader2 size={24} className="animate-spin text-obsidian" /></div> : (
+          <table className="w-full text-sm text-left">
+            <thead className="bg-ink-100 font-mono text-[10px] text-ink-500 uppercase tracking-wider">
+              <tr>
+                <th className="p-4">Timestamp</th>
+                <th className="p-4">Admin/Staff</th>
+                <th className="p-4">Action</th>
+                <th className="p-4">Entity Type</th>
+                <th className="p-4">Entity ID</th>
+                <th className="p-4">Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              {logs.length === 0 ? <tr><td colSpan="6" className="p-10 text-center text-ink-400">No logs found.</td></tr> : logs.map(l => (
+                <tr key={l.id} className="border-b border-ink-100 last:border-0 hover:bg-ink-50">
+                  <td className="p-4 text-xs font-mono whitespace-nowrap">{new Date(l.created_at).toLocaleString()}</td>
+                  <td className="p-4 font-bold">{l.admin_name}</td>
+                  <td className="p-4"><span className="px-2 py-1 bg-ink-200 text-obsidian text-[10px] font-bold tracking-wider">{l.action}</span></td>
+                  <td className="p-4 text-ink-500 capitalize">{l.entity_type}</td>
+                  <td className="p-4 font-mono text-xs max-w-[120px] truncate" title={l.entity_id}>{l.entity_id}</td>
+                  <td className="p-4 text-xs font-mono max-w-[300px] truncate" title={JSON.stringify(l.details)}>{JSON.stringify(l.details)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PosSystem() {
+  const [products, setProducts] = useState([]);
+  const [search, setSearch] = useState("");
+  const [cart, setCart] = useState([]);
+  const [customerInfo, setCustomerInfo] = useState({ name: "Walk-in Customer", phone: "", email: "" });
+  const [paymentMethod, setPaymentMethod] = useState("CASH");
+
+  useEffect(() => {
+    http.get("/admin/products?limit=100").then(res => setProducts(res.data.data.products));
+  }, []);
+
+  const addToCart = (product) => {
+    const existing = cart.find(item => item.product_id === product.id);
+    if (existing) {
+      setCart(cart.map(item => item.product_id === product.id ? { ...item, quantity: item.quantity + 1 } : item));
+    } else {
+      setCart([...cart, { product_id: product.id, name: product.name, price: product.base_price, size: product.sizes?.[0]?.size || "OS", quantity: 1 }]);
+    }
+  };
+
+  const removeFromCart = (product_id) => {
+    setCart(cart.filter(item => item.product_id !== product_id));
+  };
+
+  const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+
+  const checkout = async () => {
+    if (cart.length === 0) return toast.error("Cart is empty");
+    try {
+      await http.post("/admin/pos/checkout", { items: cart, customer: customerInfo, payment_method: paymentMethod, total: subtotal });
+      toast.success("Order completed via POS");
+      setCart([]);
+      setCustomerInfo({ name: "Walk-in Customer", phone: "", email: "" });
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "Checkout failed");
+    }
+  };
+
+  return (
+    <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-100px)]">
+      <div className="flex-1 bg-white border border-ink-200 flex flex-col min-h-0">
+        <div className="p-4 border-b border-ink-200">
+          <input type="text" placeholder="Search products for POS..." value={search} onChange={e => setSearch(e.target.value)} className="w-full border border-ink-200 px-4 py-2 focus:outline-none focus:border-obsidian" />
+        </div>
+        <div className="p-4 overflow-y-auto flex-1 grid grid-cols-2 md:grid-cols-4 gap-4 content-start">
+          {products.filter(p => p.name.toLowerCase().includes(search.toLowerCase())).map(p => (
+            <div key={p.id} onClick={() => addToCart(p)} className="border border-ink-200 p-2 cursor-pointer hover:border-obsidian hover:shadow-md transition-all text-center">
+              <img src={p.images?.[0] || 'https://via.placeholder.com/150'} className="w-full aspect-square object-cover mb-2" alt=""/>
+              <p className="text-xs font-bold truncate" title={p.name}>{p.name}</p>
+              <p className="text-xs text-ink-500">{fmt(p.base_price)}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="w-full lg:w-96 bg-white border border-ink-200 flex flex-col shrink-0 min-h-0">
+        <div className="p-4 border-b border-ink-200 font-display font-semibold text-lg flex justify-between items-center">
+          Current Sale
+          <span className="bg-fire text-white text-xs px-2 py-1">{cart.length} items</span>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {cart.length === 0 ? <p className="text-ink-400 text-center text-sm mt-10">Cart is empty</p> : cart.map((item, i) => (
+            <div key={i} className="flex justify-between items-center text-sm border-b border-ink-100 pb-2">
+              <div>
+                <p className="font-bold">{item.name}</p>
+                <p className="text-xs text-ink-500">Qty: {item.quantity} | Size: {item.size}</p>
+              </div>
+              <div className="text-right">
+                <p className="font-mono">{fmt(item.price * item.quantity)}</p>
+                <button onClick={() => removeFromCart(item.product_id)} className="text-xs text-fire hover:underline">Remove</button>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="p-4 border-t border-ink-200 bg-ink-50 space-y-4">
+          <div>
+            <label className="text-xs font-bold text-ink-500 mb-1 block">Customer</label>
+            <input type="text" placeholder="Customer Name" value={customerInfo.name} onChange={e => setCustomerInfo({...customerInfo, name: e.target.value})} className="w-full border border-ink-200 px-3 py-1.5 text-sm mb-2 focus:outline-none" />
+            <input type="text" placeholder="Phone Number" value={customerInfo.phone} onChange={e => setCustomerInfo({...customerInfo, phone: e.target.value})} className="w-full border border-ink-200 px-3 py-1.5 text-sm focus:outline-none" />
+          </div>
+          <div>
+            <label className="text-xs font-bold text-ink-500 mb-1 block">Payment</label>
+            <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} className="w-full border border-ink-200 px-3 py-2 text-sm focus:outline-none">
+              <option value="CASH">Cash</option>
+              <option value="CARD">Card Terminal</option>
+            </select>
+          </div>
+          <div className="flex justify-between font-display text-xl font-bold pt-2 border-t border-ink-200">
+            <span>Total</span>
+            <span className="text-fire">{fmt(subtotal)}</span>
+          </div>
+          <button onClick={checkout} className="w-full bg-obsidian text-white py-3 font-bold hover:bg-fire transition-colors">COMPLETE CHECKOUT</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProfitabilityAnalytics() {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    http.get("/admin/analytics/profitability").then(res => setData(res.data.data)).catch(() => toast.error("Failed to load analytics"));
+  }, []);
+
+  if (!data) return <div className="p-10 flex justify-center"><Loader2 size={24} className="animate-spin text-obsidian" /></div>;
+
+  return (
+    <div>
+      <div className="flex justify-between items-start mb-6">
+        <div>
+          <h1 className="font-display tracking-tight text-2xl font-semibold ">Profitability Analytics</h1>
+          <p className="text-sm text-ink-500">Real-time net profit dashboard (Revenue - COGS - Shipping - Platform Fees).</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white p-6 border border-ink-200">
+          <p className="text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Total Revenue</p>
+          <p className="font-display text-3xl font-semibold text-obsidian">{fmt(data.revenue)}</p>
+        </div>
+        <div className="bg-white p-6 border border-ink-200">
+          <p className="text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">COGS (Estimated)</p>
+          <p className="font-display text-3xl font-semibold text-orange-600">-{fmt(data.cogs)}</p>
+        </div>
+        <div className="bg-white p-6 border border-ink-200">
+          <p className="text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Shipping Costs</p>
+          <p className="font-display text-3xl font-semibold text-orange-600">-{fmt(data.shipping_costs)}</p>
+        </div>
+        <div className="bg-obsidian p-6 border border-ink-200 text-white shadow-xl">
+          <p className="text-xs font-bold text-ink-400 uppercase tracking-wider mb-2">Net Profit</p>
+          <p className="font-display text-3xl font-semibold text-green-400">{fmt(data.net_profit)}</p>
+          <p className="text-sm text-ink-300 mt-2 font-mono">{((data.net_profit / data.revenue) * 100 || 0).toFixed(1)}% Margin</p>
+        </div>
+      </div>
+      <div className="bg-white border border-ink-200 p-6">
+        <h3 className="font-display font-semibold mb-6">30-Day Profit Trend</h3>
+        <ResponsiveContainer width="100%" height={300}>
+          <AreaChart data={data.trend}>
+            <XAxis dataKey="date" tick={{fontSize: 11}} axisLine={false} tickLine={false} />
+            <YAxis tick={{fontSize: 11}} axisLine={false} tickLine={false} />
+            <Tooltip contentStyle={{ borderRadius: 0, border: '1px solid #e5e5e5' }} />
+            <Area type="monotone" dataKey="profit" stroke="#10b981" fill="#d1fae5" strokeWidth={2} />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+function BundlesManager() {
+  const [bundles, setBundles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [allProducts, setAllProducts] = useState([]);
+
+  const load = () => {
+    setLoading(true);
+    http.get('/admin/bundles').then(res => { setBundles(res.data.data); setLoading(false); });
+  };
+
+  useEffect(() => {
+    load();
+    http.get('/admin/products?limit=200').then(res => setAllProducts(res.data.data.products || []));
+  }, []);
+
+  const del = async (id) => {
+    if (!window.confirm('Delete this bundle?')) return;
+    await http.delete(`/admin/bundles/${id}`);
+    toast.success('Bundle deleted');
+    load();
+  };
+
+  const totalRRP = (b) => b.items?.reduce((acc, it) => acc + (it.product?.base_price || 0) * it.quantity, 0) || 0;
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="font-display tracking-tight text-2xl font-semibold">Product Bundles</h1>
+          <p className="text-sm text-ink-500">Group products together to increase average order value.</p>
+        </div>
+        <button onClick={() => { setEditing(null); setShowForm(true); }} className="px-4 py-2 text-xs font-bold bg-obsidian text-white hover:bg-fire transition-colors flex items-center gap-2"><Plus size={14}/> New Bundle</button>
+      </div>
+
+      {loading ? <div className="p-10 flex justify-center"><Loader2 size={24} className="animate-spin text-obsidian" /></div> : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {bundles.length === 0 && <div className="col-span-3 bg-white border border-ink-200 p-10 text-center text-ink-400">No bundles yet. Create one to get started.</div>}
+          {bundles.map(b => {
+            const rrp = totalRRP(b);
+            const savings = rrp - b.bundle_price;
+            return (
+              <div key={b.id} className={`bg-white border ${b.is_active ? 'border-ink-200' : 'border-dashed border-ink-300 opacity-70'} p-5 flex flex-col gap-4`}>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-display font-semibold text-lg leading-tight">{b.name}</h3>
+                    {b.description && <p className="text-xs text-ink-500 mt-1">{b.description}</p>}
+                  </div>
+                  <span className={`text-[10px] font-bold px-2 py-1 ${b.is_active ? 'bg-green-100 text-green-700' : 'bg-ink-100 text-ink-500'}`}>{b.is_active ? 'ACTIVE' : 'INACTIVE'}</span>
+                </div>
+
+                <div className="space-y-2">
+                  {b.items?.map(it => (
+                    <div key={it.id} className="flex items-center gap-3">
+                      <img src={it.product?.images?.[0] || 'https://via.placeholder.com/40'} className="w-8 h-8 object-cover shrink-0" alt="" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold truncate">{it.product?.name}</p>
+                        <p className="text-xs text-ink-400">Qty: {it.quantity}</p>
+                      </div>
+                      <span className="text-xs font-mono text-ink-500">{fmt((it.product?.base_price || 0) * it.quantity)}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="border-t border-ink-100 pt-4 flex justify-between items-end">
+                  <div>
+                    {rrp > 0 && <p className="text-xs text-ink-500 line-through">{fmt(rrp)} RRP</p>}
+                    <p className="font-display text-2xl font-bold text-fire">{fmt(b.bundle_price)}</p>
+                    {savings > 0 && <p className="text-[10px] text-green-600 font-bold">Customer saves {fmt(savings)}</p>}
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => { setEditing(b); setShowForm(true); }} className="p-2 border border-ink-200 hover:bg-ink-50"><Edit size={14}/></button>
+                    <button onClick={() => del(b.id)} className="p-2 border border-red-200 text-fire hover:bg-red-50"><Trash2 size={14}/></button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {showForm && (
+        <BundleForm
+          bundle={editing}
+          allProducts={allProducts}
+          onClose={() => setShowForm(false)}
+          onSaved={() => { setShowForm(false); load(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+function BundleForm({ bundle, allProducts, onClose, onSaved }) {
+  const isEdit = !!bundle;
+  const [f, setF] = useState({
+    name: bundle?.name || '',
+    description: bundle?.description || '',
+    bundle_price: bundle?.bundle_price || '',
+    is_active: bundle?.is_active ?? true,
+  });
+  const [items, setItems] = useState(
+    bundle?.items?.map(it => ({ product_id: it.product_id, quantity: it.quantity })) || []
+  );
+  const [saving, setSaving] = useState(false);
+  const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
+
+  const addProduct = (product_id) => {
+    if (!product_id || items.find(it => it.product_id === product_id)) return;
+    setItems([...items, { product_id, quantity: 1 }]);
+  };
+
+  const removeItem = (pid) => setItems(items.filter(it => it.product_id !== pid));
+  const setQty = (pid, qty) => setItems(items.map(it => it.product_id === pid ? { ...it, quantity: parseInt(qty) || 1 } : it));
+
+  const totalRRP = items.reduce((acc, it) => {
+    const p = allProducts.find(p => p.id === it.product_id);
+    return acc + (p?.base_price || 0) * it.quantity;
+  }, 0);
+
+  const save = async () => {
+    if (!f.name || !f.bundle_price) return toast.error('Name and price required');
+    if (items.length < 2) return toast.error('Add at least 2 products to the bundle');
+    setSaving(true);
+    try {
+      const payload = { ...f, bundle_price: Number(f.bundle_price), items };
+      if (isEdit) {
+        await http.patch(`/admin/bundles/${bundle.id}`, payload);
+        toast.success('Bundle updated');
+      } else {
+        await http.post('/admin/bundles', payload);
+        toast.success('Bundle created');
+      }
+      onSaved();
+    } catch (e) {
+      toast.error(e.response?.data?.detail || 'Save failed');
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-obsidian/40 backdrop-blur-sm" onClick={onClose}>
+      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="p-6 border-b border-ink-200 flex justify-between items-center sticky top-0 bg-white z-10">
+          <h2 className="font-display font-semibold text-xl">{isEdit ? 'Edit Bundle' : 'Create Bundle'}</h2>
+          <button onClick={onClose} className="p-2 text-ink-400 hover:text-fire"><X size={20}/></button>
+        </div>
+        <div className="p-6 space-y-5">
+          <div>
+            <label className="block text-xs font-bold text-ink-500 mb-1">Bundle Name *</label>
+            <input type="text" value={f.name} onChange={set('name')} placeholder="e.g. The Fresh Start Pack" className="w-full border border-ink-200 px-4 py-2.5 focus:outline-none focus:border-obsidian" />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-ink-500 mb-1">Description</label>
+            <textarea value={f.description} onChange={set('description')} rows={2} className="w-full border border-ink-200 px-4 py-2.5 focus:outline-none focus:border-obsidian resize-none" />
+          </div>
+
+          <div className="border border-ink-200 p-4">
+            <div className="flex justify-between items-center mb-3">
+              <label className="text-xs font-bold text-ink-500">Bundle Products</label>
+              <span className="text-xs font-mono text-ink-400">Total RRP: {fmt(totalRRP)}</span>
+            </div>
+            <select onChange={e => { addProduct(e.target.value); e.target.value = ''; }} className="w-full border border-ink-200 px-3 py-2 text-sm focus:outline-none mb-3">
+              <option value="">+ Add a product to bundle...</option>
+              {allProducts.filter(p => !items.find(it => it.product_id === p.id)).map(p => (
+                <option key={p.id} value={p.id}>{p.name} &mdash; {fmt(p.base_price)}</option>
+              ))}
+            </select>
+            <div className="space-y-2">
+              {items.map(it => {
+                const p = allProducts.find(p => p.id === it.product_id);
+                return (
+                  <div key={it.product_id} className="flex items-center gap-3 bg-ink-50 p-2">
+                    <img src={p?.images?.[0] || 'https://via.placeholder.com/32'} className="w-8 h-8 object-cover" alt="" />
+                    <span className="flex-1 text-sm font-bold truncate">{p?.name}</span>
+                    <input type="number" min="1" value={it.quantity} onChange={e => setQty(it.product_id, e.target.value)} className="w-14 border border-ink-200 px-2 py-1 text-sm text-center focus:outline-none" />
+                    <button onClick={() => removeItem(it.product_id)} className="p-1 text-fire hover:bg-red-50"><X size={14}/></button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-ink-500 mb-1">Bundle Price *</label>
+              <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono text-ink-400">Rs.</span><input type="number" value={f.bundle_price} onChange={set('bundle_price')} className="w-full pl-10 pr-4 py-2.5 border border-ink-200 focus:outline-none focus:border-obsidian font-mono font-bold" /></div>
+              {totalRRP > 0 && Number(f.bundle_price) > 0 && <p className="text-xs text-green-600 mt-1 font-bold">Customer saves {fmt(totalRRP - Number(f.bundle_price))}</p>}
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-ink-500 mb-1">Status</label>
+              <select value={f.is_active} onChange={e => setF({...f, is_active: e.target.value === 'true'})} className="w-full border border-ink-200 px-4 py-2.5 focus:outline-none bg-white">
+                <option value="true">Active</option>
+                <option value="false">Inactive (Draft)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div className="p-6 border-t border-ink-200 flex justify-end gap-3">
+          <button onClick={onClose} className="px-4 py-2 text-sm font-bold border border-ink-200 hover:bg-ink-50">Cancel</button>
+          <button onClick={save} disabled={saving} className="px-6 py-2 text-sm font-bold bg-obsidian text-white hover:bg-fire transition-colors disabled:opacity-60 flex items-center gap-2">{saving && <Loader2 size={14} className="animate-spin" />} {isEdit ? 'Save Changes' : 'Create Bundle'}</button>
+        </div>
       </div>
     </div>
   );

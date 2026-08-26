@@ -78,7 +78,7 @@ export default function Home() {
                     <img src={c.image_url} alt={c.name} className="absolute inset-0 h-full w-full object-cover group-hover:scale-110 transition-transform duration-700" />
                     <div className="absolute inset-0 bg-gradient-to-t from-obsidian/90 via-obsidian/20 to-transparent" />
                     <div className="absolute bottom-0 p-5 text-white">
-                      <span className="font-mono text-[10px] uppercase tracking-widest text-white/70">{c.product_count} models</span>
+                      <span className="font-mono text-[10px]  tracking-widest text-white/70">{c.product_count} models</span>
                       <h3 className="font-display tracking-tight leading-tight mt-1">{c.name}</h3>
                       <span className="inline-flex items-center gap-1 text-xs font-bold mt-2 group-hover:text-fire transition-colors">Shop now <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" /></span>
                     </div>
@@ -98,7 +98,7 @@ export default function Home() {
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <Flame size={18} className="fill-fire text-fire" />
-                    <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-fire font-bold">Limited time</span>
+                    <span className="font-mono text-[11px]  tracking-[0.2em] text-fire font-bold">Limited time</span>
                   </div>
                   <h2 className="font-display tracking-tight leading-none">Flash Drop</h2>
                   <p className="text-white/60 mt-2">Prices reset when the clock hits zero. Cop before it's gone.</p>
@@ -297,3 +297,4 @@ function SEOBlock() {
     </section>
   );
 }
+

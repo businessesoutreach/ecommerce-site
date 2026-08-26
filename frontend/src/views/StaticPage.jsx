@@ -14,9 +14,10 @@ export default function StaticPage({ slug }) {
   const page = PAGES[slug] || { title: "Page", body: "Content coming soon." };
   return (
     <div className="max-w-3xl mx-auto px-5 sm:px-8 py-16 min-h-[70vh]">
-      <Link to="/" className="font-mono text-xs uppercase tracking-widest text-fire">← Home</Link>
+      <Link to="/" className="font-mono text-xs  tracking-widest text-fire">← Home</Link>
       <h1 className="font-display tracking-tight mt-4">{page.title}</h1>
       <p className="text-ink-500 leading-relaxed mt-6 text-lg">{page.body}</p>
     </div>
   );
 }
+

@@ -24,8 +24,8 @@ function AnnouncementBar() {
       <div className="max-w-[1400px] mx-auto flex items-center">
         <div className="flex-1 overflow-hidden py-2">
           <div className="marquee whitespace-nowrap flex">
-            <span className="font-mono text-[11px] uppercase tracking-[0.18em] font-semibold px-4">{text}</span>
-            <span className="font-mono text-[11px] uppercase tracking-[0.18em] font-semibold px-4">{text}</span>
+            <span className="font-mono text-[11px]  tracking-[0.18em] font-semibold px-4">{text}</span>
+            <span className="font-mono text-[11px]  tracking-[0.18em] font-semibold px-4">{text}</span>
           </div>
         </div>
         <button onClick={() => setShow(false)} className="px-3 text-white/70 hover:text-white shrink-0">
@@ -191,7 +191,7 @@ function MobileBottomNav() {
     const content = (
       <div className={`flex flex-col items-center gap-0.5 relative ${active ? "text-fire" : "text-obsidian"}`}>
         <Icon size={20} />
-        <span className="text-[9px] font-bold uppercase tracking-wide">{label}</span>
+        <span className="text-[9px] font-bold  tracking-wide">{label}</span>
         {badge > 0 && <span className="absolute -top-1 right-2 h-4 min-w-4 px-1 bg-fire text-white text-[9px] font-bold rounded-none grid place-items-center">{badge}</span>}
       </div>
     );
@@ -200,10 +200,11 @@ function MobileBottomNav() {
   return (
     <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-ink-200 grid grid-cols-5 py-2.5 px-2">
       <Item to="/" icon={Home} label="Home" />
-      <Item to="/collections/retro" icon={Grid3x3} label="Shop" />
+      <Item to="/shop" icon={Grid3x3} label="Shop" />
       <Item to="/wishlist" icon={Heart} label="Saved" badge={wishlist.ids.length} />
       <Item onClick={() => setCartOpen(true)} icon={ShoppingBag} label="Bag" badge={cart.count} />
       <Item to={user ? "/account" : "/login"} icon={User} label="Account" />
     </div>
   );
 }
+

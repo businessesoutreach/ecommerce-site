@@ -5,7 +5,7 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  directUrl = env("DATABASE_URL")
 }
 
 
@@ -27,6 +27,7 @@ model User {
   reviews             Review[]
   storeCredit         StoreCredit?
   storeCreditLedgers  StoreCreditLedger[]
+  adminActionLogs     AdminActionLog[]
 }
 
 model Product {
@@ -34,6 +35,7 @@ model Product {
   slug             String   @unique
   name             String
   base_price       Float
+  cost_price       Float?   @default(0)
   compare_at_price Float?
   flash_sale_price Float?
   description      String?
@@ -56,6 +58,7 @@ model Product {
   wishlistItems WishlistItem[]
   orderItems   OrderItem[]
   reviews      Review[]
+  bundleItems  BundleItem[]
 }
 
 model ProductSize {
@@ -175,6 +178,12 @@ model Order {
   customer_note      String?
   tracking_number    String?
   courier_name       String?
+  courier_awb        String?
+  courier_status     String?
+  risk_score         Float    @default(0.0)
+  risk_flags         String[]
+  cod_remittance_status String @default("pending") // pending, remitted, failed, n/a
+  cod_remitted_amount   Float? @default(0)
   created_at         DateTime @default(now())
   updated_at         DateTime @default(now()) @updatedAt
 
@@ -429,4 +438,40 @@ model SeoConfig {
   default_meta_title String?
   default_meta_desc  String?
   default_og_image   String?
+}
+
+model AdminActionLog {
+  id          String   @id @default(uuid())
+  admin_id    String
+  admin_name  String
+  action      String
+  entity_type String
+  entity_id   String?
+  details     Json?
+  created_at  DateTime @default(now())
+
+  admin User @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+}
+
+model ProductBundle {
+  id            String   @id @default(uuid())
+  name          String
+  slug          String   @unique
+  description   String?
+  image_url     String?
+  bundle_price  Float
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now())
+
+  items BundleItem[]
+}
+
+model BundleItem {
+  id         String @id @default(uuid())
+  bundle_id  String
+  product_id String
+  quantity   Int    @default(1)
+
+  bundle  ProductBundle @relation(fields: [bundle_id], references: [id], onDelete: Cascade)
+  product Product       @relation(fields: [product_id], references: [id], onDelete: Cascade)
 }

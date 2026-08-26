@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, Plus, Check } from "lucide-react";
+import { Heart, Plus, Check, Loader2 } from "lucide-react";
 import { fmt, discountPct } from "../lib/api";
 import { useStore } from "../context/StoreContext";
 import { Stars } from "./common";
@@ -11,6 +11,8 @@ export default function ProductCard({ product, index = 0 }) {
   const [size, setSize] = useState(null);
   const [hover, setHover] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [added, setAdded] = useState(false);
+  const [togglingWishlist, setTogglingWishlist] = useState(false);
   const inWish = wishlist.ids.includes(product.id);
   const pct = discountPct(product.base_price, product.compare_at_price);
   const soldOut = (product.sizes || []).every((s) => s.stock <= 0);
@@ -22,8 +24,17 @@ export default function ProductCard({ product, index = 0 }) {
     if (!chosen) return;
     setAdding(true);
     await addToCart(product.id, chosen, 1);
+    setAdding(false);
+    setAdded(true);
     setSize(chosen);
-    setTimeout(() => setAdding(false), 700);
+    setTimeout(() => setAdded(false), 1500);
+  };
+
+  const handleToggleWishlist = async (e) => {
+    e.preventDefault();
+    setTogglingWishlist(true);
+    await toggleWishlist(product.id);
+    setTogglingWishlist(false);
   };
 
   return (
@@ -61,25 +72,30 @@ export default function ProductCard({ product, index = 0 }) {
         {/* badges */}
         <div className="absolute top-2.5 left-2.5 flex flex-col gap-1.5">
           {pct > 0 && (
-            <span data-testid={`product-card-badge-${product.id}`} className="bg-fire text-white font-mono text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-none uppercase tracking-wider">
+            <span data-testid={`product-card-badge-${product.id}`} className="bg-fire text-white font-mono text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-none  tracking-wider">
               -{pct}%
             </span>
           )}
           {product.is_new_arrival && (
-            <span className="bg-obsidian text-white font-mono text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-none uppercase tracking-wider">NEW</span>
+            <span className="bg-obsidian text-white font-mono text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-none  tracking-wider">NEW</span>
           )}
         </div>
 
         {/* wishlist */}
         <button
-          onClick={() => toggleWishlist(product.id)}
+          disabled={togglingWishlist}
+          onClick={handleToggleWishlist}
           data-testid={`product-card-wishlist-btn-${product.id}`}
-          className="absolute top-2.5 right-2.5 h-8 w-8 sm:h-9 sm:w-9 grid place-items-center rounded-none bg-white/95 border border-ink-200 hover:border-obsidian hover:bg-white transition-colors duration-200 z-10"
+          className="absolute top-2.5 right-2.5 h-8 w-8 sm:h-9 sm:w-9 grid place-items-center rounded-none bg-white/95 border border-ink-200 hover:border-obsidian hover:bg-white transition-colors duration-200 z-10 disabled:opacity-70 disabled:cursor-wait"
           aria-label="wishlist"
         >
-          <motion.span animate={inWish ? { scale: [1, 1.35, 1] } : {}} transition={{ duration: 0.35 }}>
-            <Heart size={16} className={inWish ? "fill-fire text-fire" : "text-obsidian"} />
-          </motion.span>
+          {togglingWishlist ? (
+            <Loader2 size={16} className="animate-spin text-obsidian" />
+          ) : (
+            <motion.span animate={inWish ? { scale: [1, 1.35, 1] } : {}} transition={{ duration: 0.35 }}>
+              <Heart size={16} className={inWish ? "fill-fire text-fire" : "text-obsidian"} />
+            </motion.span>
+          )}
         </button>
 
         {soldOut && (
@@ -115,11 +131,12 @@ export default function ProductCard({ product, index = 0 }) {
                   ))}
                 </div>
                 <button
+                  disabled={adding}
                   onClick={handleAdd}
                   data-testid={`product-card-add-btn-${product.id}`}
-                  className="w-full bg-obsidian text-white font-display tracking-wider text-sm py-2.5 rounded-none flex items-center justify-center gap-2 hover:bg-fire transition-colors duration-200 active:scale-[0.99]"
+                  className="w-full bg-obsidian text-white font-display tracking-wider text-sm py-2.5 rounded-none flex items-center justify-center gap-2 hover:bg-fire transition-colors duration-200 active:scale-[0.99] disabled:opacity-70 disabled:cursor-wait"
                 >
-                  {adding ? <><Check size={16} /> Added</> : <><Plus size={16} /> Quick Add</>}
+                  {adding ? <><Loader2 size={16} className="animate-spin" /> Adding...</> : added ? <><Check size={16} /> Added</> : <><Plus size={16} /> Quick Add</>}
                 </button>
               </motion.div>
             )}
@@ -130,7 +147,7 @@ export default function ProductCard({ product, index = 0 }) {
       {/* info */}
       <div className="pt-3 px-0.5">
         <div className="flex items-center justify-between gap-2">
-          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-400 truncate">{product.brand_slug?.replace("-", " ")}</span>
+          <span className="font-mono text-[10px]  tracking-[0.2em] text-ink-400 truncate">{product.brand_slug?.replace("-", " ")}</span>
           <Stars rating={product.avg_rating} count={product.review_count} size={12} />
         </div>
         <Link to={`/products/${product.slug}`}>
@@ -160,11 +177,12 @@ export default function ProductCard({ product, index = 0 }) {
           </div>
         )}
         {!soldOut && (
-          <button onClick={handleAdd} data-testid={`product-card-mobile-add-${product.id}`} className="lg:hidden mt-2 w-full bg-obsidian text-white font-display tracking-wider text-xs py-2.5 flex items-center justify-center gap-1.5 active:scale-[0.99]">
-            {adding ? <><Check size={14} /> Added</> : <><Plus size={14} /> Quick Add</>}
+          <button disabled={adding} onClick={handleAdd} data-testid={`product-card-mobile-add-${product.id}`} className="lg:hidden mt-2 w-full bg-obsidian text-white font-display tracking-wider text-xs py-2.5 flex items-center justify-center gap-1.5 active:scale-[0.99] disabled:opacity-70 disabled:cursor-wait">
+            {adding ? <><Loader2 size={14} className="animate-spin" /> Adding...</> : added ? <><Check size={14} /> Added</> : <><Plus size={14} /> Quick Add</>}
           </button>
         )}
       </div>
     </motion.div>
   );
 }
+

@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Minus, Trash2, ShoppingBag, ArrowRight } from "lucide-react";
+import { Plus, Minus, Trash2, ShoppingBag, ArrowRight, Loader2 } from "lucide-react";
 import { useStore } from "../context/StoreContext";
 import { fmt } from "../lib/api";
 import { EmptyState } from "../components/common";
@@ -8,8 +8,28 @@ import { EmptyState } from "../components/common";
 export default function CartPage() {
   const { cart, updateQty, removeItem, settings } = useStore();
   const navigate = useNavigate();
+  const [updatingId, setUpdatingId] = React.useState(null);
+  const [removingId, setRemovingId] = React.useState(null);
   const freeMin = Number(settings?.free_shipping_min_amt || 5000);
   const shipping = cart.subtotal >= freeMin ? 0 : Number(settings?.flat_shipping_fee || 250);
+
+  const handleUpdate = async (id, qty) => {
+    try {
+      setUpdatingId(id);
+      await updateQty(id, qty);
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleRemove = async (id) => {
+    try {
+      setRemovingId(id);
+      await removeItem(id);
+    } finally {
+      setRemovingId(null);
+    }
+  };
 
   if (cart.items.length === 0)
     return (
@@ -29,17 +49,20 @@ export default function CartPage() {
               <div className="flex-1">
                 <div className="flex justify-between gap-3">
                   <div>
-                    <span className="font-mono text-[11px] uppercase tracking-wider text-ink-400">{it.brand?.replace("-", " ")}</span>
+                    <span className="font-mono text-[11px]  tracking-wider text-ink-400">{it.brand?.replace("-", " ")}</span>
                     <h3 className="font-display font-bold leading-snug">{it.name}</h3>
                     <span className="font-mono text-xs text-ink-500">EU {it.size}</span>
                   </div>
-                  <button onClick={() => removeItem(it.id)} className="text-ink-400 hover:text-fire h-fit"><Trash2 size={17} /></button>
+                  <button disabled={removingId === it.id} onClick={() => handleRemove(it.id)} className="text-ink-400 hover:text-fire h-fit disabled:opacity-70 disabled:cursor-wait">
+                    {removingId === it.id ? <Loader2 size={17} className="animate-spin" /> : <Trash2 size={17} />}
+                  </button>
                 </div>
                 <div className="flex items-center justify-between mt-4">
-                  <div className="flex items-center border border-ink-200 rounded-none">
-                    <button onClick={() => updateQty(it.id, it.quantity - 1)} className="h-8 w-8 grid place-items-center hover:bg-ink-100"><Minus size={14} /></button>
+                  <div className="flex items-center border border-ink-200 rounded-none relative">
+                    {updatingId === it.id && <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] grid place-items-center z-10"><Loader2 size={14} className="animate-spin text-obsidian" /></div>}
+                    <button disabled={updatingId === it.id} onClick={() => handleUpdate(it.id, it.quantity - 1)} className="h-8 w-8 grid place-items-center hover:bg-ink-100 disabled:opacity-50"><Minus size={14} /></button>
                     <span className="w-8 text-center font-mono font-bold">{it.quantity}</span>
-                    <button onClick={() => updateQty(it.id, it.quantity + 1)} className="h-8 w-8 grid place-items-center hover:bg-ink-100"><Plus size={14} /></button>
+                    <button disabled={updatingId === it.id} onClick={() => handleUpdate(it.id, it.quantity + 1)} className="h-8 w-8 grid place-items-center hover:bg-ink-100 disabled:opacity-50"><Plus size={14} /></button>
                   </div>
                   <span className="font-mono font-bold text-lg">{fmt(it.line_total)}</span>
                 </div>
@@ -62,3 +85,4 @@ export default function CartPage() {
     </div>
   );
 }
+

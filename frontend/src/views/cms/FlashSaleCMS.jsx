@@ -86,22 +86,22 @@ export default function FlashSaleCMS() {
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Campaign Title</label>
+              <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Campaign Title</label>
               <input placeholder="E.g. SUMMER FLASH SALE" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian font-bold" />
             </div>
             <div>
-              <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Subtitle</label>
+              <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Subtitle</label>
               <input placeholder="E.g. Up to 50% off selected products" value={f.subtitle} onChange={(e) => setF({ ...f, subtitle: e.target.value })} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian" />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Start Date</label>
+              <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Start Date</label>
               <input type="datetime-local" value={f.start_date} onChange={(e) => setF({ ...f, start_date: e.target.value })} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian" />
             </div>
             <div>
-              <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">End Date</label>
+              <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">End Date</label>
               <input type="datetime-local" value={f.end_date} onChange={(e) => setF({ ...f, end_date: e.target.value })} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian" />
             </div>
           </div>
@@ -115,7 +115,7 @@ export default function FlashSaleCMS() {
             </div>
 
             <div className="bg-ink-50 border border-ink-200 p-4">
-              <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-3">Discount Application</label>
+              <label className="block text-xs font-bold text-ink-500  tracking-wider mb-3">Discount Application</label>
               <div className="flex flex-col gap-3">
                 <label className="flex items-center gap-3 cursor-pointer">
                   <input type="radio" name="discount_type" value="existing" checked={f.discount_type === 'existing'} onChange={() => setF({ ...f, discount_type: 'existing' })} className="w-4 h-4 text-obsidian" />
@@ -156,3 +156,4 @@ export default function FlashSaleCMS() {
     </div>
   );
 }
+

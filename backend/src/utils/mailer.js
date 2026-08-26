@@ -49,4 +49,15 @@ async function sendOrderConfirmation(to, order, origin_url) {
     }
 }
 
-module.exports = { sendEmail, sendOrderConfirmation };
+async function sendShippingUpdate(to, order, origin_url) {
+    try {
+        const templatePath = path.join(__dirname, '..', 'templates', 'shipping-update.ejs');
+        const html = await ejs.renderFile(templatePath, { order, origin_url });
+        return await sendEmail(to, `Your order #${order.order_number} has shipped! 🚚`, html);
+    } catch (error) {
+        console.error('Error rendering or sending shipping update email:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+module.exports = { sendEmail, sendOrderConfirmation, sendShippingUpdate };

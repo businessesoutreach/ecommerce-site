@@ -95,7 +95,7 @@ router.get('/products/:id/related', async (req, res) => {
 router.get('/products/:id/reviews', async (req, res) => {
     try {
         const items = await prisma.review.findMany({
-            where: { product_id: req.params.id, is_approved: true },
+            where: { product_id: req.params.id, status: 'approved' },
             orderBy: { created_at: 'desc' }
         });
         res.json({ success: true, data: items });
@@ -118,7 +118,7 @@ router.post('/products/:id/reviews', getOptionalUser, async (req, res) => {
                 rating: r,
                 comment,
                 image_urls,
-                is_approved: false
+                status: 'pending'
             }
         });
         res.json({ success: true, data: doc });
@@ -180,6 +180,17 @@ router.get('/search', async (req, res) => {
     } catch (err) {
         res.status(500).json({ detail: err.message });
     }
+});
+
+router.get('/bundles', async (req, res) => {
+    try {
+        const bundles = await prisma.productBundle.findMany({
+            where: { is_active: true },
+            orderBy: { created_at: 'desc' },
+            include: { items: { include: { product: { select: { id: true, name: true, base_price: true, images: true, slug: true } } } } }
+        });
+        res.json({ success: true, data: bundles });
+    } catch (err) { res.status(500).json({ detail: err.message }); }
 });
 
 module.exports = router;

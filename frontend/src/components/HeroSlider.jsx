@@ -49,12 +49,12 @@ export default function HeroSlider({ slides = [] }) {
           className="max-w-2xl"
         >
           {s.badge && (
-            <span className="inline-block bg-fire text-white font-mono text-[11px] font-bold uppercase tracking-[0.2em] px-3 py-1.5 rounded-none mb-5">
+            <span className="inline-block bg-fire text-white font-mono text-[11px] font-bold  tracking-[0.2em] px-3 py-1.5 rounded-none mb-5">
               {s.badge}
             </span>
           )}
-          <h1 className="font-display text-white text-2xl sm:text-2xl lg:text-6xl font-bold tracking-tight leading-[1.1] drop-shadow-lg">
-            {s.title}
+          <h1 className="font-display text-white text-2xl sm:text-2xl lg:text-6xl font-bold tracking-tight leading-[1.1] drop-shadow-lg capitalize">
+            {s.title ? s.title.toLowerCase() : ""}
           </h1>
           <p className="text-white/90 mt-5 text-base sm:text-lg max-w-lg leading-relaxed drop-shadow-md font-medium">
             {s.subtitle}
@@ -91,3 +91,4 @@ export default function HeroSlider({ slides = [] }) {
     </section>
   );
 }
+

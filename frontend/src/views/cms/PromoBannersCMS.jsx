@@ -102,7 +102,7 @@ export default function PromoBannersCMS() {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="col-span-1">
-             <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Banner Image *</label>
+             <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Banner Image *</label>
              <div className="h-48">
                <ImageInput value={f.image_url} onChange={(v) => setF({ ...f, image_url: v })} />
              </div>
@@ -111,22 +111,22 @@ export default function PromoBannersCMS() {
           <div className="col-span-1 md:col-span-2 space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Heading</label>
+                <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Heading</label>
                 <input placeholder="E.g. SUMMER SALE" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Subtitle</label>
+                <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Subtitle</label>
                 <input placeholder="E.g. Up to 40% Off" value={f.subtitle} onChange={(e) => setF({ ...f, subtitle: e.target.value })} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian" />
               </div>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Button Text</label>
+                <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Button Text</label>
                 <input placeholder="SHOP SALE" value={f.cta_text} onChange={(e) => setF({ ...f, cta_text: e.target.value })} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Button URL</label>
+                <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Button URL</label>
                 <input placeholder="/sale" value={f.link} onChange={(e) => setF({ ...f, link: e.target.value })} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian" />
               </div>
             </div>
@@ -135,11 +135,11 @@ export default function PromoBannersCMS() {
               <h4 className="text-sm font-bold text-obsidian mb-3">Scheduling (Optional)</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Start Date</label>
+                  <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">Start Date</label>
                   <input type="datetime-local" value={f.start_date} onChange={(e) => setF({ ...f, start_date: e.target.value })} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">End Date</label>
+                  <label className="block text-xs font-bold text-ink-500  tracking-wider mb-2">End Date</label>
                   <input type="datetime-local" value={f.end_date} onChange={(e) => setF({ ...f, end_date: e.target.value })} className="w-full border border-ink-200 px-4 py-2 outline-none focus:border-obsidian" />
                 </div>
               </div>
@@ -198,3 +198,4 @@ export default function PromoBannersCMS() {
     </div>
   );
 }
+
