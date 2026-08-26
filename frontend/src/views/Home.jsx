@@ -15,7 +15,15 @@ export default function Home() {
   const [slides, setSlides] = useState([]);
   const [cats, setCats] = useState([]);
   const [data, setData] = useState({});
-  const [layout, setLayout] = useState([]);
+  const [layout, setLayout] = useState([
+    { id: 'h1', type: 'hero', is_active: true },
+    { id: 'h2', type: 'categories', is_active: true },
+    { id: 'h3', type: 'flash_sale', is_active: true },
+    { id: 'h4', type: 'new_arrivals', is_active: true },
+    { id: 'h5', type: 'best_sellers', is_active: true },
+    { id: 'h6', type: 'trending', is_active: true },
+    { id: 'h7', type: 'testimonials', is_active: true }
+  ]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -62,7 +70,9 @@ export default function Home() {
               <SectionHeader eyebrow="Shop by drop" title="Find Your Category" tagline="From grail-worthy retros to cloud-soft runners — every silhouette, curated." />
             </ScrollReveal>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {cats.map((c, i) => (
+              {loading ? Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="skeleton w-full aspect-[3/4]" />
+              )) : cats.map((c, i) => (
                 <ScrollReveal key={c.id} delay={i * 0.08}>
                   <Link to={`/collections/${c.slug}`} className="group relative block overflow-hidden rounded-none aspect-[3/4]">
                     <img src={c.image_url} alt={c.name} className="absolute inset-0 h-full w-full object-cover group-hover:scale-110 transition-transform duration-700" />
