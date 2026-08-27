@@ -7,6 +7,7 @@ import { useStore } from "../context/StoreContext";
 import ProductCard from "../components/ProductCard";
 import { Stars, ScrollReveal, SectionHeader } from "../components/common";
 import { toast } from "sonner";
+import ReviewModal from "../components/ReviewModal";
 
 export default function ProductDetail() {
   const { slug } = useParams();
@@ -20,6 +21,7 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true);
   const [addingToCart, setAddingToCart] = useState(false);
   const [togglingWishlist, setTogglingWishlist] = useState(false);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -183,10 +185,38 @@ export default function ProductDetail() {
                 <p className="text-ink-500 leading-relaxed">{p.description}</p>
               ) : (
                 <div className="space-y-5" data-testid="pdp-reviews-section">
+                  <div className="flex justify-between items-center mb-6 border-b border-ink-100 pb-4">
+                    <div>
+                      <h3 className="font-display font-bold text-lg">Customer Reviews</h3>
+                      <p className="text-sm text-ink-400">Based on {reviews.length} reviews</p>
+                    </div>
+                    <button 
+                      onClick={() => setReviewModalOpen(true)}
+                      className="bg-obsidian text-white px-4 py-2 text-sm font-bold font-display hover:bg-fire transition-colors"
+                    >
+                      Write a Review
+                    </button>
+                  </div>
+                  
                   {reviews.length === 0 ? <p className="text-ink-400">No reviews yet. Be the first to review.</p> : reviews.map((r) => (
                     <div key={r.id} className="border-b border-ink-200 pb-4">
                       <div className="flex items-center justify-between"><span className="font-display font-bold text-sm">{r.customer_name}</span><Stars rating={r.rating} size={13} /></div>
                       {r.comment && <p className="text-ink-500 text-sm mt-1.5">{r.comment}</p>}
+                      {r.image_urls && r.image_urls.length > 0 && (
+                        <div className="flex gap-2 mt-3">
+                          {r.image_urls.map((img, i) => (
+                            <a href={img} target="_blank" rel="noreferrer" key={i}>
+                              <img src={img} alt="Review" className="h-20 w-20 object-cover border border-ink-200" />
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                      {r.admin_reply && (
+                        <div className="mt-3 bg-ink-50 p-3 border-l-2 border-fire">
+                          <p className="text-xs font-bold text-obsidian mb-1">Response from Solekicks</p>
+                          <p className="text-sm text-ink-500">{r.admin_reply}</p>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -214,6 +244,16 @@ export default function ProductDetail() {
           {addingToCart ? "Adding..." : `Add to Bag · ${fmt(p.base_price)}`}
         </button>
       </div>
+
+      <ReviewModal 
+        open={reviewModalOpen} 
+        onClose={() => setReviewModalOpen(false)} 
+        product={p} 
+        onReviewSubmitted={async () => {
+          const rev = await http.get(`/products/${p.id}/reviews`);
+          setReviews(rev.data.data);
+        }} 
+      />
     </div>
   );
 }

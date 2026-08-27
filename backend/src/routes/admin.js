@@ -1981,4 +1981,52 @@ router.post('/orders/:id/book-courier', async (req, res) => {
     }
 });
 
+router.post('/orders/:id/sync-tcs', async (req, res) => {
+    try {
+        const order = await prisma.order.findUnique({ where: { id: req.params.id } });
+        if (!order || !order.tracking_number) {
+            return res.status(400).json({ detail: "No tracking number available to sync" });
+        }
+        
+        const courierService = require('../services/courier');
+        const tracking = await courierService.trackParcel(order.tracking_number);
+        
+        if (tracking && tracking.status !== "Unknown" && tracking.status !== "Error") {
+            // Update order courier status
+            await prisma.order.update({
+                where: { id: order.id },
+                data: { courier_status: tracking.status }
+            });
+            
+            // Optionally, map TCS status to local status
+            const lowerStatus = tracking.status.toLowerCase();
+            let newStatus = null;
+            if (lowerStatus.includes('delivered')) newStatus = 'delivered';
+            else if (lowerStatus.includes('returned') || lowerStatus.includes('rto')) newStatus = 'returned';
+            
+            if (newStatus && newStatus !== order.status) {
+                await prisma.order.update({
+                    where: { id: order.id },
+                    data: {
+                        status: newStatus,
+                        status_history: {
+                            create: {
+                                id: require('uuid').v4(),
+                                status: newStatus,
+                                note: `Auto-synced from TCS: ${tracking.status}`
+                            }
+                        }
+                    }
+                });
+            }
+            
+            return res.json({ success: true, tracking, local_status_updated: newStatus });
+        }
+        
+        res.json({ success: true, tracking });
+    } catch (err) {
+        res.status(500).json({ detail: err.message });
+    }
+});
+
 module.exports = router;

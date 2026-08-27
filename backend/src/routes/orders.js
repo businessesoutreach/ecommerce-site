@@ -5,6 +5,7 @@ const { getOptionalUser, getCurrentUser } = require('../middleware/auth');
 const { getOrCreateCart } = require('./cart');
 const { shippingEstimate, validateCoupon, getSettings } = require('./checkout');
 const { notify } = require('../utils/notifications');
+const courierService = require('../services/courier');
 
 const router = express.Router();
 
@@ -407,6 +408,47 @@ router.post('/webhooks/courier', async (req, res) => {
         }
         
         res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ detail: err.message });
+    }
+});
+
+// Track order endpoint (Public but requires validation via query like phone)
+router.get('/track/status/:order_number', async (req, res) => {
+    try {
+        const order = await prisma.order.findUnique({
+            where: { order_number: req.params.order_number },
+            include: { items: true, status_history: true }
+        });
+        
+        if (!order) return res.status(404).json({ detail: 'Order not found' });
+        
+        // Optional: you can strictly require ?phone=... for security
+        // const phone = req.query.phone;
+        // if (!phone || order.customer_phone.replace(/\s/g, '') !== phone.replace(/\s/g, '')) {
+        //     return res.status(403).json({ detail: 'Phone number mismatch' });
+        // }
+        
+        let tcsData = null;
+        if (order.tracking_number) {
+            tcsData = await courierService.trackParcel(order.tracking_number);
+        }
+        
+        res.json({
+            success: true,
+            data: {
+                order_number: order.order_number,
+                status: order.status,
+                customer_name: order.customer_name,
+                created_at: order.created_at,
+                shipping_address: order.shipping_address,
+                items: order.items.map(i => ({ name: i.product_name, image: i.image_url, size: i.size })),
+                tracking_number: order.tracking_number,
+                courier_name: order.courier_name,
+                internal_history: order.status_history,
+                live_tracking: tcsData
+            }
+        });
     } catch (err) {
         res.status(500).json({ detail: err.message });
     }

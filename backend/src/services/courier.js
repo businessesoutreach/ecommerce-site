@@ -87,10 +87,53 @@ const courierService = {
 
     } catch (error) {
       console.error(`[TCS API] Failed to book parcel for ${order.order_number}:`, error.message);
-      
-      // Instead of failing the entire operation, you can choose to return false or throw
-      // so the admin knows the booking failed.
       throw new Error(`Courier booking failed: ${error.message}`);
+    }
+  },
+
+  /**
+   * Tracks a parcel using the TCS API.
+   * @param {string} awb The Airway Bill (Tracking Number)
+   * @returns {Promise<Object>} Tracking info
+   */
+  async trackParcel(awb) {
+    if (!process.env.TCS_CLIENT_ID || !process.env.TCS_USERNAME || !process.env.TCS_PASSWORD) {
+      return {
+        awb,
+        status: "In Transit (Mock)",
+        details: "Tracking mock because TCS credentials are not set."
+      };
+    }
+
+    try {
+      const apiUrl = process.env.TCS_API_URL || "https://api.tcscourier.com/production/v1";
+      const response = await axios.get(`${apiUrl}/track/awb?consignmentNo=${awb}`, {
+        headers: {
+          'X-IBM-Client-Id': process.env.TCS_CLIENT_ID
+        }
+      });
+      
+      const data = response.data;
+      if (data && data.TrackInfo) {
+        // Find the latest tracking event
+        const history = data.TrackInfo.History || [];
+        const latest = history.length > 0 ? history[0] : null;
+        
+        return {
+          awb,
+          status: data.TrackInfo.CurrentStatus || (latest ? latest.Status : 'Unknown'),
+          history: history.map(h => ({
+            status: h.Status,
+            location: h.Location,
+            date: h.Date
+          }))
+        };
+      } else {
+        return { awb, status: "Unknown", details: "Could not fetch status from TCS" };
+      }
+    } catch (error) {
+      console.error(`[TCS API] Failed to track AWB ${awb}:`, error.message);
+      return { awb, status: "Error", details: error.message };
     }
   }
 

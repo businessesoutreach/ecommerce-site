@@ -57,6 +57,26 @@ router.post('/admin/upload', getAdmin, upload.single('file'), async (req, res) =
     }
 });
 
+// Public upload for reviews/avatars
+router.post('/upload', upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ detail: 'No file uploaded' });
+        
+        if (!req.file.mimetype.startsWith('image/')) {
+            return res.status(400).json({ detail: 'Only images are allowed' });
+        }
+        
+        const ext = req.file.originalname.includes('.') ? req.file.originalname.split('.').pop() : 'png';
+        const path = `${APP_NAME}/public_uploads/${uuidv4()}.${ext}`;
+        
+        const result = await putObject(path, req.file.buffer, req.file.mimetype);
+        const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${result.path}`;
+        res.json({ success: true, data: { path: result.path, url: url } });
+    } catch (err) {
+        res.status(500).json({ detail: err.message });
+    }
+});
+
 router.get(/^\/files\/(.*)/, async (req, res) => {
     try {
         const path = req.params[0];
