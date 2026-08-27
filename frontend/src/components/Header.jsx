@@ -133,8 +133,16 @@ export default function Header() {
                 <Heart size={19} />
                 {wishlist.ids.length > 0 && <span className="absolute top-1 right-1 h-4 min-w-4 px-1 bg-fire text-white text-[10px] font-bold rounded-none grid place-items-center">{wishlist.ids.length}</span>}
               </Link>
-              <Link to={user ? "/account" : "/login"} data-testid="account-link" className="h-10 w-10 grid place-items-center rounded-none hover:bg-ink-100 overflow-hidden">
-                {user?.picture ? <img src={user.picture} alt="" className="h-8 w-8 rounded-full object-cover" referrerPolicy="no-referrer" /> : <User size={19} />}
+              <Link to={user ? (user.role === "admin" ? "/admin" : "/account") : "/login"} data-testid="account-link" className="h-10 w-10 grid place-items-center rounded-none hover:bg-ink-100 overflow-hidden">
+                {user?.picture ? (
+                  <img src={user.picture} alt="" className="h-8 w-8 rounded-full object-cover" referrerPolicy="no-referrer" />
+                ) : user?.role === "admin" ? (
+                  <div className="h-8 w-8 rounded-full bg-fire text-white grid place-items-center font-display font-bold text-sm">
+                    {user.name ? user.name[0].toUpperCase() : "A"}
+                  </div>
+                ) : (
+                  <User size={19} />
+                )}
               </Link>
               <motion.button
                 key={cartBump}
@@ -203,7 +211,7 @@ function MobileBottomNav() {
       <Item to="/shop" icon={Grid3x3} label="Shop" />
       <Item to="/wishlist" icon={Heart} label="Saved" badge={wishlist.ids.length} />
       <Item onClick={() => setCartOpen(true)} icon={ShoppingBag} label="Bag" badge={cart.count} />
-      <Item to={user ? "/account" : "/login"} icon={User} label="Account" />
+      <Item to={user ? (user.role === "admin" ? "/admin" : "/account") : "/login"} icon={User} label={user?.role === "admin" ? "Admin" : "Account"} />
     </div>
   );
 }
