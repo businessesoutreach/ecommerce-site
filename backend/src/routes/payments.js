@@ -15,7 +15,7 @@ router.post('/payments/stripe/checkout', async (req, res) => {
             payment_method_types: ['card'],
             line_items: [{
                 price_data: {
-                    currency: 'usd',
+                    currency: 'pkr',
                     product_data: { name: `Order ${o.order_number}` },
                     unit_amount: Math.round(o.total * 100)
                 },
@@ -32,7 +32,7 @@ router.post('/payments/stripe/checkout', async (req, res) => {
                 session_id: session.id,
                 order_id: order_id,
                 amount: o.total,
-                currency: 'usd',
+                currency: 'PKR',
                 status: 'initiated',
                 payment_status: 'pending'
             }
