@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0a0a0a"/>
+      <stop offset="1" stop-color="#1f1f1f"/>
+    </linearGradient>
+    <linearGradient id="flameGrad" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ff3b00"/>
+      <stop offset="1" stop-color="#ff8c00"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="15" stdDeviation="15" flood-color="#000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+  
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)"/>
+  
+  <g filter="url(#shadow)">
+    <!-- Main Sneaker / Flame Swoosh -->
+    <path d="M112 368 C144 384 192 384 256 384 C384 384 416 352 416 320 C416 288 352 224 256 160 C208 128 176 112 144 112 C112 112 96 128 96 144 C96 160 112 176 160 208 C224 256 256 272 256 288 C256 304 224 320 160 320 C144 320 128 336 112 368 Z" fill="url(#flameGrad)" />
+
+    <!-- Inner Highlight -->
+    <path d="M128 352 C160 368 192 368 256 368 C352 368 384 336 384 320 C384 304 336 256 256 208 C224 192 192 176 176 176 C160 176 144 192 160 208 C208 240 240 256 240 288 C240 304 208 320 176 320 Z" fill="#ffffff" />
+  </g>
+</svg>
