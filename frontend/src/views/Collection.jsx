@@ -3,6 +3,7 @@ import { useParams, useSearchParams, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { SlidersHorizontal, X, ChevronDown } from "lucide-react";
 import { http } from "../lib/api";
+import { useStore } from "../context/StoreContext";
 import ProductCard from "../components/ProductCard";
 import { ProductCardSkeleton, EmptyState } from "../components/common";
 import { Package } from "lucide-react";
@@ -18,6 +19,7 @@ const SORTS = [
 
 export default function Collection({ mode }) {
   const { slug } = useParams();
+  const { settings } = useStore();
   const loc = useLocation();
   const [sp] = useSearchParams();
   const [products, setProducts] = useState([]);
@@ -116,7 +118,7 @@ export default function Collection({ mode }) {
     </div>
   );
 
-  const isFlashEnded = mode === "flash" && (!products[0]?.flash_sale_ends_at || new Date(products[0].flash_sale_ends_at) < new Date());
+  const isFlashEnded = mode === "flash" && (!settings?.flash_sale_active || !settings?.flash_sale_end_time || new Date(settings.flash_sale_end_time) < new Date());
 
   return (
     <div>

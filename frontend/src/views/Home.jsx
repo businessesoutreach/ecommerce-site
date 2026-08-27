@@ -50,8 +50,8 @@ export default function Home({ initialData }) {
   const layout = homeData?.layout || [
     { id: 'h1', type: 'hero', is_active: true },
     { id: 'h2', type: 'categories', is_active: true },
-    { id: 'h3', type: 'flash_sale', is_active: true },
-    { id: 'h4', type: 'new_arrivals', is_active: true },
+    { id: 'h3', type: 'new_arrivals', is_active: true },
+    { id: 'h4', type: 'flash_sale', is_active: true },
     { id: 'h5', type: 'best_sellers', is_active: true },
     { id: 'h6', type: 'trending', is_active: true },
     { id: 'h7', type: 'testimonials', is_active: true }
@@ -184,8 +184,8 @@ export default function Home({ initialData }) {
     layout.push(
       { id: 'h1', type: 'hero', is_active: true },
       { id: 'h2', type: 'categories', is_active: true },
-      { id: 'h3', type: 'flash_sale', is_active: true },
-      { id: 'h4', type: 'new_arrivals', is_active: true },
+      { id: 'h3', type: 'new_arrivals', is_active: true },
+      { id: 'h4', type: 'flash_sale', is_active: true },
       { id: 'h5', type: 'best_sellers', is_active: true },
       { id: 'h6', type: 'trending', is_active: true },
       { id: 'h7', type: 'testimonials', is_active: true }
