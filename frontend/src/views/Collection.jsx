@@ -1,12 +1,11 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useSearchParams, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { SlidersHorizontal, X, ChevronDown } from "lucide-react";
+import { SlidersHorizontal, X, ChevronDown, Package } from "lucide-react";
 import { http } from "../lib/api";
 import { useStore } from "../context/StoreContext";
 import ProductCard from "../components/ProductCard";
-import { ProductCardSkeleton, EmptyState } from "../components/common";
-import { Package } from "lucide-react";
+import { ProductCardSkeleton, EmptyState, Countdown } from "../components/common";
 
 const SIZES = ["39", "40", "41", "42", "43", "44", "45", "46"];
 const SORTS = [
@@ -139,6 +138,11 @@ export default function Collection({ mode }) {
             <p className="text-white/70 mt-3 text-sm sm:text-base max-w-xl mx-auto font-light leading-relaxed drop-shadow-md">
               {category.tagline}
             </p>
+          )}
+          {mode === "flash" && settings?.flash_sale_end_time && (
+            <div className="mt-6">
+              <Countdown endsAt={settings.flash_sale_end_time} />
+            </div>
           )}
         </div>
       </div>
