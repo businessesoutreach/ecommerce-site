@@ -6,6 +6,7 @@ import { useStore } from "../context/StoreContext";
 import { http, fmt } from "../lib/api";
 
 const NAV = [
+  { label: "All Products", to: "/shop" },
   { label: "New Releases", to: "/new-arrivals" },
   { label: "Streetwear", to: "/collections/streetwear" },
   { label: "Retro & Highs", to: "/collections/retro" },
