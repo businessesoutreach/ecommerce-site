@@ -68,7 +68,7 @@ export default function HeroSlider({ slides = [] }) {
               <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link
-              to="/auth?mode=register"
+              to="/register"
               className="inline-flex items-center justify-center bg-transparent border-2 border-white/80 text-white font-display tracking-wider text-sm px-7 py-3.5 rounded-none hover:bg-white hover:text-obsidian shadow-lg transition-colors backdrop-blur-sm"
             >
               Sign Up

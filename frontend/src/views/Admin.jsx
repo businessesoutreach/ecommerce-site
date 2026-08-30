@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Home, Megaphone, Tag, Layers, Zap, FileText, Search, LayoutDashboard, Package, ShoppingCart, Ticket, Star, Users, LogOut, TrendingUp, AlertTriangle, Plus, Trash2, X, RotateCcw, DollarSign, Image as ImageIcon, Upload, MessageCircle, Search as SearchIcon, Filter, MoreVertical, Eye, Download, Printer, CheckCircle, Truck, MapPin, Edit, Copy, Activity, Loader2 } from "lucide-react";
+import { Home, Megaphone, Tag, Layers, Zap, FileText, Search, LayoutDashboard, Package, ShoppingCart, Ticket, Star, Users, LogOut, TrendingUp, AlertTriangle, Plus, Trash2, X, RotateCcw, DollarSign, Image as ImageIcon, Upload, MessageCircle, Search as SearchIcon, Filter, MoreVertical, Eye, Download, Printer, CheckCircle, Truck, MapPin, Edit, Copy, Activity, Loader2, HelpCircle } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell } from "recharts";
 import { http, fmt, imgUrl, waLink } from "../lib/api";
 import { useStore } from "../context/StoreContext";
@@ -103,7 +103,7 @@ function Overview({ setTab }) {
   useEffect(() => { http.get("/admin/analytics/overview").then(({ data }) => setD(data.data)); }, []);
   if (!d) return <div className="skeleton h-64 rounded-none" />;
 
-  const { kpis, sales_chart, top_products, sales_by_category, recent_orders, customer_overview, needs_attention } = d;
+  const { kpis, sales_chart, top_products, sales_by_category, recent_orders, customer_overview, needs_attention, inventory_by_category } = d;
 
   const COLORS = ['#FF3B30', '#111111', '#666666', '#E5E5E5', '#A3A3A3'];
 
@@ -124,31 +124,46 @@ function Overview({ setTab }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-        <div className="bg-white rounded-none p-5 border border-ink-200">
+      <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-4 mb-6">
+        <div className="bg-white rounded-none p-5 border border-ink-200 xl:col-span-2">
            <div className="flex justify-between items-start"><span className="font-mono text-xs  tracking-wider text-ink-400">Collected Revenue</span><DollarSign size={18} className="text-green-500" /></div>
            <p className="font-display font-semibold text-2xl mt-2">{fmt(kpis.revenue.value)}</p>
            <Trend val={kpis.revenue.trend} />
         </div>
-        <div className="bg-white rounded-none p-5 border border-ink-200">
-           <div className="flex justify-between items-start"><span className="font-mono text-xs  tracking-wider text-ink-400">Pending COD</span><Truck size={18} className="text-orange-500" /></div>
-           <p className="font-display font-semibold text-2xl mt-2">{fmt(kpis.pending_cod?.value || 0)}</p>
-           <span className="text-xs font-mono font-bold text-ink-400">Awaiting Remittance</span>
+        <div className="bg-white rounded-none p-5 border border-ink-200 xl:col-span-2">
+           <div className="flex justify-between items-start"><span className="font-mono text-xs  tracking-wider text-ink-400">Total Orders</span><ShoppingCart size={18} className="text-fire" /></div>
+           <p className="font-display font-semibold text-2xl mt-2">{kpis.total_orders?.value || 0}</p>
+           <span className="text-xs font-mono font-bold text-ink-400">All Time</span>
         </div>
-        <div className="bg-white rounded-none p-5 border border-ink-200">
-           <div className="flex justify-between items-start"><span className="font-mono text-xs  tracking-wider text-ink-400">Orders</span><ShoppingCart size={18} className="text-fire" /></div>
-           <p className="font-display font-semibold text-2xl mt-2">{kpis.orders.value}</p>
-           <Trend val={kpis.orders.trend} />
+        <div className="bg-white rounded-none p-5 border border-ink-200 xl:col-span-2">
+           <div className="flex justify-between items-start"><span className="font-mono text-xs  tracking-wider text-ink-400">Delivered Orders</span><CheckCircle size={18} className="text-blue-500" /></div>
+           <p className="font-display font-semibold text-2xl mt-2">{kpis.delivered_orders?.value || 0}</p>
+           <span className="text-xs font-mono font-bold text-ink-400">Last 30 Days</span>
         </div>
-        <div className="bg-white rounded-none p-5 border border-ink-200">
+        <div className="bg-white rounded-none p-5 border border-ink-200 xl:col-span-2">
+           <div className="flex justify-between items-start"><span className="font-mono text-xs  tracking-wider text-ink-400">Confirmed Orders</span><Package size={18} className="text-green-500" /></div>
+           <p className="font-display font-semibold text-2xl mt-2">{kpis.confirmed_orders?.value || 0}</p>
+           <span className="text-xs font-mono font-bold text-ink-400">Last 30 Days</span>
+        </div>
+        <div className="bg-white rounded-none p-5 border border-ink-200 xl:col-span-2">
+           <div className="flex justify-between items-start"><span className="font-mono text-xs  tracking-wider text-ink-400">Pending Orders</span><ShoppingCart size={18} className="text-orange-500" /></div>
+           <p className="font-display font-semibold text-2xl mt-2">{kpis.pending_orders?.value || 0}</p>
+           <span className="text-xs font-mono font-bold text-ink-400">Last 30 Days</span>
+        </div>
+        <div className="bg-white rounded-none p-5 border border-ink-200 xl:col-span-2">
            <div className="flex justify-between items-start"><span className="font-mono text-xs  tracking-wider text-ink-400">Customers</span><Users size={18} className="text-fire" /></div>
            <p className="font-display font-semibold text-2xl mt-2">{kpis.customers.value}</p>
            <Trend val={kpis.customers.trend} />
         </div>
-        <div className="bg-white rounded-none p-5 border border-ink-200">
+        <div className="bg-white rounded-none p-5 border border-ink-200 xl:col-span-2">
            <div className="flex justify-between items-start"><span className="font-mono text-xs  tracking-wider text-ink-400">Avg Order Value</span><Package size={18} className="text-fire" /></div>
            <p className="font-display font-semibold text-2xl mt-2">{fmt(kpis.aov.value)}</p>
            <Trend val={kpis.aov.trend} />
+        </div>
+        <div className="bg-white rounded-none p-5 border border-ink-200 xl:col-span-2">
+           <div className="flex justify-between items-start"><span className="font-mono text-xs  tracking-wider text-ink-400">Pending COD</span><Truck size={18} className="text-orange-500" /></div>
+           <p className="font-display font-semibold text-2xl mt-2">{fmt(kpis.pending_cod?.value || 0)}</p>
+           <span className="text-xs font-mono font-bold text-ink-400">Awaiting Remittance</span>
         </div>
       </div>
 
@@ -287,6 +302,19 @@ function Overview({ setTab }) {
               </li>
             </ul>
           </div>
+
+          <div className="bg-white rounded-none p-5 border border-ink-200">
+            <h3 className="font-display text-lg font-semibold mb-4 flex items-center gap-2"><Layers size={18} className="text-obsidian"/> Inventory by Category</h3>
+            <ul className="space-y-3 text-sm">
+              {inventory_by_category && inventory_by_category.map((inv, idx) => (
+                <li key={idx} className="flex justify-between items-center">
+                  <span className="capitalize">{inv.name.replace(/-/g, ' ')}</span>
+                  <span className="font-bold bg-ink-100 px-2 py-0.5">{inv.count} Products</span>
+                </li>
+              ))}
+              {(!inventory_by_category || inventory_by_category.length === 0) && <li className="text-ink-400">No data</li>}
+            </ul>
+          </div>
         </div>
       </div>
     </div>
@@ -300,6 +328,10 @@ function Orders() {
   const [searchInput, setSearchInput] = useState("");
   const [selected, setSelected] = useState([]);
   const [viewOrder, setViewOrder] = useState(null);
+  const [activeDropdown, setActiveDropdown] = useState(null);
+  const [confirmStatusUpdate, setConfirmStatusUpdate] = useState(null);
+  const [showStatusGuide, setShowStatusGuide] = useState(false);
+  const [trackParcelOrder, setTrackParcelOrder] = useState(null);
 
   const load = () => {
     setLoading(true);
@@ -439,6 +471,7 @@ function Orders() {
           <p className="text-sm text-ink-500">Manage and process customer orders</p>
         </div>
         <div className="flex gap-2">
+          <button onClick={() => setShowStatusGuide(true)} className="px-3 py-1.5 text-xs font-bold border border-ink-200 bg-white hover:bg-ink-100 transition-colors flex items-center gap-2"><HelpCircle size={14}/> Status Guide</button>
           <button onClick={exportOrders} className="px-3 py-1.5 text-xs font-bold  border border-ink-200 bg-white hover:bg-obsidian hover:text-white transition-colors flex items-center gap-2"><Download size={14}/> Export</button>
           <button onClick={() => toast.success("Create Order coming soon!")} className="px-3 py-1.5 text-xs font-bold  bg-obsidian text-white hover:bg-fire transition-colors">+ Create Order</button>
         </div>
@@ -531,8 +564,28 @@ function Orders() {
                     <span className="text-[10px] font-bold  tracking-wider bg-ink-100 text-obsidian px-2 py-0.5">{o.status}</span>
                   </td>
                   <td className="p-3 text-ink-500 font-mono text-xs">{new Date(o.created_at).toLocaleDateString()}</td>
-                  <td className="p-3 text-center" onClick={e => e.stopPropagation()}>
-                    <button onClick={() => setViewOrder(o)} className="p-1 text-ink-400 hover:text-obsidian hover:bg-ink-100"><Eye size={16}/></button>
+                  <td className="p-3 text-center relative" onClick={e => e.stopPropagation()}>
+                    <button onClick={() => setActiveDropdown(activeDropdown === o.id ? null : o.id)} className="p-1 text-ink-400 hover:text-obsidian hover:bg-ink-100 rounded">
+                      <MoreVertical size={16}/>
+                    </button>
+                    {activeDropdown === o.id && (
+                      <>
+                        <div className="fixed inset-0 z-10" onClick={() => setActiveDropdown(null)}></div>
+                        <div className="absolute right-8 top-8 w-48 bg-white border border-ink-200 shadow-xl z-20 flex flex-col text-left py-1 text-xs">
+                          <button onClick={() => { setViewOrder(o); setActiveDropdown(null); }} className="px-4 py-2 hover:bg-ink-50 flex items-center gap-2 text-obsidian"><Eye size={14}/> View Details</button>
+                          {(o.tracking_number || o.status === 'shipped') && (
+                            <button onClick={() => { setTrackParcelOrder(o); setActiveDropdown(null); }} className="px-4 py-2 hover:bg-ink-50 flex items-center gap-2 text-blue-600"><Truck size={14}/> Track Parcel (TCS)</button>
+                          )}
+                          <div className="border-t border-ink-100 my-1"></div>
+                          <div className="px-4 py-1 text-[10px] font-bold text-ink-400 uppercase tracking-wider">Update Status</div>
+                          {ORDER_STATES.map(s => (
+                            <button key={s} onClick={() => { setConfirmStatusUpdate({ order: o, newStatus: s }); setActiveDropdown(null); }} className={`px-4 py-1.5 hover:bg-ink-50 text-left capitalize ${o.status === s ? 'font-bold bg-ink-50 text-obsidian' : 'text-ink-600'}`}>
+                              {s}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -553,6 +606,101 @@ function Orders() {
       )}
 
       {viewOrder && <OrderDetailsDrawer order={viewOrder} onClose={() => setViewOrder(null)} onUpdate={() => { load(); setViewOrder(null); }} />}
+
+      {/* Confirmation Modal */}
+      {confirmStatusUpdate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-obsidian/40 backdrop-blur-sm" onClick={() => setConfirmStatusUpdate(null)}>
+          <div className="bg-white p-6 max-w-sm w-full shadow-2xl border-t-4 border-obsidian" onClick={e => e.stopPropagation()}>
+            <h3 className="font-display text-lg font-semibold mb-2">Update Status</h3>
+            <p className="text-sm text-ink-500 mb-6">Are you sure you want to mark Order <strong>#{confirmStatusUpdate.order.order_number}</strong> as <strong className="capitalize text-obsidian">{confirmStatusUpdate.newStatus}</strong>?</p>
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setConfirmStatusUpdate(null)} className="px-4 py-2 text-sm font-bold text-ink-500 hover:text-obsidian">Cancel</button>
+              <button onClick={() => { updateStatus(confirmStatusUpdate.order.id, confirmStatusUpdate.newStatus); setConfirmStatusUpdate(null); }} className="px-4 py-2 text-sm font-bold bg-obsidian text-white hover:bg-fire transition-colors">Confirm Update</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Status Guide Modal */}
+      {showStatusGuide && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-obsidian/40 backdrop-blur-sm" onClick={() => setShowStatusGuide(false)}>
+          <div className="bg-white max-w-2xl w-full shadow-2xl flex flex-col max-h-[80vh]" onClick={e => e.stopPropagation()}>
+            <div className="p-6 border-b border-ink-200 flex justify-between items-center bg-ink-50">
+              <h3 className="font-display text-lg font-semibold flex items-center gap-2"><HelpCircle size={18}/> Order Status Guide</h3>
+              <button onClick={() => setShowStatusGuide(false)} className="text-ink-400 hover:text-fire"><X size={20}/></button>
+            </div>
+            <div className="p-6 overflow-y-auto">
+              <div className="space-y-6">
+                <div>
+                  <h4 className="font-bold text-sm mb-3 text-obsidian border-b border-ink-200 pb-2">Internal Statuses</h4>
+                  <ul className="space-y-3 text-sm">
+                    <li><strong className="bg-ink-100 px-2 py-0.5 rounded mr-2">placed</strong> Customer has completed checkout. Action needed: Review payment.</li>
+                    <li><strong className="bg-ink-100 px-2 py-0.5 rounded mr-2">confirmed</strong> Payment verified. Action needed: Pick items.</li>
+                    <li><strong className="bg-ink-100 px-2 py-0.5 rounded mr-2">processing</strong> Order is currently being handled/packed in the warehouse.</li>
+                    <li><strong className="bg-ink-100 px-2 py-0.5 rounded mr-2">packed</strong> Ready for courier pickup. Label should be generated.</li>
+                    <li><strong className="bg-ink-100 px-2 py-0.5 rounded mr-2">shipped</strong> Handed over to courier (e.g. TCS). Tracking is active.</li>
+                    <li><strong className="bg-ink-100 px-2 py-0.5 rounded mr-2">delivered</strong> Courier confirms successful delivery to customer.</li>
+                    <li><strong className="bg-ink-100 px-2 py-0.5 rounded mr-2">cancelled</strong> Order terminated before shipping.</li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm mb-3 text-obsidian border-b border-ink-200 pb-2">TCS Tracking Integration</h4>
+                  <p className="text-sm text-ink-500 mb-2">When an order is marked as <strong>shipped</strong> or a tracking number is generated via "Book Courier via TCS", the system will map the following TCS events:</p>
+                  <ul className="space-y-2 text-sm">
+                    <li><span className="text-blue-500 font-bold">Transit:</span> Parcel is moving through TCS network.</li>
+                    <li><span className="text-orange-500 font-bold">Out for Delivery:</span> Rider is on the way to the customer today.</li>
+                    <li><span className="text-red-500 font-bold">Exception:</span> Delivery attempt failed, address issue, or customer refused.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Track Parcel Modal (Admin View) */}
+      {trackParcelOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-obsidian/40 backdrop-blur-sm" onClick={() => setTrackParcelOrder(null)}>
+          <div className="bg-white max-w-lg w-full shadow-2xl flex flex-col max-h-[80vh]" onClick={e => e.stopPropagation()}>
+            <div className="p-4 border-b border-ink-200 flex justify-between items-center bg-obsidian text-white">
+              <h3 className="font-display text-base font-semibold flex items-center gap-2"><Truck size={16}/> Tracking: #{trackParcelOrder.tracking_number || trackParcelOrder.order_number}</h3>
+              <button onClick={() => setTrackParcelOrder(null)} className="text-white/70 hover:text-white"><X size={20}/></button>
+            </div>
+            <div className="p-6 overflow-y-auto">
+              <div className="mb-6 p-4 border border-ink-200 bg-ink-50 text-sm flex justify-between">
+                <div>
+                  <div className="font-bold text-obsidian">{trackParcelOrder.courier_name || 'TCS'} Delivery</div>
+                  <div className="text-ink-500">{trackParcelOrder.customer_name}</div>
+                </div>
+                <div className="text-right">
+                  <div className="font-mono font-bold text-fire">{trackParcelOrder.tracking_number || 'N/A'}</div>
+                </div>
+              </div>
+              <div className="relative pl-6 border-l-2 border-ink-200 space-y-6">
+                {/* Mock timeline for now, typically this would fetch from API */}
+                <div className="relative">
+                  <div className="absolute -left-[31px] bg-white border-2 border-green-500 w-4 h-4 rounded-full"></div>
+                  <p className="text-sm font-bold text-green-600">Shipped</p>
+                  <p className="text-xs text-ink-400">Package handed to courier</p>
+                </div>
+                <div className="relative">
+                  <div className="absolute -left-[31px] bg-white border-2 border-blue-500 w-4 h-4 rounded-full"></div>
+                  <p className="text-sm font-bold text-blue-600">In Transit</p>
+                  <p className="text-xs text-ink-400">Arrived at origin facility</p>
+                </div>
+                <div className="relative">
+                  <div className="absolute -left-[31px] bg-white border-2 border-ink-300 w-4 h-4 rounded-full"></div>
+                  <p className="text-sm font-bold text-ink-400">Out for Delivery</p>
+                </div>
+                <div className="relative">
+                  <div className="absolute -left-[31px] bg-white border-2 border-ink-300 w-4 h-4 rounded-full"></div>
+                  <p className="text-sm font-bold text-ink-400">Delivered</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -564,18 +712,32 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
   const [courierName, setCourierName] = useState(order.courier_name || "");
   const [savingNote, setSavingNote] = useState(false);
   const [refundOrder, setRefundOrder] = useState(null);
+  
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [savingTracking, setSavingTracking] = useState(false);
+  const [bookingCourier, setBookingCourier] = useState(false);
 
   const updateStatus = async (newStatus) => {
     setStatus(newStatus);
-    await http.patch(`/admin/orders/${order.id}/status`, { status: newStatus, tracking_number: trackingNumber, courier_name: courierName });
-    toast.success("Order status updated");
-    onUpdate();
+    setUpdatingStatus(true);
+    try {
+      await http.patch(`/admin/orders/${order.id}/status`, { status: newStatus, tracking_number: trackingNumber, courier_name: courierName });
+      toast.success("Order status updated");
+      onUpdate();
+    } finally {
+      setUpdatingStatus(false);
+    }
   };
   
   const saveTracking = async () => {
-    await http.patch(`/admin/orders/${order.id}/status`, { status, tracking_number: trackingNumber, courier_name: courierName });
-    toast.success("Tracking updated");
-    onUpdate();
+    setSavingTracking(true);
+    try {
+      await http.patch(`/admin/orders/${order.id}/status`, { status, tracking_number: trackingNumber, courier_name: courierName });
+      toast.success("Tracking updated");
+      onUpdate();
+    } finally {
+      setSavingTracking(false);
+    }
   };
 
   const saveNote = async () => {
@@ -586,6 +748,7 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
   };
 
   const bookCourier = async () => {
+    setBookingCourier(true);
     try {
       const res = await http.post(`/admin/orders/${order.id}/book-courier`);
       setTrackingNumber(res.data.data.awb);
@@ -594,6 +757,8 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
       onUpdate();
     } catch (e) {
       toast.error(e.response?.data?.detail || "Failed to book courier");
+    } finally {
+      setBookingCourier(false);
     }
   };
 
@@ -604,175 +769,162 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-obsidian/30 backdrop-blur-sm" onClick={onClose}>
       <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.2 }}
-        className="w-[95vw] h-[95vh] bg-ink-100 overflow-y-auto flex flex-col shadow-2xl rounded-xl" onClick={e => e.stopPropagation()}>
+        className="w-full max-w-6xl max-h-[95vh] bg-ink-100 overflow-hidden flex flex-col shadow-2xl rounded-xl" onClick={e => e.stopPropagation()}>
         
         {/* Header */}
-        <div className="bg-white border-b border-ink-200 p-6 flex justify-between items-start sticky top-0 z-10">
+        <div className="bg-white border-b border-ink-200 p-4 px-6 flex justify-between items-center shrink-0">
           <div>
-            <h2 className="font-display font-semibold text-2xl flex items-center gap-3">
+            <h2 className="font-display font-semibold text-xl flex items-center gap-3">
               Order #{order.order_number}
-              <span className="text-[10px] font-bold  tracking-wider bg-ink-100 text-obsidian px-2 py-1 align-middle">{order.status}</span>
+              <span className="text-[10px] font-bold tracking-wider bg-ink-100 text-obsidian px-2 py-0.5 rounded uppercase">{order.status}</span>
             </h2>
-            <p className="text-sm text-ink-500 mt-1 font-mono">Placed {new Date(order.created_at).toLocaleString()}</p>
+            <p className="text-xs text-ink-500 font-mono mt-1">Placed {new Date(order.created_at).toLocaleString()}</p>
           </div>
           <div className="flex gap-2 items-center">
-            <select value={status} onChange={(e) => updateStatus(e.target.value)} className="border border-ink-200 px-3 py-1.5 text-sm font-bold  bg-white focus:outline-none">
+            {updatingStatus && <Loader2 size={16} className="animate-spin text-ink-400" />}
+            <select disabled={updatingStatus} value={status} onChange={(e) => updateStatus(e.target.value)} className="border border-ink-200 px-3 py-1.5 text-xs font-bold bg-white focus:outline-none disabled:opacity-50">
               {ORDER_STATES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
-            <button onClick={() => window.print()} className="p-2 border border-ink-200 hover:bg-ink-100 text-ink-600"><Printer size={18}/></button>
-            <button onClick={onClose} className="p-2 text-ink-400 hover:text-fire"><X size={20}/></button>
+            <button onClick={() => window.print()} className="p-1.5 border border-ink-200 hover:bg-ink-100 text-ink-600"><Printer size={16}/></button>
+            <button onClick={onClose} className="p-1.5 text-ink-400 hover:text-fire"><X size={18}/></button>
           </div>
         </div>
 
-        <div className="p-6 space-y-6">
-          {/* Timeline */}
-          {(!['cancelled', 'refunded', 'failed'].includes(order.status)) && (
-            <div className="bg-white border border-ink-200 p-6">
-              <h3 className="font-display font-semibold mb-6  text-sm tracking-wider text-ink-500">Order Timeline</h3>
-              <div className="flex justify-between relative">
-                <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-0.5 bg-ink-100 -z-10"></div>
-                {STEPS.map((step, i) => {
-                  const isCompleted = i <= currentIndex;
-                  const isCurrent = i === currentIndex;
-                  return (
-                    <div key={step} className="flex flex-col items-center gap-2 bg-white px-2">
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 ${isCompleted ? 'bg-obsidian border-obsidian text-white' : 'bg-white border-ink-200 text-ink-300'}`}>
-                        {isCompleted ? <CheckCircle size={14}/> : <div className="w-2 h-2 rounded-full bg-ink-200"/>}
-                      </div>
-                      <span className={`text-[10px] font-bold  ${isCurrent ? 'text-obsidian' : 'text-ink-400'}`}>{step}</span>
+        {/* Timeline */}
+        {(!['cancelled', 'refunded', 'failed'].includes(order.status)) && (
+          <div className="bg-white border-b border-ink-200 p-4 px-6 shrink-0">
+            <div className="flex justify-between relative max-w-2xl mx-auto">
+              <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-0.5 bg-ink-100 -z-10"></div>
+              {STEPS.map((step, i) => {
+                const isCompleted = i <= currentIndex;
+                const isCurrent = i === currentIndex;
+                return (
+                  <div key={step} className="flex flex-col items-center gap-1 bg-white px-2">
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center border-2 ${isCompleted ? 'bg-obsidian border-obsidian text-white' : 'bg-white border-ink-200 text-ink-300'}`}>
+                      {isCompleted ? <CheckCircle size={10}/> : <div className="w-1.5 h-1.5 rounded-full bg-ink-200"/>}
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Combined Info Container */}
-            <div className="bg-white border border-ink-200 p-6 space-y-6">
-              {/* Customer Information */}
-              <div>
-                <h3 className="font-display font-semibold flex items-center gap-2 mb-4"><Users size={16}/> Customer Information</h3>
-                <div className="text-sm">
-                  <p className="font-bold">{order.customer_name}</p>
-                  {order.shipping_address?.email && <p className="text-ink-500">{order.shipping_address.email}</p>}
-                  <p className="text-ink-500 font-mono mt-1">{order.customer_phone}</p>
-                  <a href={waLink(order.customer_phone, `Hi ${order.customer_name}, update on your SOLEKICKS order ${order.order_number}:`)} target="_blank" rel="noreferrer" className="text-xs font-bold  text-[#25D366] hover:underline mt-2 inline-block">WhatsApp Customer</a>
-                </div>
-              </div>
-              
-              {order.payment_method === 'COD' && (
-                <div className="mt-4 pt-4 border-t border-ink-100">
-                  <h4 className="text-xs font-bold text-ink-400 mb-2">COD Risk Analysis</h4>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-sm">Risk Score:</span>
-                    <span className={`font-mono font-bold px-2 py-0.5 rounded ${order.risk_score > 50 ? 'bg-red-100 text-fire' : order.risk_score > 20 ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}>
-                      {order.risk_score || 0}/100
-                    </span>
+                    <span className={`text-[9px] uppercase font-bold tracking-widest ${isCurrent ? 'text-obsidian' : 'text-ink-400'}`}>{step}</span>
                   </div>
-                  {order.risk_flags?.length > 0 && (
-                    <ul className="text-xs text-fire list-disc list-inside">
-                      {order.risk_flags.map((flag, idx) => <li key={idx}>{flag}</li>)}
-                    </ul>
-                  )}
-                </div>
-              )}
+                );
+              })}
+            </div>
+          </div>
+        )}
 
-              <hr className="border-ink-100" />
-
-              {/* Shipping Address */}
-              <div>
-                <h3 className="font-display font-semibold flex items-center gap-2 mb-4"><MapPin size={16}/> Shipping Address</h3>
-                <div className="text-sm text-ink-600">
+        {/* Content Body (Two Columns) */}
+        <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
+          
+          {/* Left Column - Details */}
+          <div className="w-full lg:w-[400px] bg-ink-50 p-6 overflow-y-auto border-r border-ink-200 space-y-6">
+            
+            {/* Customer & Shipping */}
+            <div className="bg-white border border-ink-200 p-4 shadow-sm">
+              <h3 className="font-display font-semibold text-sm flex items-center gap-2 mb-3 border-b border-ink-100 pb-2"><Users size={14}/> Customer & Delivery</h3>
+              <div className="space-y-3 text-xs">
+                <div>
                   <p className="font-bold text-obsidian">{order.customer_name}</p>
-                  <p>{order.shipping_address?.address_l1}</p>
-                  {order.shipping_address?.address_l2 && <p>{order.shipping_address.address_l2}</p>}
-                  <p>{order.shipping_address?.city}, {order.shipping_address?.province}</p>
-                  <p>{order.shipping_address?.postal_code}</p>
+                  <p className="text-ink-600">{order.shipping_address?.email}</p>
+                  <p className="text-ink-600 font-mono mt-0.5">{order.customer_phone}</p>
+                  <a href={waLink(order.customer_phone, `Hi ${order.customer_name}, update on your SOLEKICKS order ${order.order_number}:`)} target="_blank" rel="noreferrer" className="text-[10px] font-bold text-[#25D366] hover:underline mt-1 flex items-center gap-1"><CheckCircle size={10}/> WhatsApp Chat</a>
                 </div>
+                <div className="pt-2 border-t border-ink-100">
+                  <p className="text-ink-600">{order.shipping_address?.address_l1}</p>
+                  {order.shipping_address?.address_l2 && <p className="text-ink-600">{order.shipping_address.address_l2}</p>}
+                  <p className="text-ink-600">{order.shipping_address?.city}, {order.shipping_address?.province} {order.shipping_address?.postal_code}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Tracking & Courier */}
+            <div className="bg-white border border-ink-200 p-4 shadow-sm">
+              <h3 className="font-display font-semibold text-sm flex items-center gap-2 mb-3 border-b border-ink-100 pb-2"><Truck size={14}/> Courier Integration</h3>
+              <div className="space-y-2 text-xs">
+                <input type="text" placeholder="Courier Name (e.g. TCS)" value={courierName} onChange={e => setCourierName(e.target.value)} className="w-full border border-ink-200 px-2 py-1.5 focus:outline-none focus:border-obsidian" />
+                <input type="text" placeholder="Tracking Number / AWB" value={trackingNumber} onChange={e => setTrackingNumber(e.target.value)} className="w-full border border-ink-200 px-2 py-1.5 focus:outline-none focus:border-obsidian font-mono" />
+                <div className="flex gap-2 pt-2">
+                  <button onClick={saveTracking} disabled={savingTracking || bookingCourier} className="flex-1 flex justify-center items-center gap-2 bg-ink-100 hover:bg-ink-200 text-obsidian font-bold py-1.5 transition-colors disabled:opacity-50">
+                    {savingTracking ? <Loader2 size={14} className="animate-spin" /> : "Update"}
+                  </button>
+                  <button onClick={bookCourier} disabled={bookingCourier || savingTracking} className="flex-1 flex justify-center items-center gap-2 bg-obsidian text-white font-bold py-1.5 hover:bg-fire transition-colors disabled:opacity-50">
+                    {bookingCourier ? <Loader2 size={14} className="animate-spin" /> : "Auto-Book (API)"}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Payment & Risk */}
+            <div className="bg-white border border-ink-200 p-4 shadow-sm">
+              <h3 className="font-display font-semibold text-sm flex items-center gap-2 mb-3 border-b border-ink-100 pb-2"><DollarSign size={14}/> Payment Details</h3>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between"><span className="text-ink-500">Method</span><span className="font-bold">{order.payment_method}</span></div>
+                <div className="flex justify-between"><span className="text-ink-500">Status</span><span className={`font-bold uppercase px-1.5 ${order.payment_status==='paid'?'bg-green-100 text-green-700':'bg-yellow-100 text-yellow-700'}`}>{order.payment_status}</span></div>
+                {order.paymentTransactions && order.paymentTransactions[0] && (
+                  <div className="flex justify-between"><span className="text-ink-500">TXN</span><span className="font-mono">{order.paymentTransactions[0].session_id.substring(0,16)}...</span></div>
+                )}
                 
-                <div className="mt-4 pt-4 border-t border-ink-100">
-                  <p className="text-xs font-bold text-ink-400 mb-2">Tracking Info</p>
-                  <div className="space-y-2">
-                    <input type="text" placeholder="Courier (e.g. TCS)" value={courierName} onChange={e => setCourierName(e.target.value)} className="w-full border border-ink-200 px-3 py-2 text-sm focus:outline-none focus:border-obsidian" />
-                    <input type="text" placeholder="Tracking Number / AWB" value={trackingNumber} onChange={e => setTrackingNumber(e.target.value)} className="w-full border border-ink-200 px-3 py-2 text-sm focus:outline-none focus:border-obsidian font-mono" />
-                    <div className="flex gap-2 mt-2">
-                      <button onClick={saveTracking} className="px-3 py-1.5 bg-obsidian text-white text-xs font-bold hover:bg-fire transition-colors">Save Tracking</button>
-                      <button onClick={bookCourier} className="px-3 py-1.5 border border-fire text-fire text-xs font-bold hover:bg-fire hover:text-white transition-colors">Auto-Book Courier API</button>
+                {order.payment_method === 'COD' && (
+                  <div className="pt-2 border-t border-ink-100 mt-2">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-ink-500">Risk Score</span>
+                      <span className={`font-mono font-bold px-1.5 ${order.risk_score > 50 ? 'bg-red-100 text-fire' : 'bg-green-100 text-green-700'}`}>{order.risk_score || 0}/100</span>
+                    </div>
+                    {order.risk_flags?.length > 0 && (
+                      <ul className="text-fire list-disc list-inside">
+                        {order.risk_flags.map((flag, idx) => <li key={idx} className="truncate" title={flag}>{flag}</li>)}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Admin Notes */}
+            <div className="bg-white border border-ink-200 p-4 shadow-sm">
+              <h3 className="font-display font-semibold text-sm flex items-center gap-2 mb-2"><MapPin size={14}/> Internal Note</h3>
+              <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Private staff notes..." className="w-full border border-ink-200 p-2 text-xs focus:outline-none focus:border-obsidian min-h-[60px] resize-none mb-2 bg-ink-50" />
+              <button onClick={saveNote} disabled={savingNote} className="w-full py-1.5 bg-ink-100 hover:bg-ink-200 text-obsidian text-xs font-bold transition-colors">Save Note</button>
+            </div>
+            
+            {/* Refund Action */}
+            <button onClick={() => setRefundOrder(order)} className="w-full py-2 border border-fire text-fire text-xs font-bold hover:bg-fire hover:text-white transition-colors bg-white">Initiate Refund</button>
+
+          </div>
+
+          {/* Right Column - Order Items */}
+          <div className="flex-1 bg-white flex flex-col overflow-hidden">
+            <div className="p-4 border-b border-ink-200 bg-ink-50 shrink-0">
+              <h3 className="font-display font-semibold text-sm flex items-center gap-2"><Package size={14}/> Order Items</h3>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="space-y-4">
+                {order.items?.map((item, i) => (
+                  <div key={i} className="flex items-center gap-4 border border-ink-200 p-3 shadow-sm hover:border-obsidian transition-colors">
+                    <img src={imgUrl(item.image_url)} alt={item.product_name} className="w-16 h-16 object-cover bg-ink-50" />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-sm text-obsidian truncate">{item.product_name}</div>
+                      <div className="text-xs text-ink-500 font-mono mt-1">Size: {item.size}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-mono font-bold text-sm">{fmt(item.unit_price)} <span className="text-ink-400 font-sans text-xs">x{item.quantity}</span></div>
+                      <div className="font-mono font-bold text-fire mt-1">{fmt(item.unit_price * item.quantity)}</div>
                     </div>
                   </div>
-                </div>
-              </div>
-
-              <hr className="border-ink-100" />
-
-              {/* Payment Information */}
-              <div>
-                <h3 className="font-display font-semibold flex items-center gap-2 mb-4"><DollarSign size={16}/> Payment Information</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between"><span className="text-ink-500">Method</span><span className="font-semibold capitalize">{order.payment_method}</span></div>
-                  <div className="flex justify-between"><span className="text-ink-500">Status</span><span className={`font-bold  tracking-wider text-[10px] px-2 py-0.5 ${order.payment_status==='paid'?'bg-green-100 text-green-700':'bg-yellow-100 text-yellow-700'}`}>{order.payment_status}</span></div>
-                  {order.paymentTransactions && order.paymentTransactions[0] && (
-                    <div className="flex justify-between"><span className="text-ink-500">Transaction</span><span className="font-mono text-xs">{order.paymentTransactions[0].session_id.substring(0,20)}...</span></div>
-                  )}
-                </div>
+                ))}
               </div>
             </div>
-
-            {/* Notes & Refunds */}
-            <div className="space-y-6">
-
-              <div className="bg-white border border-ink-200 p-6">
-                <h3 className="font-display font-semibold mb-4  text-sm tracking-wider text-ink-500">Internal Notes</h3>
-                <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Add a private note about this order..." className="w-full border border-ink-200 p-3 text-sm focus:outline-none focus:border-obsidian min-h-[100px] rounded-none mb-3 resize-none" />
-                <button onClick={saveNote} disabled={savingNote} className="px-4 py-2 bg-obsidian text-white text-xs font-bold  disabled:opacity-50">Save Note</button>
-              </div>
-
-              <div className="bg-white border border-ink-200 p-6 border-l-4 border-l-fire">
-                <h3 className="font-display font-semibold mb-2">Process Refund</h3>
-                <p className="text-xs text-ink-500 mb-4">Full or partial refunds can be processed here.</p>
-                <button onClick={() => setRefundOrder(order)} className="px-4 py-2 border border-fire text-fire text-xs font-bold  hover:bg-fire hover:text-white transition-colors w-full">Initiate Refund</button>
+            
+            {/* Totals Footer */}
+            <div className="p-6 bg-ink-50 border-t border-ink-200 shrink-0">
+              <div className="max-w-xs ml-auto space-y-2 text-sm">
+                <div className="flex justify-between text-ink-500"><span>Subtotal</span><span className="font-mono text-obsidian">{fmt(order.subtotal)}</span></div>
+                <div className="flex justify-between text-ink-500"><span>Shipping</span><span className="font-mono text-obsidian">{fmt(order.shipping_fee)}</span></div>
+                {order.discount_amount > 0 && <div className="flex justify-between text-fire font-bold"><span>Discount</span><span className="font-mono">-{fmt(order.discount_amount)}</span></div>}
+                <div className="flex justify-between font-bold text-xl pt-2 border-t border-ink-200 mt-2"><span>Total</span><span className="font-mono text-fire">{fmt(order.total)}</span></div>
               </div>
             </div>
           </div>
-
-          {/* Products Table */}
-          <div className="bg-white border border-ink-200">
-            <div className="p-6 border-b border-ink-200">
-              <h3 className="font-display font-semibold flex items-center gap-2"><Package size={16}/> Products</h3>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead className="bg-ink-50 font-mono text-[10px]  text-ink-500">
-                  <tr><th className="p-4" colSpan={2}>Product</th><th className="p-4 text-center">Qty</th><th className="p-4 text-right">Price</th><th className="p-4 text-right">Total</th></tr>
-                </thead>
-                <tbody>
-                  {order.items?.map((item, i) => (
-                    <tr key={i} className="border-b border-ink-100 last:border-0">
-                      <td className="p-4 w-16"><img src={imgUrl(item.image_url)} alt={item.product_name} className="w-12 h-12 object-cover border border-ink-200" /></td>
-                      <td className="p-4 py-4">
-                        <div className="font-bold">{item.product_name}</div>
-                        <div className="text-xs text-ink-500">Size: {item.size}</div>
-                      </td>
-                      <td className="p-4 text-center font-mono">{item.quantity}</td>
-                      <td className="p-4 text-right font-mono">{fmt(item.unit_price)}</td>
-                      <td className="p-4 text-right font-mono font-bold text-obsidian">{fmt(item.unit_price * item.quantity)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="p-6 bg-ink-50 flex justify-end border-t border-ink-200">
-              <div className="w-64 space-y-3 text-sm">
-                <div className="flex justify-between text-ink-500"><span>Subtotal</span><span className="font-mono">{fmt(order.subtotal)}</span></div>
-                <div className="flex justify-between text-ink-500"><span>Shipping</span><span className="font-mono">{fmt(order.shipping_fee)}</span></div>
-                {order.discount_amount > 0 && <div className="flex justify-between text-fire"><span>Discount</span><span className="font-mono">-{fmt(order.discount_amount)}</span></div>}
-                <div className="flex justify-between font-bold text-lg pt-3 border-t border-ink-200"><span>Total</span><span className="font-mono text-fire">{fmt(order.total)}</span></div>
-              </div>
-            </div>
-          </div>
-
         </div>
+
       </motion.div>
       {refundOrder && <RefundModal order={refundOrder} onClose={() => setRefundOrder(null)} onDone={() => { setRefundOrder(null); onUpdate(); }} />}
       <ShippingLabel order={order} />

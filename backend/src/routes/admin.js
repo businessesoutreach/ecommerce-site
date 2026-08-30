@@ -174,10 +174,18 @@ router.get('/analytics/overview', async (req, res) => {
             return ((curr - prev) / prev) * 100;
         };
 
+        const deliveredCount = currentOrders.filter(o => o.status === 'delivered').length;
+        const pendingCount = currentOrders.filter(o => o.status === 'placed').length;
+        const confirmedCount = currentOrders.filter(o => o.status === 'confirmed').length;
+
         const kpis = {
             revenue: { value: currentRev, trend: calcTrend(currentRev, prevRev) },
             pending_cod: { value: pendingCodRev, trend: 0 },
             orders: { value: currentCount, trend: calcTrend(currentCount, prevCount) },
+            total_orders: { value: allOrders.length, trend: 0 },
+            delivered_orders: { value: deliveredCount, trend: 0 },
+            pending_orders: { value: pendingCount, trend: 0 },
+            confirmed_orders: { value: confirmedCount, trend: 0 },
             customers: { value: allUsers.length, trend: calcTrend(currentUsers, prevUsers) },
             aov: { value: currentAOV, trend: calcTrend(currentAOV, prevAOV) }
         };
@@ -202,17 +210,23 @@ router.get('/analytics/overview', async (req, res) => {
             orders: dailyMap[date].orders
         }));
 
-        // Top Selling Products
+        // Top Selling Products & Sales by Category
         const productStats = {};
         let catStats = {};
         for (const o of currentOrders) {
+            // Only count towards top products if delivered
+            const isDelivered = o.status === 'delivered';
+            
             for (const item of o.items) {
-                if (!productStats[item.product_id]) productStats[item.product_id] = { sold: 0, rev: 0, name: item.product?.name || 'Unknown' };
-                productStats[item.product_id].sold += item.quantity;
-                productStats[item.product_id].rev += (item.price * item.quantity);
+                if (isDelivered) {
+                    if (!productStats[item.product_id]) productStats[item.product_id] = { sold: 0, rev: 0, name: item.product?.name || 'Unknown' };
+                    productStats[item.product_id].sold += item.quantity;
+                    productStats[item.product_id].rev += (item.unit_price * item.quantity);
+                }
 
+                // Category sales include all valid orders
                 const cat = item.product?.category_slug || 'uncategorized';
-                catStats[cat] = (catStats[cat] || 0) + (item.price * item.quantity);
+                catStats[cat] = (catStats[cat] || 0) + (item.unit_price * item.quantity);
             }
         }
 
@@ -247,6 +261,13 @@ router.get('/analytics/overview', async (req, res) => {
         const allProducts = await prisma.product.findMany({ include: { sizes: true } });
         const low_stock = allProducts.filter(p => p.sizes.some(s => s.stock < 5)).length;
 
+        // Inventory by Category
+        const inventoryMap = {};
+        allProducts.forEach(p => {
+            inventoryMap[p.category_slug] = (inventoryMap[p.category_slug] || 0) + 1;
+        });
+        const inventory_by_category = Object.keys(inventoryMap).map(c => ({ name: c, count: inventoryMap[c] }));
+
         const reviews = await prisma.review.count({ where: { status: 'pending' } });
         const refunds = await prisma.returnRequest.count({ where: { status: 'pending' } }).catch(() => 0);
 
@@ -260,7 +281,7 @@ router.get('/analytics/overview', async (req, res) => {
 
         res.json({
             success: true,
-            data: { kpis, sales_chart, top_products, sales_by_category, recent_orders, customer_overview, needs_attention }
+            data: { kpis, sales_chart, top_products, sales_by_category, recent_orders, customer_overview, needs_attention, inventory_by_category }
         });
     } catch (err) {
         console.error(err);
