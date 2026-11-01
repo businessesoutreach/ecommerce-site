@@ -14,8 +14,14 @@ export default function OrderConfirmation() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    const sessionId = sp.get("session_id");
-    if (sessionId) http.get(`/payments/status/${sessionId}`).catch(() => {});
+    const tracker = sp.get("tracker");
+    if (tracker) {
+      http.get(`/payments/safepay/status/${tracker}`).then(res => {
+        if (res.data?.data?.order) {
+          setOrder(res.data.data.order);
+        }
+      }).catch(() => {});
+    }
   }, [orderNumber]);
 
   const waNumber = settings?.whatsapp_number || "923001234567";

@@ -1,156 +1,30 @@
 const express = require('express');
-const stripe = require('../utils/stripe');
 const prisma = require('../db');
 
 const router = express.Router();
 
-router.post('/payments/stripe/checkout', async (req, res) => {
-    try {
-        const { order_id, origin_url } = req.body;
-        
-        const o = await prisma.order.findUnique({ where: { id: order_id } });
-        if (!o) return res.status(404).json({ detail: 'Order not found' });
-        
-        const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card'],
-            line_items: [{
-                price_data: {
-                    currency: 'pkr',
-                    product_data: { name: `Order ${o.order_number}` },
-                    unit_amount: Math.round(o.total * 100)
-                },
-                quantity: 1,
-            }],
-            mode: 'payment',
-            success_url: `${origin_url}/order-confirmation/${o.order_number}?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${origin_url}/checkout`,
-            metadata: { order_id: order_id, order_number: o.order_number }
-        });
-        
-        await prisma.paymentTransaction.create({
-            data: {
-                session_id: session.id,
-                order_id: order_id,
-                amount: o.total,
-                currency: 'PKR',
-                status: 'initiated',
-                payment_status: 'pending'
-            }
-        });
-        
-        res.json({ success: true, data: { checkout_url: session.url, session_id: session.id } });
-    } catch (err) {
-        res.status(500).json({ detail: err.message });
-    }
-});
-
-router.get('/payments/status/:session_id', async (req, res) => {
-    try {
-        const { session_id } = req.params;
-        let rec = await prisma.paymentTransaction.findUnique({ where: { session_id } });
-        
-        if (!rec) return res.status(404).json({ detail: 'Transaction not found' });
-        
-        if (rec.payment_status !== 'paid') {
-            try {
-                const status = await stripe.checkout.sessions.retrieve(session_id);
-                if (status.payment_status === 'paid' || status.status === 'complete') {
-                    await prisma.paymentTransaction.update({
-                        where: { session_id },
-                        data: { status: 'completed', payment_status: 'paid' }
-                    });
-                    await prisma.order.update({
-                        where: { id: rec.order_id },
-                        data: { payment_status: 'paid', status: 'confirmed' }
-                    });
-                    rec.payment_status = 'paid';
-                }
-            } catch (stripeErr) {
-                console.error(`stripe status error: ${stripeErr.message}`);
-            }
-        }
-        
-        res.json({ success: true, data: { session_id, payment_status: rec.payment_status } });
-    } catch (err) {
-        res.status(500).json({ detail: err.message });
-    }
-});
-
-// Note: webhook should be placed before body-parser in express setup
-// We did that in server.js, but the router itself needs to handle it
-router.post('/webhook/stripe', async (req, res) => {
-    try {
-        const sig = req.headers['stripe-signature'];
-        // Note: For local development, we skip endpoint_secret verification just like the python version
-        // if we don't have STRIPE_WEBHOOK_SECRET
-        
-        const bodyStr = req.body.toString();
-        let event;
-        
-        try {
-            event = JSON.parse(bodyStr);
-        } catch (err) {
-            return res.status(400).send(`Webhook Error: ${err.message}`);
-        }
-        
-        if (event.type === 'checkout.session.completed') {
-            const session = event.data.object;
-            if (session.payment_status === 'paid') {
-                const rec = await prisma.paymentTransaction.findUnique({ where: { session_id: session.id } });
-                if (rec && rec.payment_status !== 'paid') {
-                    await prisma.paymentTransaction.update({
-                        where: { session_id: session.id },
-                        data: { payment_status: 'paid', status: 'completed' }
-                    });
-                    const updatedOrder = await prisma.order.update({
-                        where: { id: rec.order_id },
-                        data: { payment_status: 'paid', status: 'confirmed' },
-                        include: { items: true }
-                    });
-                    
-                    if (updatedOrder.customer_email) {
-                        const { sendOrderConfirmation } = require('../utils/mailer');
-                        const originUrl = 'http://localhost:5173'; // Default fallback, but typically should use env var or similar in prod
-                        sendOrderConfirmation(updatedOrder.customer_email, updatedOrder, originUrl).catch(console.error);
-                    }
-                }
-            }
-        }
-        
-        res.json({ success: true });
-    } catch (err) {
-        console.error(`webhook error: ${err.message}`);
-        res.status(500).json({ success: false });
-    }
-});
 
 // ==========================================
-// PayFast PK Routes
+// Safepay PK Routes (Cards, JazzCash, Easypaisa)
 // ==========================================
-const { getAccessToken, buildCheckoutPayload, verifyIPN, PAYFAST_CONFIG } = require('../utils/payfast');
+const { createPaymentSession, verifyWebhookSignature, SAFEPAY_CONFIG } = require('../utils/safepay');
 
-// Initiate PayFast checkout — frontend calls this after creating the order
-router.post('/payments/payfast/initiate', async (req, res) => {
+// Initiate Safepay checkout — frontend calls this after creating the order
+router.post('/payments/safepay/checkout', async (req, res) => {
     try {
         const { order_id, origin_url } = req.body;
-        
-        const order = await prisma.order.findUnique({ where: { id: order_id } });
+
+        const order = await prisma.order.findUnique({
+            where: { id: order_id },
+            include: { items: true }
+        });
         if (!order) return res.status(404).json({ detail: 'Order not found' });
-        
-        const { token, merchantId } = await getAccessToken(order.order_number, order.total);
-        
-        const backendUrl = `${origin_url.replace(/:\d+$/, ':8000')}`; // Backend port
-        const successUrl = `${origin_url}/order-confirmation/${order.order_number}?payfast=success`;
-        const failureUrl = `${origin_url}/checkout?payfast=failed`;
-        const callbackUrl = `${backendUrl}/api/payments/payfast/callback`;
-        
-        const checkoutData = buildCheckoutPayload(order, token, order.payment_method, successUrl, failureUrl, callbackUrl);
-        
-        // Create payment transaction record
-        const sessionId = `payfast_${order.order_number}_${Date.now()}`;
+
+        const session = await createPaymentSession(order, origin_url);
+
         await prisma.paymentTransaction.create({
             data: {
-                session_id: sessionId,
+                session_id: session.token,
                 order_id: order_id,
                 amount: order.total,
                 currency: 'PKR',
@@ -158,109 +32,228 @@ router.post('/payments/payfast/initiate', async (req, res) => {
                 payment_status: 'pending'
             }
         });
-        
+
         res.json({
             success: true,
             data: {
-                checkout_url: checkoutData.CHECKOUT_URL,
-                form_fields: checkoutData,
-                session_id: sessionId,
-                is_mock: !PAYFAST_CONFIG.merchantId || PAYFAST_CONFIG.merchantId === 'your_sandbox_merchant_id'
+                checkout_url: session.checkoutUrl,
+                tracker: session.token
             }
         });
     } catch (err) {
-        console.error('PayFast initiate error:', err.message);
+        console.error('Safepay checkout error:', err.message);
         res.status(500).json({ detail: err.message });
     }
 });
 
-// IPN callback from PayFast (server-to-server)
-router.post('/payments/payfast/callback', async (req, res) => {
+const axios = require('axios');
+
+// Safepay Status check by tracker token (queries Safepay API & syncs status immediately on redirect)
+router.get('/payments/safepay/status/:tracker', async (req, res) => {
     try {
-        console.log('PayFast IPN received:', JSON.stringify(req.body));
-        
-        const payload = req.body;
-        
-        if (!verifyIPN(payload)) {
-            console.error('PayFast IPN verification failed');
-            return res.status(400).json({ detail: 'Invalid IPN' });
+        const { tracker } = req.params;
+        let txn = await prisma.paymentTransaction.findUnique({ where: { session_id: tracker } });
+        if (!txn) return res.status(404).json({ detail: 'Transaction not found' });
+
+        let order = await prisma.order.findUnique({
+            where: { id: txn.order_id },
+            include: { items: true }
+        });
+
+        // If local payment status is not yet marked as paid, query Safepay API directly
+        if (txn.payment_status !== 'paid' && order) {
+            try {
+                const baseUrl = SAFEPAY_CONFIG.environment === 'production'
+                    ? 'https://api.getsafepay.com'
+                    : 'https://sandbox.api.getsafepay.com';
+
+                const sfRes = await axios.get(`${baseUrl}/order/v1/${tracker}`, { timeout: 10000 });
+                const sfData = sfRes.data?.data;
+                const isPaid = sfData && (
+                    sfData.state === 'TRACKER_ENDED' || 
+                    sfData.state === 'COMPLETED' || 
+                    sfData.state === 'PAID' || 
+                    sfData.transaction != null
+                );
+
+                if (isPaid && order.payment_status !== 'paid') {
+                    order = await prisma.order.update({
+                        where: { id: order.id },
+                        data: {
+                            payment_status: 'paid',
+                            status: 'confirmed'
+                        },
+                        include: { items: true }
+                    });
+
+                    await prisma.paymentTransaction.update({
+                        where: { session_id: tracker },
+                        data: {
+                            status: 'completed',
+                            payment_status: 'paid'
+                        }
+                    });
+
+                    txn.payment_status = 'paid';
+
+                    // Send confirmation email
+                    if (order.customer_email) {
+                        try {
+                            const { sendOrderConfirmation } = require('../utils/mailer');
+                            const originUrl = process.env.FRONTEND_URL || 'https://sneak-pk.vercel.app';
+                            sendOrderConfirmation(order.customer_email, order, originUrl).catch(console.error);
+                        } catch (mailErr) {
+                            console.error('Mail error on status sync:', mailErr.message);
+                        }
+                    }
+                    console.log(`Safepay Status API: Order ${order.order_number} verified and marked as paid!`);
+                }
+            } catch (apiErr) {
+                console.error('Safepay order status check error:', apiErr.message);
+            }
         }
-        
-        const orderNumber = payload.BASKET_ID;
-        const txnStatus = payload.TRANSACTION_STATUS; // 0 = failed, 1 = success
-        
-        const order = await prisma.order.findUnique({ where: { order_number: orderNumber } });
-        if (!order) {
-            console.error(`PayFast IPN: Order ${orderNumber} not found`);
-            return res.status(404).json({ detail: 'Order not found' });
+
+        res.json({
+            success: true,
+            data: {
+                tracker,
+                payment_status: txn.payment_status,
+                order_status: order ? order.status : null,
+                order_number: order ? order.order_number : null,
+                order: order || null
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ detail: err.message });
+    }
+});
+
+// Webhook endpoint for Safepay (registered in Safepay dashboard)
+// URL: https://sneak-pk.vercel.app/api/webhook/safepay
+router.post(['/webhook/safepay', '/payments/safepay/webhook'], async (req, res) => {
+    try {
+        console.log('Safepay Webhook received. Headers:', JSON.stringify(req.headers));
+        console.log('Safepay Webhook body:', JSON.stringify(req.body));
+
+        if (!verifyWebhookSignature(req)) {
+            console.error('Safepay webhook signature mismatch');
+            return res.status(400).json({ error: 'Invalid Safepay signature' });
         }
-        
-        if (txnStatus === '1' || txnStatus === 1) {
-            // Payment successful
-            await prisma.order.update({
-                where: { id: order.id },
-                data: { payment_status: 'paid', status: 'confirmed' }
-            });
-            
-            // Update payment transaction if exists
-            const txn = await prisma.paymentTransaction.findFirst({
-                where: { order_id: order.id },
-                orderBy: { created_at: 'desc' }
-            });
+
+        const payload = req.body || {};
+        const eventType = req.headers['x-sfpy-event-type'] || payload.type || payload.event;
+        const data = payload.data || payload;
+
+        // Extract identifiers: token/tracker and order_id/order_number
+        const trackerToken = data.token || data.tracker || data.beacon || (data.metadata && data.metadata.tracker);
+        const orderNumber = data.order_id || (data.metadata && (data.metadata.order_number || data.metadata.orderId));
+
+        console.log(`Safepay Event: ${eventType}, tracker: ${trackerToken}, order: ${orderNumber}`);
+
+        // Find the matching order
+        let order = null;
+        let txn = null;
+
+        if (trackerToken) {
+            txn = await prisma.paymentTransaction.findUnique({ where: { session_id: trackerToken } });
             if (txn) {
-                await prisma.paymentTransaction.update({
-                    where: { session_id: txn.session_id },
-                    data: { status: 'completed', payment_status: 'paid' }
-                });
+                order = await prisma.order.findUnique({ where: { id: txn.order_id }, include: { items: true } });
             }
-            
-            console.log(`PayFast: Order ${orderNumber} payment confirmed`);
-        } else {
-            // Payment failed
-            await prisma.order.update({
-                where: { id: order.id },
-                data: { payment_status: 'failed' }
-            });
-            console.log(`PayFast: Order ${orderNumber} payment failed`);
         }
-        
-        res.json({ success: true });
-    } catch (err) {
-        console.error('PayFast callback error:', err.message);
-        res.status(500).json({ detail: err.message });
-    }
-});
 
-// Mock endpoint for testing without real PayFast credentials
-// Simulates a successful payment callback
-router.post('/payments/payfast/mock-complete', async (req, res) => {
-    try {
-        const { order_number } = req.body;
-        
-        const order = await prisma.order.findUnique({ where: { order_number } });
-        if (!order) return res.status(404).json({ detail: 'Order not found' });
-        
-        await prisma.order.update({
-            where: { id: order.id },
-            data: { payment_status: 'paid', status: 'confirmed' }
-        });
-        
-        const txn = await prisma.paymentTransaction.findFirst({
-            where: { order_id: order.id },
-            orderBy: { created_at: 'desc' }
-        });
-        if (txn) {
-            await prisma.paymentTransaction.update({
-                where: { session_id: txn.session_id },
-                data: { status: 'completed', payment_status: 'paid' }
-            });
+        if (!order && orderNumber) {
+            order = await prisma.order.findUnique({ where: { order_number: orderNumber }, include: { items: true } });
         }
-        
-        res.json({ success: true, message: `Order ${order_number} marked as paid (mock)` });
+
+        // Determine event outcome
+        const state = (data.state || data.status || '').toUpperCase();
+        const isSuccess = 
+            eventType === 'payment.succeeded' ||
+            eventType === 'payment.completed' ||
+            eventType === 'payment:created' ||
+            state === 'COMPLETED' ||
+            state === 'PAID' ||
+            state === 'TRACKER_ENDED';
+
+        const isFailed = 
+            eventType === 'payment.failed' ||
+            eventType === 'payment.rejected' ||
+            eventType === 'error:occurred' ||
+            state === 'FAILED' ||
+            state === 'REJECTED';
+
+        const isRefunded = 
+            eventType === 'payment.refunded' ||
+            eventType === 'refund:created';
+
+        if (order) {
+            if (isSuccess && order.payment_status !== 'paid') {
+                const updatedOrder = await prisma.order.update({
+                    where: { id: order.id },
+                    data: {
+                        payment_status: 'paid',
+                        status: 'confirmed'
+                    },
+                    include: { items: true }
+                });
+
+                if (txn) {
+                    await prisma.paymentTransaction.update({
+                        where: { session_id: txn.session_id },
+                        data: {
+                            status: 'completed',
+                            payment_status: 'paid'
+                        }
+                    });
+                }
+
+                // Send confirmation email
+                if (updatedOrder.customer_email) {
+                    try {
+                        const { sendOrderConfirmation } = require('../utils/mailer');
+                        const originUrl = process.env.FRONTEND_URL || 'https://sneak-pk.vercel.app';
+                        sendOrderConfirmation(updatedOrder.customer_email, updatedOrder, originUrl).catch(console.error);
+                    } catch (mailErr) {
+                        console.error('Safepay webhook mail error:', mailErr.message);
+                    }
+                }
+                console.log(`Safepay: Order ${order.order_number} marked as paid & confirmed.`);
+            } else if (isFailed) {
+                await prisma.order.update({
+                    where: { id: order.id },
+                    data: { payment_status: 'failed' }
+                });
+                if (txn) {
+                    await prisma.paymentTransaction.update({
+                        where: { session_id: txn.session_id },
+                        data: { status: 'failed', payment_status: 'failed' }
+                    });
+                }
+                console.log(`Safepay: Order ${order.order_number} payment failed.`);
+            } else if (isRefunded) {
+                await prisma.order.update({
+                    where: { id: order.id },
+                    data: { payment_status: 'refunded' }
+                });
+                if (txn) {
+                    await prisma.paymentTransaction.update({
+                        where: { session_id: txn.session_id },
+                        data: { status: 'refunded', payment_status: 'refunded' }
+                    });
+                }
+                console.log(`Safepay: Order ${order.order_number} refunded.`);
+            }
+        } else {
+            console.warn('Safepay webhook: No matching order found for tracker:', trackerToken, 'order:', orderNumber);
+        }
+
+        return res.status(200).json({ success: true, received: true });
     } catch (err) {
-        res.status(500).json({ detail: err.message });
+        console.error('Safepay webhook processing error:', err.message);
+        return res.status(500).json({ error: err.message });
     }
 });
 
 module.exports = router;
+
 

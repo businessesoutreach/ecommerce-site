@@ -27,10 +27,11 @@ app.use(cors({
     credentials: false // matching FastAPI allow_credentials=False but in Node we might need it for cookies? Wait, python had allow_credentials=False, but it uses cookies? That's a contradiction. Python had: allow_credentials=False. Let's match it exactly.
 }));
 
-// We need raw body for Stripe webhook before express.json()
-app.use('/api/webhook/stripe', express.raw({type: 'application/json'}));
-
-app.use(express.json());
+app.use(express.json({
+    verify: (req, res, buf) => {
+        req.rawBody = buf;
+    }
+}));
 app.use(cookieParser());
 
 const apiRouter = express.Router();

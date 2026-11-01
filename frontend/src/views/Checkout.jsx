@@ -36,8 +36,8 @@ export default function Checkout() {
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    if (searchParams.get("payfast") === "failed") {
-      toast.error("Payment was cancelled or failed. Please try again.");
+    if (searchParams.get("safepay") === "cancelled") {
+      toast.error("Payment was cancelled. Please try again or choose Cash on Delivery.");
     }
   }, [searchParams]);
 
@@ -97,17 +97,18 @@ export default function Checkout() {
       const { data } = await http.post("/orders", payload);
       const order = data.data;
 
-      // Stripe
-      if (payment === "CARD") {
+      // Safepay (Easypaisa, JazzCash, Cards)
+      if (payment === "SAFEPAY") {
         try {
-          const { data: stripeData } = await http.post("/payments/stripe/checkout", {
+          const { data: spData } = await http.post("/payments/safepay/checkout", {
             order_id: order.id,
             origin_url: window.location.origin
           });
-          // Redirect to Stripe Checkout
-          window.location.href = stripeData.data.checkout_url;
-        } catch (stripeErr) {
-          toast.error(stripeErr.response?.data?.detail || "Payment initiation failed");
+          await loadCart();
+          // Redirect to Safepay Checkout
+          window.location.href = spData.data.checkout_url;
+        } catch (spErr) {
+          toast.error(spErr.response?.data?.detail || "Safepay payment initiation failed");
           setPlacing(false);
         }
         return;
@@ -200,12 +201,28 @@ export default function Checkout() {
             <h3 className="font-display tracking-tight text-md mb-4">Payment Method</h3>
             <div className="space-y-3">
               {[
+                { 
+                  v: "SAFEPAY", 
+                  icon: Wallet, 
+                  t: "Online Payment (Safepay)", 
+                  // s: "Easypaisa, JazzCash, Debit / Credit Cards (Visa & Mastercard)",
+                  s: "Debit / Credit Cards (Visa & Mastercard)",
+                  // badges: ["Easypaisa", "JazzCash", "Cards"]
+                  badges: [/* "Easypaisa", "JazzCash", */ "Cards"]
+                },
                 { v: "COD", icon: Truck, t: "Cash on Delivery", s: "Pay when your kicks arrive — most popular" },
-                { v: "CARD", icon: CreditCard, t: "Debit / Credit Card", s: "Secure card payment via Stripe" },
               ].map((m) => (
                 <button key={m.v} onClick={() => setPayment(m.v)} data-testid={`checkout-payment-method-${m.v}`} className={`w-full flex items-center gap-4 border-2 rounded-none p-4 text-left transition-colors ${payment === m.v ? "border-obsidian bg-white" : "border-ink-200"}`}>
                   <div className={`h-11 w-11 grid place-items-center rounded-none ${payment === m.v ? "bg-fire text-white" : "bg-ink-100"}`} style={payment === m.v && m.color ? { backgroundColor: m.color } : {}}><m.icon size={19} /></div>
-                  <div className="flex-1"><p className="font-display text-sm tracking-tight">{m.t}</p><p className="text-ink-400 text-xs">{m.s}</p></div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-display text-sm tracking-tight">{m.t}</p>
+                      {m.badges && m.badges.map(b => (
+                        <span key={b} className="text-[10px] font-mono font-bold bg-ink-100 text-ink-700 px-1.5 py-0.5 rounded-none">{b}</span>
+                      ))}
+                    </div>
+                    <p className="text-ink-400 text-xs mt-0.5">{m.s}</p>
+                  </div>
                   {payment === m.v && <Check size={20} className="text-fire" />}
                 </button>
               ))}

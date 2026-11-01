@@ -627,7 +627,8 @@ router.get('/orders', async (req, res) => {
             data: {
                 orders: items,
                 pagination: { page, limit, totalCount, totalPages: Math.ceil(totalCount / limit) },
-                status_counts
+                status_counts,
+                courier_configured: courierService.isConfigured()
             }
         });
     } catch (err) {
@@ -1316,7 +1317,7 @@ router.post('/orders/:order_id/refund', async (req, res) => {
         
         if (amount <= 0) return res.status(400).json({ detail: 'Refund amount must be positive' });
         if (amount > refundable + 0.01) return res.status(400).json({ detail: `Amount exceeds refundable balance (Rs. ${refundable})` });
-        if (!['PAYFAST_ORIGINAL', 'BANK_TRANSFER', 'STORE_CREDIT'].includes(method)) {
+        if (!['SAFEPAY_ORIGINAL', 'ORIGINAL_GATEWAY', 'PAYFAST_ORIGINAL', 'BANK_TRANSFER', 'STORE_CREDIT'].includes(method)) {
             return res.status(400).json({ detail: 'Invalid refund method' });
         }
         
@@ -1970,8 +1971,22 @@ router.patch('/inventory/bulk', async (req, res) => {
     }
 });
 
+router.get('/courier/config', (req, res) => {
+    res.json({
+        success: true,
+        data: {
+            configured: courierService.isConfigured(),
+            provider: courierService.isConfigured() ? 'TCS' : null
+        }
+    });
+});
+
 router.post('/orders/:id/book-courier', async (req, res) => {
     try {
+        if (!courierService.isConfigured()) {
+            return res.status(400).json({ detail: "TCS API credentials are not configured in environment variables. Please update order tracking manually." });
+        }
+
         const order = await prisma.order.findUnique({ where: { id: req.params.id } });
         if (!order) return res.status(404).json({ detail: "Order not found" });
 

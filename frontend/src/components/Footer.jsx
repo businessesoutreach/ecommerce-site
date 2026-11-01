@@ -81,7 +81,7 @@ export default function Footer() {
             </form>
             <p className="text-white/40 text-xs mt-4 mb-2">We ship & accept</p>
             <div className="flex flex-wrap gap-2">
-              {["COD", "JazzCash", "EasyPaisa", "Visa", "Mastercard"].map((p) => (
+              {["COD", /* "JazzCash", "EasyPaisa", */ "Visa", "Mastercard"].map((p) => (
                 <span key={p} className="text-[10px] font-mono font-bold bg-white/10 px-2 py-1 rounded">{p}</span>
               ))}
             </div>

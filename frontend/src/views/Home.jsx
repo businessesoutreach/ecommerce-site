@@ -224,7 +224,8 @@ function WhyUsSection() {
     { icon: <Package size={24} />, title: "Nationwide Delivery", desc: "Fast shipping to all major cities across Pakistan." },
     { icon: <Star size={24} />, title: "Authentic Goods", desc: "100% verified authentic streetwear and sneakers." },
     { icon: <RotateCcw size={24} />, title: "Easy Returns", desc: "7-day hassle-free return and exchange policy." },
-    { icon: <DollarSign size={24} />, title: "Secure Payments", desc: "Cash on Delivery, JazzCash, EasyPaisa, and Card." },
+    // { icon: <DollarSign size={24} />, title: "Secure Payments", desc: "Cash on Delivery, JazzCash, EasyPaisa, and Card." },
+    { icon: <DollarSign size={24} />, title: "Secure Payments", desc: "Cash on Delivery and Card." },
   ];
   return (
     <section className="bg-obsidian text-white py-16">
@@ -295,7 +296,7 @@ function SEOBlock() {
     <section className="max-w-[1400px] mx-auto px-5 sm:px-8 py-16">
       <h2 className="font-display tracking-tight">Pakistan's Home For Premium Streetwear Sneakers</h2>
       <div className={`text-ink-500 leading-relaxed mt-4 space-y-4 ${open ? "" : "line-clamp-4"}`}>
-        <p>SOLEKICKS PK is where Pakistan's growing sneaker culture finds its footing. From grail-worthy retro high-tops and clean terrace low-tops to ultra-cushioned performance runners and recovery slides, every silhouette in our catalog is selected for authenticity, comfort, and street credibility. We deliver nationwide — Karachi, Lahore, Islamabad, Rawalpindi, Faisalabad, Multan, Peshawar and beyond — with Cash on Delivery, JazzCash, EasyPaisa and card options.</p>
+        <p>SOLEKICKS PK is where Pakistan's growing sneaker culture finds its footing. From grail-worthy retro high-tops and clean terrace low-tops to ultra-cushioned performance runners and recovery slides, every silhouette in our catalog is selected for authenticity, comfort, and street credibility. We deliver nationwide — Karachi, Lahore, Islamabad, Rawalpindi, Faisalabad, Multan, Peshawar and beyond — with Cash on Delivery and card options{/* with Cash on Delivery, JazzCash, EasyPaisa and card options */}.</p>
         <p>Our sizing runs from EU 39 to EU 46 with a true-to-size fit guarantee and a 7-day hassle-free exchange policy. Each pair ships with premium packaging, extra laces, and a care card so your kicks stay fresh. Whether you're chasing the latest SS26 drop or hunting a timeless court classic, SOLEKICKS PK is your trusted plug for heat that lasts.</p>
       </div>
       <button onClick={() => setOpen(!open)} className="mt-4 font-display text-sm tracking-wide text-fire hover:underline">{open ? "Read less" : "Read more"}</button>

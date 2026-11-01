@@ -9,6 +9,20 @@ const axios = require('axios');
 const courierService = {
   
   /**
+   * Check if TCS credentials are configured in environment variables
+   */
+  isConfigured() {
+    return Boolean(
+      process.env.TCS_CLIENT_ID &&
+      process.env.TCS_USERNAME &&
+      process.env.TCS_PASSWORD &&
+      process.env.TCS_CLIENT_ID.trim() !== '' &&
+      process.env.TCS_USERNAME.trim() !== '' &&
+      process.env.TCS_PASSWORD.trim() !== ''
+    );
+  },
+
+  /**
    * Books a parcel with TCS and returns the Airway Bill (AWB) number.
    * @param {Object} order The order object from the database
    * @returns {Promise<Object>} The booking response containing the tracking number
@@ -16,17 +30,9 @@ const courierService = {
   async bookParcel(order) {
     console.log(`[TCS API] Booking parcel for order ${order.order_number}...`);
     
-    // Check if API keys are configured (fallback to mock if missing for dev)
-    if (!process.env.TCS_CLIENT_ID || !process.env.TCS_USERNAME || !process.env.TCS_PASSWORD) {
-      console.warn("[TCS API] Missing TCS API credentials in .env. Falling back to mock tracking.");
-      const mockAwb = Math.floor(100000000000 + Math.random() * 900000000000).toString();
-      return {
-        success: true,
-        awb: mockAwb,
-        courier_name: "TCS (Mock)",
-        tracking_url: `https://www.tcsexpress.com/tracking?tracking_number=${mockAwb}`,
-        estimated_delivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-      };
+    // Check if API keys are configured
+    if (!this.isConfigured()) {
+      throw new Error("TCS API credentials are not configured in environment variables. Please fulfill order and update tracking manually.");
     }
 
     try {
@@ -97,11 +103,11 @@ const courierService = {
    * @returns {Promise<Object>} Tracking info
    */
   async trackParcel(awb) {
-    if (!process.env.TCS_CLIENT_ID || !process.env.TCS_USERNAME || !process.env.TCS_PASSWORD) {
+    if (!this.isConfigured()) {
       return {
         awb,
-        status: "In Transit (Mock)",
-        details: "Tracking mock because TCS credentials are not set."
+        status: "Manual Dispatch",
+        details: "TCS API credentials are not configured. Tracking is updated manually by store admin."
       };
     }
 

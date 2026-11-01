@@ -574,7 +574,7 @@ function Orders() {
                         <div className="absolute right-8 top-8 w-48 bg-white border border-ink-200 shadow-xl z-20 flex flex-col text-left py-1 text-xs">
                           <button onClick={() => { setViewOrder(o); setActiveDropdown(null); }} className="px-4 py-2 hover:bg-ink-50 flex items-center gap-2 text-obsidian"><Eye size={14}/> View Details</button>
                           {(o.tracking_number || o.status === 'shipped') && (
-                            <button onClick={() => { setTrackParcelOrder(o); setActiveDropdown(null); }} className="px-4 py-2 hover:bg-ink-50 flex items-center gap-2 text-blue-600"><Truck size={14}/> Track Parcel (TCS)</button>
+                            <button onClick={() => { setTrackParcelOrder(o); setActiveDropdown(null); }} className="px-4 py-2 hover:bg-ink-50 flex items-center gap-2 text-blue-600"><Truck size={14}/> Track Parcel ({o.courier_name || 'Courier'})</button>
                           )}
                           <div className="border-t border-ink-100 my-1"></div>
                           <div className="px-4 py-1 text-[10px] font-bold text-ink-400 uppercase tracking-wider">Update Status</div>
@@ -716,6 +716,13 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [savingTracking, setSavingTracking] = useState(false);
   const [bookingCourier, setBookingCourier] = useState(false);
+  const [courierConfig, setCourierConfig] = useState(null);
+
+  useEffect(() => {
+    http.get('/admin/courier/config')
+      .then(res => setCourierConfig(res.data?.data || { configured: false }))
+      .catch(() => setCourierConfig({ configured: false }));
+  }, []);
 
   const updateStatus = async (newStatus) => {
     setStatus(newStatus);
@@ -737,6 +744,46 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
       onUpdate();
     } finally {
       setSavingTracking(false);
+    }
+  };
+
+  const markAsShipped = async () => {
+    if (!trackingNumber.trim()) {
+      toast.error("Please enter a tracking number before marking as shipped");
+      return;
+    }
+    setUpdatingStatus(true);
+    try {
+      await http.patch(`/admin/orders/${order.id}/status`, {
+        status: 'shipped',
+        tracking_number: trackingNumber.trim(),
+        courier_name: courierName.trim() || 'TCS'
+      });
+      setStatus('shipped');
+      toast.success("Order marked as Shipped & tracking notification sent!");
+      onUpdate();
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "Failed to update status");
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  const markAsDelivered = async () => {
+    setUpdatingStatus(true);
+    try {
+      await http.patch(`/admin/orders/${order.id}/status`, {
+        status: 'delivered',
+        tracking_number: trackingNumber.trim(),
+        courier_name: courierName.trim()
+      });
+      setStatus('delivered');
+      toast.success("Order marked as Delivered!");
+      onUpdate();
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "Failed to update status");
+    } finally {
+      setUpdatingStatus(false);
     }
   };
 
@@ -837,18 +884,99 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
 
             {/* Tracking & Courier */}
             <div className="bg-white border border-ink-200 p-4 shadow-sm">
-              <h3 className="font-display font-semibold text-sm flex items-center gap-2 mb-3 border-b border-ink-100 pb-2"><Truck size={14}/> Courier Integration</h3>
-              <div className="space-y-2 text-xs">
-                <input type="text" placeholder="Courier Name (e.g. TCS)" value={courierName} onChange={e => setCourierName(e.target.value)} className="w-full border border-ink-200 px-2 py-1.5 focus:outline-none focus:border-obsidian" />
-                <input type="text" placeholder="Tracking Number / AWB" value={trackingNumber} onChange={e => setTrackingNumber(e.target.value)} className="w-full border border-ink-200 px-2 py-1.5 focus:outline-none focus:border-obsidian font-mono" />
-                <div className="flex gap-2 pt-2">
-                  <button onClick={saveTracking} disabled={savingTracking || bookingCourier} className="flex-1 flex justify-center items-center gap-2 bg-ink-100 hover:bg-ink-200 text-obsidian font-bold py-1.5 transition-colors disabled:opacity-50">
-                    {savingTracking ? <Loader2 size={14} className="animate-spin" /> : "Update"}
-                  </button>
-                  <button onClick={bookCourier} disabled={bookingCourier || savingTracking} className="flex-1 flex justify-center items-center gap-2 bg-obsidian text-white font-bold py-1.5 hover:bg-fire transition-colors disabled:opacity-50">
-                    {bookingCourier ? <Loader2 size={14} className="animate-spin" /> : "Auto-Book (API)"}
-                  </button>
+              <div className="flex justify-between items-center mb-3 border-b border-ink-100 pb-2">
+                <h3 className="font-display font-semibold text-sm flex items-center gap-2">
+                  <Truck size={14}/> {courierConfig?.configured ? "Courier Integration (TCS)" : "Manual Shipping & Tracking"}
+                </h3>
+                <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${courierConfig?.configured ? 'bg-blue-100 text-blue-700' : 'bg-ink-100 text-ink-600'}`}>
+                  {courierConfig?.configured ? "API Active" : "Manual Mode"}
+                </span>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                {/* Courier Selection Presets */}
+                <div>
+                  <label className="text-[10px] font-bold uppercase text-ink-400 block mb-1">Courier Service</label>
+                  <div className="flex flex-wrap gap-1 mb-1.5">
+                    {['TCS', 'Leopards', 'Trax', 'PostEx', 'Rider'].map(c => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setCourierName(c)}
+                        className={`px-2 py-0.5 text-[10px] font-semibold border transition-colors ${courierName === c ? 'bg-obsidian text-white border-obsidian' : 'bg-ink-50 text-ink-600 border-ink-200 hover:border-ink-400'}`}
+                      >
+                        {c}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Courier Name (e.g. TCS, Leopards)"
+                    value={courierName}
+                    onChange={e => setCourierName(e.target.value)}
+                    className="w-full border border-ink-200 px-2 py-1.5 focus:outline-none focus:border-obsidian bg-white"
+                  />
                 </div>
+
+                <div>
+                  <label className="text-[10px] font-bold uppercase text-ink-400 block mb-1">Tracking Number / AWB</label>
+                  <input
+                    type="text"
+                    placeholder="Enter Tracking / Consignment #"
+                    value={trackingNumber}
+                    onChange={e => setTrackingNumber(e.target.value)}
+                    className="w-full border border-ink-200 px-2 py-1.5 focus:outline-none focus:border-obsidian font-mono bg-white"
+                  />
+                </div>
+
+                {/* Primary Action Buttons */}
+                <div className="flex flex-col gap-2 pt-1">
+                  <div className="flex gap-2">
+                    <button
+                      onClick={saveTracking}
+                      disabled={savingTracking || updatingStatus || bookingCourier}
+                      className="flex-1 flex justify-center items-center gap-1.5 bg-ink-100 hover:bg-ink-200 text-obsidian font-bold py-1.5 transition-colors disabled:opacity-50"
+                    >
+                      {savingTracking ? <Loader2 size={13} className="animate-spin" /> : "Save Tracking"}
+                    </button>
+                    {courierConfig?.configured && (
+                      <button
+                        onClick={bookCourier}
+                        disabled={bookingCourier || savingTracking || updatingStatus}
+                        className="flex-1 flex justify-center items-center gap-1.5 bg-blue-600 text-white font-bold py-1.5 hover:bg-blue-700 transition-colors disabled:opacity-50"
+                      >
+                        {bookingCourier ? <Loader2 size={13} className="animate-spin" /> : "Auto-Book (API)"}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Quick Workflow Status Buttons for Manual Operation */}
+                  {status !== 'shipped' && status !== 'delivered' && status !== 'cancelled' && (
+                    <button
+                      onClick={markAsShipped}
+                      disabled={updatingStatus || savingTracking}
+                      className="w-full flex justify-center items-center gap-1.5 bg-obsidian text-white font-bold py-2 hover:bg-fire transition-colors disabled:opacity-50 shadow-sm"
+                    >
+                      {updatingStatus ? <Loader2 size={13} className="animate-spin" /> : "🚚 Dispatch & Mark as Shipped"}
+                    </button>
+                  )}
+
+                  {status === 'shipped' && (
+                    <button
+                      onClick={markAsDelivered}
+                      disabled={updatingStatus || savingTracking}
+                      className="w-full flex justify-center items-center gap-1.5 bg-green-600 text-white font-bold py-2 hover:bg-green-700 transition-colors disabled:opacity-50 shadow-sm"
+                    >
+                      {updatingStatus ? <Loader2 size={13} className="animate-spin" /> : "🎉 Mark as Delivered"}
+                    </button>
+                  )}
+                </div>
+
+                {!courierConfig?.configured && (
+                  <p className="text-[10px] text-ink-400 leading-tight pt-1 border-t border-ink-100">
+                    💡 Manual Mode: Ship parcel with your courier, paste the tracking # above, and click <strong>Dispatch & Mark as Shipped</strong> to update status and send customer notifications.
+                  </p>
+                )}
               </div>
             </div>
 
@@ -2307,7 +2435,7 @@ function AdminImageInput({ value, onChange, testid }) {
 function RefundModal({ order, onClose, onDone }) {
   const [amount, setAmount] = useState(order.payment_status === "partially_paid" ? order.advance_paid : order.total);
   const [reason, setReason] = useState("");
-  const [method, setMethod] = useState(order.payment_method === "COD" ? "STORE_CREDIT" : "PAYFAST_ORIGINAL");
+  const [method, setMethod] = useState(order.payment_method === "COD" ? "STORE_CREDIT" : "SAFEPAY_ORIGINAL");
   const [ref, setRef] = useState("");
   const submit = async () => {
     if (!reason.trim()) return toast.error("Reason required");
@@ -2327,7 +2455,7 @@ function RefundModal({ order, onClose, onDone }) {
           <select value={method} onChange={(e) => setMethod(e.target.value)} data-testid="admin-refund-method" className="w-full border border-ink-200 rounded-none px-4 py-2.5 bg-white">
             <option value="STORE_CREDIT">Store Credit (registered users)</option>
             <option value="BANK_TRANSFER">Bank Transfer (manual)</option>
-            <option value="PAYFAST_ORIGINAL">Original Method / Gateway</option>
+            <option value="SAFEPAY_ORIGINAL">Original Gateway (Safepay)</option>
           </select>
           {method === "BANK_TRANSFER" && <input value={ref} onChange={(e) => setRef(e.target.value)} placeholder="Transfer reference" className="w-full border border-ink-200 rounded-none px-4 py-2.5 outline-none focus:border-obsidian" />}
           <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} placeholder="Reason" data-testid="admin-refund-reason" className="w-full border border-ink-200 rounded-none px-4 py-2.5 outline-none focus:border-obsidian" />
