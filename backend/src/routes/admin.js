@@ -1860,6 +1860,21 @@ router.patch('/reviews/:id', async (req, res) => {
             data: updateData
         });
         
+        // Dynamically update parent product rating metrics
+        if (updated.product_id) {
+            const approved = await prisma.review.findMany({
+                where: { product_id: updated.product_id, status: 'approved' }
+            });
+            const count = approved.length;
+            const avg = count > 0 
+                ? Number((approved.reduce((acc, r) => acc + r.rating, 0) / count).toFixed(1))
+                : 5.0;
+            await prisma.product.update({
+                where: { id: updated.product_id },
+                data: { review_count: count, avg_rating: avg }
+            });
+        }
+        
         res.json({ success: true, data: updated });
     } catch (err) {
         console.error("REVIEW PATCH ERROR", err);

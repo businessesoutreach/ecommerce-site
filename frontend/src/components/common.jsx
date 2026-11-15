@@ -37,7 +37,7 @@ export const Stars = ({ rating = 5, size = 14, count }) => (
         <Star key={i} size={size} className={i <= Math.round(rating) ? "fill-fire text-fire" : "fill-ink-200 text-ink-200"} />
       ))}
     </div>
-    {count != null && <span className="font-mono text-xs text-ink-400">({count})</span>}
+    {count != null && count > 0 && <span className="font-mono text-xs text-ink-400">({count})</span>}
   </div>
 );
 

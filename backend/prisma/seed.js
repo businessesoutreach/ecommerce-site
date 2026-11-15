@@ -193,8 +193,8 @@ async function main() {
                     is_best_seller: flags.includes("best"),
                     is_flash_sale: flags.includes("flash"),
                     status: "active",
-                    avg_rating: 4.6 + (i % 5) * 0.08,
-                    review_count: 40 + i * 7,
+                    avg_rating: 5.0,
+                    review_count: 0,
                     sort_order: i,
                     sizes: {
                         create: getSizes(flags.includes("best"))
