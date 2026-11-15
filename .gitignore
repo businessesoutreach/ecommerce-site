@@ -11,3 +11,5 @@ __pycache__/
 *.pyc
 *.exe
 cloudflared*
+.playwright-mcp/
+*.png.tmp

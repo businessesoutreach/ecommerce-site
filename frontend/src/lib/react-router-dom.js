@@ -57,8 +57,15 @@ export function useSearchParams() {
   }, [nextSearchParams]);
 
   const setSearchParams = (params) => {
-    const qs = params.toString();
-    router.push(`${pathname}${qs ? `?${qs}` : ''}`);
+    let qs = "";
+    if (params instanceof URLSearchParams) {
+      qs = params.toString();
+    } else if (typeof params === "object" && params !== null) {
+      qs = new URLSearchParams(params).toString();
+    } else if (typeof params === "string") {
+      qs = params.startsWith("?") ? params.slice(1) : params;
+    }
+    router.replace(`${pathname}${qs ? `?${qs}` : ""}`);
   };
 
   return [searchParams, setSearchParams];

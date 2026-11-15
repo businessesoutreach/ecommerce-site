@@ -78,6 +78,25 @@ router.delete('/addresses/:aid', getCurrentUser, async (req, res) => {
     }
 });
 
+router.patch('/profile', getCurrentUser, async (req, res) => {
+    try {
+        const { name, phone } = req.body;
+        const data = {};
+        if (name !== undefined && name.trim()) data.name = name.trim();
+        if (phone !== undefined) data.phone = phone ? phone.trim() : null;
+        
+        const updated = await prisma.user.update({
+            where: { id: req.user.id },
+            data,
+            select: { id: true, name: true, email: true, phone: true, role: true, picture: true }
+        });
+        
+        res.json({ success: true, data: updated });
+    } catch (err) {
+        res.status(500).json({ detail: err.message });
+    }
+});
+
 router.get('/store-credit', getCurrentUser, async (req, res) => {
     try {
         const sc = await prisma.storeCredit.findUnique({ where: { user_id: req.user.id } });

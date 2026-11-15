@@ -2,8 +2,10 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import { useStore } from "../context/StoreContext";
 
 export default function HeroSlider({ slides = [] }) {
+  const { user } = useStore();
   const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
   const n = slides.length;
@@ -67,12 +69,21 @@ export default function HeroSlider({ slides = [] }) {
               {s.cta_text || "Shop Now"}
               <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
             </Link>
-            <Link
-              to="/register"
-              className="inline-flex items-center justify-center bg-transparent border-2 border-white/80 text-white font-display tracking-wider text-sm px-7 py-3.5 rounded-none hover:bg-white hover:text-obsidian shadow-lg transition-colors backdrop-blur-sm"
-            >
-              Sign Up
-            </Link>
+            {user ? (
+              <Link
+                to={user.role === "admin" || user.role === "staff" ? "/admin" : "/account"}
+                className="inline-flex items-center justify-center bg-transparent border-2 border-white/80 text-white font-display tracking-wider text-sm px-7 py-3.5 rounded-none hover:bg-white hover:text-obsidian shadow-lg transition-colors backdrop-blur-sm"
+              >
+                {user.role === "admin" || user.role === "staff" ? "Admin Portal" : "My Account"}
+              </Link>
+            ) : (
+              <Link
+                to="/new-arrivals"
+                className="inline-flex items-center justify-center bg-transparent border-2 border-white/80 text-white font-display tracking-wider text-sm px-7 py-3.5 rounded-none hover:bg-white hover:text-obsidian shadow-lg transition-colors backdrop-blur-sm"
+              >
+                New Drops
+              </Link>
+            )}
           </div>
         </motion.div>
       </div>

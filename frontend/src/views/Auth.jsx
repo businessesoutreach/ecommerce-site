@@ -21,13 +21,37 @@ const GoogleIcon = () => (
 export default function Auth({ mode = "login" }) {
   const [view, setView] = useState(mode);
   const [step, setStep] = useState(1);
-  const { login, register } = useStore();
+  const { user, login, register } = useStore();
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: "", email: "", password: "", phone: "", otp: "" });
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => { setView(mode); setStep(1); }, [mode]);
+
+  // If user is already authenticated, immediately redirect away from login/register
+  useEffect(() => {
+    if (mounted && user) {
+      const dest = user.role === "admin" || user.role === "staff" ? "/admin" : "/account";
+      navigate(dest, { replace: true });
+    }
+  }, [mounted, user, navigate]);
+
+  if (mounted && user) {
+    return (
+      <div className="min-h-[70vh] flex flex-col items-center justify-center gap-3">
+        <Loader2 size={32} className="animate-spin text-fire" />
+        <span className="font-mono text-xs text-ink-500 uppercase tracking-widest">
+          Redirecting to dashboard...
+        </span>
+      </div>
+    );
+  }
 
   const requestOTP = async (e) => {
     e.preventDefault();

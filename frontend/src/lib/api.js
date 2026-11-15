@@ -25,6 +25,23 @@ http.interceptors.request.use((config) => {
   return config;
 });
 
+http.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 && typeof window !== 'undefined') {
+      const isAuthEndpoint = error.config?.url?.includes('/auth/');
+      if (!isAuthEndpoint) {
+        localStorage.removeItem('jt_token');
+        localStorage.removeItem('jt_user');
+        if (window.location.pathname.startsWith('/admin')) {
+          window.location.href = '/login';
+        }
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export function fmt(n) {
   const v = Math.round(Number(n) || 0);
   return "Rs. " + v.toLocaleString("en-PK");

@@ -270,20 +270,47 @@ router.get('/:order_number', getOptionalUser, async (req, res) => {
         const phone = req.query.phone;
         const o = await prisma.order.findUnique({
             where: { order_number: req.params.order_number },
-            include: { items: true, status_history: true }
+            include: { 
+                items: {
+                    include: { product: { select: { slug: true } } }
+                }, 
+                status_history: {
+                    orderBy: { at: 'asc' }
+                } 
+            }
         });
         
         if (!o) return res.status(404).json({ detail: 'Order not found' });
         
-        if (req.user && o.user_id === req.user.id) {
-            return res.json({ success: true, data: o });
+        const isOwner = Boolean(req.user && o.user_id && o.user_id === req.user.id);
+        
+        let phoneMatches = false;
+        if (phone && o.customer_phone) {
+            const cleanDb = o.customer_phone.replace(/\D/g, '');
+            const cleanInput = phone.replace(/\D/g, '');
+            phoneMatches = cleanDb.length >= 7 && cleanInput.length >= 7 && 
+                           (cleanDb.endsWith(cleanInput.slice(-9)) || cleanInput.endsWith(cleanDb.slice(-9)));
+        }
+
+        if (!isOwner && !phoneMatches) {
+            return res.status(403).json({ detail: 'Provide the phone number used at checkout' });
+        }
+
+        let liveCourier = null;
+        if (o.tracking_number) {
+            try {
+                liveCourier = await courierService.trackParcel(o.tracking_number);
+            } catch (_) {}
         }
         
-        if (phone && o.customer_phone.replace(/\s/g, '') === phone.replace(/\s/g, '')) {
-            return res.json({ success: true, data: o });
-        }
-        
-        res.status(403).json({ detail: 'Provide the phone number used at checkout' });
+        return res.json({ 
+            success: true, 
+            data: {
+                ...o,
+                is_owner: isOwner,
+                live_courier: liveCourier
+            } 
+        });
     } catch (err) {
         res.status(500).json({ detail: err.message });
     }
@@ -292,29 +319,45 @@ router.get('/:order_number', getOptionalUser, async (req, res) => {
 router.post('/:order_id/cancel', getCurrentUser, async (req, res) => {
     try {
         const o = await prisma.order.findFirst({
-            where: { id: req.params.order_id, user_id: req.user.id }
+            where: { id: req.params.order_id, user_id: req.user.id },
+            include: { items: true }
         });
         
         if (!o) return res.status(404).json({ detail: 'Order not found' });
-        if (['shipped', 'delivered', 'cancelled'].includes(o.status)) {
-            return res.status(400).json({ detail: 'Order can no longer be cancelled' });
+        if (['shipped', 'out_for_delivery', 'delivered', 'cancelled', 'returned'].includes(o.status)) {
+            return res.status(400).json({ detail: 'Order has already been dispatched and cannot be cancelled' });
         }
         
-        await prisma.order.update({
-            where: { id: req.params.order_id },
-            data: {
-                status: 'cancelled',
-                status_history: {
-                    create: {
-                        id: uuidv4(),
-                        status: 'cancelled',
-                        note: 'Cancelled by customer'
+        await prisma.$transaction(async (tx) => {
+            await tx.order.update({
+                where: { id: req.params.order_id },
+                data: {
+                    status: 'cancelled',
+                    status_history: {
+                        create: {
+                            id: uuidv4(),
+                            status: 'cancelled',
+                            note: 'Cancelled by customer'
+                        }
                     }
                 }
+            });
+            
+            // Restock product variants
+            for (const it of o.items) {
+                await tx.productSize.updateMany({
+                    where: { product_id: it.product_id, size: it.size },
+                    data: { stock: { increment: it.quantity } }
+                });
             }
         });
         
-        res.json({ success: true });
+        // Restore store credit if used on this order
+        if (o.store_credit_used && o.store_credit_used > 0 && req.user) {
+            await addStoreCredit(req.user.id, o.store_credit_used, "ORDER_CANCELLED_REFUND", o.id);
+        }
+        
+        res.json({ success: true, message: 'Order successfully cancelled and items restocked' });
     } catch (err) {
         res.status(500).json({ detail: err.message });
     }

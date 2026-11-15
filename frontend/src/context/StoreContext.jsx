@@ -11,8 +11,12 @@ export function StoreProvider({ children }) {
   const [settings, setSettings] = useState(null);
   const [user, setUser] = useState(() => {
     if (typeof window !== "undefined") {
-      const u = localStorage.getItem("jt_user");
-      return u ? JSON.parse(u) : null;
+      try {
+        const u = localStorage.getItem("jt_user");
+        return u ? JSON.parse(u) : null;
+      } catch (e) {
+        return null;
+      }
     }
     return null;
   });
@@ -134,12 +138,22 @@ export function StoreProvider({ children }) {
     loadWishlist();
   };
 
+  const updateUser = (updatedFields) => {
+    setUser((prev) => {
+      const next = { ...prev, ...updatedFields };
+      try {
+        localStorage.setItem("jt_user", JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+  };
+
   return (
     <StoreCtx.Provider
       value={{
         settings, user, cart, wishlist, cartOpen, setCartOpen, cartBump,
         addToCart, updateQty, removeItem, toggleWishlist, loadCart,
-        login, register, logout,
+        login, register, logout, updateUser,
       }}
     >
       {children}
