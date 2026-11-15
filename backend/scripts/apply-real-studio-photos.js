@@ -95,16 +95,14 @@ const REAL_STUDIO_CATALOG = {
     "https://res.cloudinary.com/p1w5xus9/image/upload/v1787735909/solekicks/products/court-master-black-panther/2-front.png"
   ],
 
-  // 14. Velocity Gray Road Runner (Knit cushioning runner angles)
+  // 14. Velocity Gray Road Runner (Dedicated gray knit road runner photography)
   "velocity-gray-road-runner": [
-    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787735602/solekicks/products/boost-knit-cloud-runner/1-side.png",
-    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787735663/solekicks/products/boost-knit-cloud-runner/2-front.png"
+    "https://res.cloudinary.com/p1w5xus9/image/upload/v1794731476/solekicks/products/velocity-gray-road-runner/1-side.jpg"
   ],
 
-  // 15. CloudStratus Surge Pro Runner (High performance runner angles)
+  // 15. CloudStratus Surge Pro Runner (High performance marathon runner with cyan/volt pods)
   "cloudstratus-surge-pro": [
-    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787735602/solekicks/products/boost-knit-cloud-runner/1-side.png",
-    "https://res.cloudinary.com/p1w5xus9/image/upload/v1787735723/solekicks/products/boost-knit-cloud-runner/3-3d.png"
+    "https://res.cloudinary.com/p1w5xus9/image/upload/v1794731479/solekicks/products/cloudstratus-surge-pro/1-side.jpg"
   ],
 
   // 16. CloudStride Marathon Elite (Marathon elite cushioning angles)
