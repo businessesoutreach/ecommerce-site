@@ -598,10 +598,13 @@ router.get('/orders', async (req, res) => {
         }
 
         if (search) {
+            const cleanSearch = search.trim();
             where.OR = [
-                { order_number: { contains: search, mode: 'insensitive' } },
-                { customer_name: { contains: search, mode: 'insensitive' } },
-                { shipping_address: { path: ['email'], string_contains: search } }
+                { order_number: { contains: cleanSearch, mode: 'insensitive' } },
+                { customer_name: { contains: cleanSearch, mode: 'insensitive' } },
+                { customer_phone: { contains: cleanSearch, mode: 'insensitive' } },
+                { customer_email: { contains: cleanSearch, mode: 'insensitive' } },
+                { tracking_number: { contains: cleanSearch, mode: 'insensitive' } }
             ];
         }
 
@@ -645,6 +648,134 @@ router.get('/orders', async (req, res) => {
             }
         });
     } catch (err) {
+        res.status(500).json({ detail: err.message });
+    }
+});
+
+router.post('/orders', async (req, res) => {
+    try {
+        const {
+            customer_name,
+            customer_phone,
+            customer_email,
+            shipping_address,
+            items,
+            payment_method = 'COD',
+            shipping_fee = 0,
+            discount_amount = 0,
+            customer_note
+        } = req.body;
+
+        if (!customer_name || !customer_name.trim()) {
+            return res.status(400).json({ detail: 'Customer name is required' });
+        }
+        if (!customer_phone || !customer_phone.trim()) {
+            return res.status(400).json({ detail: 'Customer phone number is required' });
+        }
+        if (!items || !Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({ detail: 'At least one product item is required' });
+        }
+
+        let subtotal = 0;
+        const orderItemsData = [];
+
+        for (const it of items) {
+            const prod = await prisma.product.findUnique({
+                where: { id: it.product_id },
+                include: { sizes: true }
+            });
+            if (!prod) {
+                return res.status(400).json({ detail: `Product not found: ${it.product_id}` });
+            }
+
+            const sizeObj = prod.sizes.find(s => s.size === String(it.size));
+            if (!sizeObj) {
+                return res.status(400).json({ detail: `Size ${it.size} does not exist for ${prod.name}` });
+            }
+            if (sizeObj.stock < (it.quantity || 1)) {
+                return res.status(400).json({ detail: `Insufficient stock for ${prod.name} (Size ${it.size}). Available: ${sizeObj.stock}` });
+            }
+
+            const unitPrice = prod.is_flash_sale && prod.flash_sale_price ? prod.flash_sale_price : prod.base_price;
+            const qty = Math.max(1, parseInt(it.quantity) || 1);
+            subtotal += unitPrice * qty;
+
+            orderItemsData.push({
+                product_id: prod.id,
+                product_name: prod.name,
+                variant_label: `Size ${it.size}`,
+                size: String(it.size),
+                image_url: prod.images?.[0] || prod.hover_image || '',
+                unit_price: unitPrice,
+                quantity: qty
+            });
+        }
+
+        const fee = Number(shipping_fee) || 0;
+        const discount = Number(discount_amount) || 0;
+        const total = Math.max(0, subtotal + fee - discount);
+
+        let orderNumber = `PK-SNK-${Math.floor(10000 + Math.random() * 90000)}`;
+        while (await prisma.order.findUnique({ where: { order_number: orderNumber } })) {
+            orderNumber = `PK-SNK-${Math.floor(10000 + Math.random() * 90000)}`;
+        }
+
+        const formattedAddress = typeof shipping_address === 'object' && shipping_address !== null
+            ? shipping_address
+            : { address_l1: String(shipping_address || 'Walk-in / Direct Order'), city: 'Karachi', province: 'Sindh', country_code: 'PK' };
+
+        const newOrder = await prisma.$transaction(async (tx) => {
+            const order = await tx.order.create({
+                data: {
+                    id: uuidv4(),
+                    order_number: orderNumber,
+                    customer_name: customer_name.trim(),
+                    customer_phone: customer_phone.trim(),
+                    customer_email: customer_email ? customer_email.trim() : null,
+                    shipping_address: formattedAddress,
+                    subtotal,
+                    shipping_fee: fee,
+                    discount_amount: discount,
+                    total,
+                    payment_method: payment_method || 'COD',
+                    payment_status: payment_method === 'COD' ? 'pending' : 'paid',
+                    status: 'placed',
+                    customer_note: customer_note ? customer_note.trim() : 'Manual order created by admin',
+                    items: {
+                        create: orderItemsData.map(it => ({
+                            id: uuidv4(),
+                            ...it
+                        }))
+                    },
+                    status_history: {
+                        create: {
+                            id: uuidv4(),
+                            status: 'placed',
+                            note: 'Manual order created by admin via Admin Portal'
+                        }
+                    }
+                },
+                include: {
+                    items: { include: { product: true } },
+                    status_history: true
+                }
+            });
+
+            for (const it of orderItemsData) {
+                await tx.productSize.updateMany({
+                    where: { product_id: it.product_id, size: it.size },
+                    data: { stock: { decrement: it.quantity } }
+                });
+            }
+
+            return order;
+        });
+
+        memoryCache.flush();
+
+        res.json({ success: true, data: newOrder });
+    } catch (err) {
+        console.error('ADMIN CREATE ORDER ERROR:', err);
         res.status(500).json({ detail: err.message });
     }
 });
