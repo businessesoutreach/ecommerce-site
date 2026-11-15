@@ -42,3 +42,4 @@ class MemoryCache {
 const memoryCache = new MemoryCache();
 
 module.exports = memoryCache;
+
