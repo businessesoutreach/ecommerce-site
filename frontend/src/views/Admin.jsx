@@ -90,13 +90,13 @@ export default function Admin() {
   return (
     <div className="min-h-screen bg-gray-50 flex" data-testid="admin-dashboard">
       {tab !== "cms" && (
-        <aside className="w-16 lg:w-60 bg-white border-r border-gray-200 h-screen sticky top-0 flex flex-col shrink-0 z-20">
+        <aside className="w-16 lg:w-60 bg-gray-50/90 border-r border-gray-200 h-screen sticky top-0 flex flex-col shrink-0 z-20">
           <div className="px-4 py-4 lg:px-6 border-b border-gray-200 shrink-0 flex items-center justify-between">
             <span className="font-display font-black text-lg text-gray-900 tracking-tight hidden lg:block">
               SOLEKICKS<span className="text-fire">.</span>
             </span>
             <span className="lg:hidden font-display font-black text-fire text-center block w-full text-base">S.</span>
-            <span className="hidden lg:inline text-[9px] font-mono font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200">
+            <span className="hidden lg:inline text-[9px] font-mono font-bold bg-white text-gray-600 px-1.5 py-0.5 rounded border border-gray-200 shadow-xs">
               ADMIN
             </span>
           </div>
@@ -115,14 +115,14 @@ export default function Admin() {
                       key={k}
                       onClick={() => setTab(k)}
                       data-testid={`admin-nav-${k}`}
-                      className={`w-full flex items-center justify-center lg:justify-start gap-3 px-3 py-2 rounded-lg font-bold text-xs transition-all ${
+                      className={`w-full flex items-center justify-center lg:justify-start gap-3 px-3 py-2.5 rounded-lg font-bold text-xs transition-all ${
                         isActive
-                          ? "bg-gray-900 text-white shadow-sm"
-                          : "text-gray-600 hover:text-black hover:bg-gray-100"
+                          ? "bg-white text-fire border border-gray-200 shadow-sm"
+                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-100/70 border border-transparent"
                       }`}
                       title={l}
                     >
-                      <I size={16} className={isActive ? "text-fire" : "text-gray-400"} />
+                      <I size={16} />
                       <span className="hidden lg:block truncate">{l}</span>
                     </button>
                   );
