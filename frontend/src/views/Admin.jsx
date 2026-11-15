@@ -41,47 +41,105 @@ export default function Admin() {
 
   if (!user || (user.role !== "admin" && user.role !== "staff")) return null;
 
-  const NAV = [
-    ["overview", "Overview", LayoutDashboard],
-    ["orders", "Orders", ShoppingCart],
-    ["cod", "COD Tracking", Truck],
-    ["inventory", "Inventory", Layers],
-    ["products", "Products", Package],
-    ["pos", "POS", Plus],
-    ["returns", "Returns", RotateCcw],
-    ["refunds", "Refunds", DollarSign],
-    ["coupons", "Coupons", Ticket],
-    ["reviews", "Reviews", Star],
-    ["customers", "Customers", Users],
-    ["bundles", "Bundles", Tag],
-    ["cms", "Hero & CMS", ImageIcon],
-    ["profitability", "Profitability", TrendingUp],
-    ["audit_logs", "Audit Logs", FileText]
-  ].filter(([k]) => {
-    if (user.role === 'admin') return true;
-    return !['overview', 'refunds', 'coupons', 'cms', 'audit_logs', 'profitability'].includes(k);
-  });
+  const NAV_SECTIONS = [
+    {
+      category: "Core",
+      items: [
+        ["overview", "Overview", LayoutDashboard],
+        ["orders", "Orders", ShoppingCart],
+        ["products", "Products", Package],
+        ["customers", "Customers", Users],
+        ["profitability", "Analytics", TrendingUp],
+      ]
+    },
+    {
+      category: "Operations",
+      items: [
+        ["inventory", "Inventory", Layers],
+        ["cod", "COD Tracking", Truck],
+        ["pos", "POS Counter", Plus],
+        ["returns", "Returns", RotateCcw],
+        ["refunds", "Refunds", DollarSign],
+      ]
+    },
+    {
+      category: "Marketing & CMS",
+      items: [
+        ["cms", "Hero & CMS", ImageIcon],
+        ["coupons", "Coupons", Ticket],
+        ["bundles", "Bundles", Tag],
+        ["reviews", "Reviews", Star],
+      ]
+    },
+    {
+      category: "System",
+      items: [
+        ["audit_logs", "Audit Logs", FileText],
+      ]
+    }
+  ];
+
+  const filteredSections = NAV_SECTIONS.map(sec => ({
+    ...sec,
+    items: sec.items.filter(([k]) => {
+      if (user.role === 'admin') return true;
+      return !['overview', 'refunds', 'coupons', 'cms', 'audit_logs', 'profitability'].includes(k);
+    })
+  })).filter(sec => sec.items.length > 0);
 
   return (
-    <div className="min-h-screen bg-ink-100 flex" data-testid="admin-dashboard">
+    <div className="min-h-screen bg-gray-50 flex" data-testid="admin-dashboard">
       {tab !== "cms" && (
-        <aside className="w-16 lg:w-60 bg-ink-50 border-r border-ink-200 h-screen sticky top-0 flex flex-col shrink-0">
-          <div className="px-4 py-3 lg:px-6 lg:py-4 border-b border-ink-200 shrink-0">
-            <span className="font-display font-bold text-obsidian tracking-tighter hidden lg:block">SOLEKICKS<span className="text-fire">.</span></span>
-            <span className="lg:hidden font-display font-semibold text-fire text-center block">S.</span>
+        <aside className="w-16 lg:w-60 bg-white border-r border-gray-200 h-screen sticky top-0 flex flex-col shrink-0 z-20">
+          <div className="px-4 py-4 lg:px-6 border-b border-gray-200 shrink-0 flex items-center justify-between">
+            <span className="font-display font-black text-lg text-gray-900 tracking-tight hidden lg:block">
+              SOLEKICKS<span className="text-fire">.</span>
+            </span>
+            <span className="lg:hidden font-display font-black text-fire text-center block w-full text-base">S.</span>
+            <span className="hidden lg:inline text-[9px] font-mono font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200">
+              ADMIN
+            </span>
           </div>
-          <nav className="flex-1 p-2 lg:p-3 space-y-1 overflow-y-auto custom-scrollbar">
-            {NAV.map(([k, l, I]) => (
-              <button key={k} onClick={() => setTab(k)} data-testid={`admin-nav-${k}`} className={`w-full flex items-center justify-center lg:justify-start gap-3 px-3 py-2.5 font-bold text-sm transition-colors ${tab === k ? "bg-white text-fire border border-ink-200 shadow-sm" : "text-ink-500 hover:text-obsidian hover:bg-ink-100/50 border border-transparent"}`}>
-                <I size={18} />
-                <span className="hidden lg:block">{l}</span>
-              </button>
+
+          <nav className="flex-1 p-2 lg:p-3 space-y-4 overflow-y-auto custom-scrollbar">
+            {filteredSections.map(sec => (
+              <div key={sec.category} className="space-y-1">
+                <div className="hidden lg:block px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-gray-400">
+                  {sec.category}
+                </div>
+                <div className="lg:hidden h-px bg-gray-200 my-1"></div>
+                {sec.items.map(([k, l, I]) => {
+                  const isActive = tab === k;
+                  return (
+                    <button
+                      key={k}
+                      onClick={() => setTab(k)}
+                      data-testid={`admin-nav-${k}`}
+                      className={`w-full flex items-center justify-center lg:justify-start gap-3 px-3 py-2 rounded-lg font-bold text-xs transition-all ${
+                        isActive
+                          ? "bg-gray-900 text-white shadow-sm"
+                          : "text-gray-600 hover:text-black hover:bg-gray-100"
+                      }`}
+                      title={l}
+                    >
+                      <I size={16} className={isActive ? "text-fire" : "text-gray-400"} />
+                      <span className="hidden lg:block truncate">{l}</span>
+                    </button>
+                  );
+                })}
+              </div>
             ))}
           </nav>
-          <button onClick={() => { logout(); navigate("/"); }} className="m-3 flex items-center justify-center lg:justify-start gap-3 px-3 py-3 text-ink-500 hover:text-fire hover:bg-ink-100/50 font-bold  text-sm transition-colors border border-transparent">
-            <LogOut size={18} />
-            <span className="hidden lg:block">Logout</span>
-          </button>
+
+          <div className="p-3 border-t border-gray-200 shrink-0">
+            <button
+              onClick={() => { logout(); navigate("/"); }}
+              className="w-full flex items-center justify-center lg:justify-start gap-3 px-3 py-2 rounded-lg text-gray-500 hover:text-fire hover:bg-rose-50 font-bold text-xs transition-colors"
+            >
+              <LogOut size={16} />
+              <span className="hidden lg:block">Logout</span>
+            </button>
+          </div>
         </aside>
       )}
 
