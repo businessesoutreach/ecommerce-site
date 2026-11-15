@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Heart, Plus, Check, Loader2, Eye } from "lucide-react";
-import { fmt, discountPct } from "../lib/api";
+import { fmt, discountPct, optimizeImg } from "../lib/api";
 import { useStore } from "../context/StoreContext";
 import { Stars } from "./common";
 
@@ -18,8 +18,10 @@ export default function ProductCard({ product, index = 0, onQuickView, layout = 
   const soldOut = (product.sizes || []).every((s) => s.stock <= 0);
   const totalStock = (product.sizes || []).reduce((acc, s) => acc + (s.stock || 0), 0);
   const lowStock = !soldOut && totalStock > 0 && totalStock <= 6;
-  const img = product.images?.[0] || product.image_url;
-  const hoverImg = product.hover_image || product.images?.[1] || img;
+  const rawImg = product.images?.[0] || product.image_url;
+  const rawHoverImg = product.hover_image || product.images?.[1] || rawImg;
+  const img = optimizeImg(rawImg, { width: 600 });
+  const hoverImg = optimizeImg(rawHoverImg, { width: 600 });
 
   const handleAdd = async () => {
     const chosen = size || (product.sizes || []).find((s) => s.stock > 0)?.size;

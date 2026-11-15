@@ -6,31 +6,46 @@ export default async function Page() {
 
   let initialData = null;
   try {
-    const [s, c, nw, flash, best, feat, settings, cms] = await Promise.all([
-      fetch(`${api}/hero-slides`, { next: { revalidate: 60 } }).then(r => r.json()),
-      fetch(`${api}/categories`, { next: { revalidate: 60 } }).then(r => r.json()),
-      fetch(`${api}/products?flag=new&limit=8`, { next: { revalidate: 60 } }).then(r => r.json()),
-      fetch(`${api}/products?flag=flash&limit=8`, { next: { revalidate: 60 } }).then(r => r.json()),
-      fetch(`${api}/products?flag=best&limit=4`, { next: { revalidate: 60 } }).then(r => r.json()),
-      fetch(`${api}/products?flag=featured&limit=8`, { next: { revalidate: 60 } }).then(r => r.json()),
-      fetch(`${api}/settings`, { next: { revalidate: 60 } }).then(r => r.json()),
-      fetch(`${api}/admin/cms/homepage-sections`, { next: { revalidate: 60 } }).then(r => r.ok ? r.json() : { data: [] })
-    ]);
-
-    initialData = {
-      slides: s?.data || [],
-      cats: c?.data || [],
-      data: {
-        nw: nw?.data || [],
-        flash: flash?.data || [],
-        best: best?.data || [],
-        feat: feat?.data || [],
-        settings: settings?.data || {}
-      },
-      layout: (cms?.data || []).sort((a, b) => a.sort_order - b.sort_order)
-    };
+    const res = await fetch(`${api}/homepage`, { next: { revalidate: 60 } });
+    if (res.ok) {
+      const json = await res.json();
+      if (json.success && json.data) {
+        initialData = json.data;
+      }
+    }
   } catch (err) {
-    console.error("SSR Fetch Error:", err.message);
+    console.error("SSR Fetch Error (/api/homepage):", err.message);
+  }
+
+  // Fallback in case of any network glitch
+  if (!initialData) {
+    try {
+      const [s, c, nw, flash, best, feat, settings, cms] = await Promise.all([
+        fetch(`${api}/hero-slides`, { next: { revalidate: 60 } }).then(r => r.json()).catch(() => ({ data: [] })),
+        fetch(`${api}/categories`, { next: { revalidate: 60 } }).then(r => r.json()).catch(() => ({ data: [] })),
+        fetch(`${api}/products?flag=new&limit=8`, { next: { revalidate: 60 } }).then(r => r.json()).catch(() => ({ data: [] })),
+        fetch(`${api}/products?flag=flash&limit=8`, { next: { revalidate: 60 } }).then(r => r.json()).catch(() => ({ data: [] })),
+        fetch(`${api}/products?flag=best&limit=4`, { next: { revalidate: 60 } }).then(r => r.json()).catch(() => ({ data: [] })),
+        fetch(`${api}/products?flag=featured&limit=8`, { next: { revalidate: 60 } }).then(r => r.json()).catch(() => ({ data: [] })),
+        fetch(`${api}/settings`, { next: { revalidate: 60 } }).then(r => r.json()).catch(() => ({ data: {} })),
+        fetch(`${api}/admin/cms/homepage-sections`, { next: { revalidate: 60 } }).then(r => r.ok ? r.json() : { data: [] }).catch(() => ({ data: [] }))
+      ]);
+
+      initialData = {
+        slides: s?.data || [],
+        cats: c?.data || [],
+        data: {
+          nw: nw?.data || [],
+          flash: flash?.data || [],
+          best: best?.data || [],
+          feat: feat?.data || [],
+          settings: settings?.data || {}
+        },
+        layout: (cms?.data || []).sort((a, b) => a.sort_order - b.sort_order)
+      };
+    } catch (e) {
+      console.error("Fallback Fetch Error:", e.message);
+    }
   }
 
   return <Home initialData={initialData} />;

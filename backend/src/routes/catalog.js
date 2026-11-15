@@ -2,8 +2,97 @@ const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const prisma = require('../db');
 const { getOptionalUser } = require('../middleware/auth');
+const memoryCache = require('../utils/cache');
 
 const router = express.Router();
+
+// ==========================================
+// CONSOLIDATED HOMEPAGE ENDPOINT
+// ==========================================
+router.get('/homepage', async (req, res) => {
+    try {
+        const cached = memoryCache.get('homepage');
+        if (cached) {
+            res.set('X-Cache', 'HIT');
+            return res.json(cached);
+        }
+
+        const [slides, cats, catCounts, nw, flash, best, feat, settings, cms] = await Promise.all([
+            prisma.heroSlide.findMany({
+                where: { is_active: true },
+                orderBy: { sort_order: 'asc' }
+            }),
+            prisma.category.findMany({
+                where: { is_active: true },
+                orderBy: { sort_order: 'asc' }
+            }),
+            prisma.product.groupBy({
+                by: ['category_slug'],
+                where: { status: 'active' },
+                _count: { id: true }
+            }),
+            prisma.product.findMany({
+                where: { status: 'active', is_new_arrival: true },
+                orderBy: { sort_order: 'asc' },
+                take: 8,
+                include: { sizes: true }
+            }),
+            prisma.product.findMany({
+                where: { status: 'active', is_flash_sale: true },
+                orderBy: { sort_order: 'asc' },
+                take: 8,
+                include: { sizes: true }
+            }),
+            prisma.product.findMany({
+                where: { status: 'active', is_best_seller: true },
+                orderBy: { sort_order: 'asc' },
+                take: 4,
+                include: { sizes: true }
+            }),
+            prisma.product.findMany({
+                where: { status: 'active', is_featured: true },
+                orderBy: { sort_order: 'asc' },
+                take: 8,
+                include: { sizes: true }
+            }),
+            prisma.settings.findUnique({
+                where: { id: 'singleton' }
+            }),
+            prisma.homepageSection.findMany({
+                orderBy: { sort_order: 'asc' }
+            })
+        ]);
+
+        const countMap = Object.fromEntries(catCounts.map(c => [c.category_slug, c._count.id]));
+        const formattedCats = cats.map(c => ({
+            ...c,
+            product_count: countMap[c.slug] || 0
+        }));
+
+        const result = {
+            success: true,
+            data: {
+                slides: slides || [],
+                cats: formattedCats || [],
+                data: {
+                    nw: nw || [],
+                    flash: flash || [],
+                    best: best || [],
+                    feat: feat || [],
+                    settings: settings || {}
+                },
+                layout: (cms || []).sort((a, b) => a.sort_order - b.sort_order)
+            }
+        };
+
+        memoryCache.set('homepage', result, 60 * 1000);
+        res.set('X-Cache', 'MISS');
+        res.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ detail: err.message });
+    }
+});
 
 router.get('/products', async (req, res) => {
     try {
@@ -129,15 +218,27 @@ router.post('/products/:id/reviews', getOptionalUser, async (req, res) => {
 
 router.get('/categories', async (req, res) => {
     try {
-        const items = await prisma.category.findMany({
-            where: { is_active: true },
-            orderBy: { sort_order: 'asc' }
-        });
+        const cached = memoryCache.get('categories');
+        if (cached) return res.json({ success: true, data: cached });
+
+        const [items, catCounts] = await Promise.all([
+            prisma.category.findMany({
+                where: { is_active: true },
+                orderBy: { sort_order: 'asc' }
+            }),
+            prisma.product.groupBy({
+                by: ['category_slug'],
+                where: { status: 'active' },
+                _count: { id: true }
+            })
+        ]);
+
+        const countMap = Object.fromEntries(catCounts.map(c => [c.category_slug, c._count.id]));
         for (const c of items) {
-            c.product_count = await prisma.product.count({
-                where: { category_slug: c.slug, status: 'active' }
-            });
+            c.product_count = countMap[c.slug] || 0;
         }
+
+        memoryCache.set('categories', items, 60 * 1000);
         res.json({ success: true, data: items });
     } catch (err) {
         res.status(500).json({ detail: err.message });

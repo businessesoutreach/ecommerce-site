@@ -5,6 +5,7 @@ const prisma = require('../db');
 const { getAdmin } = require('../middleware/auth');
 const { APP_NAME, putObject, getObject } = require('../utils/storage');
 const { getSettings } = require('./checkout');
+const memoryCache = require('../utils/cache');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -25,7 +26,11 @@ router.post('/newsletter/subscribe', async (req, res) => {
 
 router.get('/settings', async (req, res) => {
     try {
-        res.json({ success: true, data: await getSettings() });
+        const cached = memoryCache.get('settings');
+        if (cached) return res.json({ success: true, data: cached });
+        const s = await getSettings();
+        memoryCache.set('settings', s, 60 * 1000);
+        res.json({ success: true, data: s });
     } catch (err) {
         res.status(500).json({ detail: err.message });
     }
@@ -33,10 +38,13 @@ router.get('/settings', async (req, res) => {
 
 router.get('/hero-slides', async (req, res) => {
     try {
+        const cached = memoryCache.get('hero-slides');
+        if (cached) return res.json({ success: true, data: cached });
         const items = await prisma.heroSlide.findMany({
             where: { is_active: true },
             orderBy: { sort_order: 'asc' }
         });
+        memoryCache.set('hero-slides', items, 60 * 1000);
         res.json({ success: true, data: items });
     } catch (err) {
         res.status(500).json({ detail: err.message });

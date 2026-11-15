@@ -9,10 +9,23 @@ const { notify } = require('../utils/notifications');
 const courierService = require('../services/courier');
 const { requireRole, logAdminAction } = require('../middleware/rbac');
 const { sendShippingUpdate } = require('../utils/mailer');
+const memoryCache = require('../utils/cache');
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 router.use(getAdmin);
+
+// Invalidate homepage and catalog cache on any successful admin write operation
+router.use((req, res, next) => {
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+        res.on('finish', () => {
+            if (res.statusCode < 400) {
+                memoryCache.flush();
+            }
+        });
+    }
+    next();
+});
 
 // RBAC Strict routes
 router.use('/analytics', requireRole(['admin']));

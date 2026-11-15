@@ -275,3 +275,4 @@ async function syncLocalToSupabase() {
 }
 
 syncLocalToSupabase();
+

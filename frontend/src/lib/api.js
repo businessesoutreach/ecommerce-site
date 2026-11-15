@@ -58,6 +58,19 @@ export function imgUrl(u) {
   return u;
 }
 
+export function optimizeImg(url, { width = 800, quality = "auto" } = {}) {
+  if (!url || typeof url !== "string") return "";
+  const resolved = imgUrl(url);
+  if (resolved.includes("res.cloudinary.com") && resolved.includes("/upload/")) {
+    if (resolved.includes("/upload/f_auto") || resolved.includes("/upload/q_auto") || resolved.includes("/upload/w_")) {
+      return resolved;
+    }
+    const transform = width ? `f_auto,q_${quality},w_${width},c_limit` : `f_auto,q_${quality}`;
+    return resolved.replace("/upload/", `/upload/${transform}/`);
+  }
+  return resolved;
+}
+
 export function waLink(number, message) {
   const n = String(number || "").replace(/[^0-9]/g, "");
   return `https://wa.me/${n}?text=${encodeURIComponent(message)}`;

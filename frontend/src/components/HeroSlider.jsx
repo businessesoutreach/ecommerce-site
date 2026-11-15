@@ -3,12 +3,18 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { useStore } from "../context/StoreContext";
+import { optimizeImg } from "../lib/api";
 
 export default function HeroSlider({ slides = [] }) {
   const { user } = useStore();
   const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [hasMounted, setHasMounted] = useState(false);
   const n = slides.length;
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   const next = useCallback(() => setIdx((i) => (i + 1) % Math.max(1, n)), [n]);
 
@@ -20,6 +26,7 @@ export default function HeroSlider({ slides = [] }) {
 
   if (!n) return <div className="skeleton w-full h-[70vh]" />;
   const s = slides[idx];
+  const optimizedHero = optimizeImg(s.image_url, { width: 1400 });
 
   return (
     <section
@@ -31,13 +38,19 @@ export default function HeroSlider({ slides = [] }) {
       <AnimatePresence mode="sync">
         <motion.div
           key={s.id || idx}
-          initial={{ opacity: 0, scale: 1.08 }}
+          initial={hasMounted ? { opacity: 0, scale: 1.05 } : false}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
           className="absolute inset-0"
         >
-          <img src={s.image_url} alt={s.title} className="h-full w-full object-cover" />
+          <img
+            src={optimizedHero}
+            alt={s.title}
+            className="h-full w-full object-cover"
+            loading={idx === 0 ? "eager" : "lazy"}
+            fetchPriority={idx === 0 ? "high" : "auto"}
+          />
           <div className="absolute inset-0 bg-gradient-to-r from-obsidian/90 via-obsidian/50 to-transparent" />
         </motion.div>
       </AnimatePresence>

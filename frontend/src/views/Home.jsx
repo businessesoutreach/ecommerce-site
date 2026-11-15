@@ -4,7 +4,7 @@ import useSWR from "swr";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, Zap, Flame, Package, Star, RotateCcw, DollarSign } from "lucide-react";
-import { http } from "../lib/api";
+import { http, optimizeImg } from "../lib/api";
 import { useStore } from "../context/StoreContext";
 import HeroSlider from "../components/HeroSlider";
 import ProductCard from "../components/ProductCard";
@@ -15,33 +15,43 @@ const SIZES = ["39", "40", "41", "42", "43", "44", "45", "46"];
 
 export default function Home({ initialData }) {
   const fetcher = async () => {
+    try {
+      const res = await http.get("/homepage");
+      if (res.data?.success && res.data?.data) {
+        return res.data.data;
+      }
+    } catch (_) {}
+
+    // Fallback if needed
     const [s, c, nw, flash, best, feat, settings, cms] = await Promise.all([
-      http.get("/hero-slides"),
-      http.get("/categories"),
-      http.get("/products?flag=new&limit=8"),
-      http.get("/products?flag=flash&limit=8"),
-      http.get("/products?flag=best&limit=4"),
-      http.get("/products?flag=featured&limit=8"),
-      http.get("/settings"),
+      http.get("/hero-slides").catch(() => ({ data: { data: [] } })),
+      http.get("/categories").catch(() => ({ data: { data: [] } })),
+      http.get("/products?flag=new&limit=8").catch(() => ({ data: { data: [] } })),
+      http.get("/products?flag=flash&limit=8").catch(() => ({ data: { data: [] } })),
+      http.get("/products?flag=best&limit=4").catch(() => ({ data: { data: [] } })),
+      http.get("/products?flag=featured&limit=8").catch(() => ({ data: { data: [] } })),
+      http.get("/settings").catch(() => ({ data: { data: {} } })),
       http.get("/admin/cms/homepage-sections").catch(() => ({ data: { data: [] } }))
     ]);
     return {
-      slides: s.data.data,
-      cats: c.data.data,
+      slides: s.data?.data || [],
+      cats: c.data?.data || [],
       data: { 
-        nw: nw.data.data, 
-        flash: flash.data.data, 
-        best: best.data.data, 
-        feat: feat.data.data,
-        settings: settings.data.data 
+        nw: nw.data?.data || [], 
+        flash: flash.data?.data || [], 
+        best: best.data?.data || [], 
+        feat: feat.data?.data || [],
+        settings: settings.data?.data || {}
       },
-      layout: cms.data.data.sort((a, b) => a.sort_order - b.sort_order)
+      layout: (cms.data?.data || []).sort((a, b) => a.sort_order - b.sort_order)
     };
   };
 
   const { data: homeData, isLoading: loading } = useSWR('home-data', fetcher, { 
     fallbackData: initialData,
-    revalidateOnFocus: false 
+    revalidateOnMount: false,
+    revalidateOnFocus: false,
+    dedupingInterval: 60000
   });
 
   const slides = homeData?.slides || [];
@@ -80,7 +90,7 @@ export default function Home({ initialData }) {
               )) : cats.map((c, i) => (
                 <ScrollReveal key={c.id} delay={i * 0.08}>
                   <Link to={`/collections/${c.slug}`} className="group relative block overflow-hidden rounded-none aspect-[3/4]">
-                    <img src={c.image_url} alt={c.name} className="absolute inset-0 h-full w-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                    <img src={optimizeImg(c.image_url, { width: 600 })} alt={c.name} loading="lazy" className="absolute inset-0 h-full w-full object-cover group-hover:scale-110 transition-transform duration-700" />
                     <div className="absolute inset-0 bg-gradient-to-t from-obsidian/90 via-obsidian/20 to-transparent" />
                     <div className="absolute bottom-0 p-5 text-white">
                       <span className="font-mono text-[10px]  tracking-widest text-white/70">{c.product_count} models</span>

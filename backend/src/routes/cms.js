@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../db');
+const memoryCache = require('../utils/cache');
 
 const cache = {
     data: {},
@@ -20,6 +20,7 @@ function setCache(key, data) {
 function clearCache(key) {
     delete cache.data[key];
     delete cache.timestamp[key];
+    memoryCache.flush();
 }
 
 // ==========================================
