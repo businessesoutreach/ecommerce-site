@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Home, Megaphone, Tag, Layers, Zap, FileText, Search, LayoutDashboard, Package, ShoppingCart, Ticket, Star, Users, LogOut, TrendingUp, AlertTriangle, Plus, Trash2, X, RotateCcw, DollarSign, Image as ImageIcon, Upload, MessageCircle, Search as SearchIcon, Filter, MoreVertical, Eye, Download, Printer, CheckCircle, Check, Truck, MapPin, Edit, Copy, Activity, Loader2, HelpCircle, ExternalLink, Clock } from "lucide-react";
+import { Home, Megaphone, Tag, Layers, Zap, FileText, Search, LayoutDashboard, Package, ShoppingCart, Ticket, Star, Users, LogOut, TrendingUp, AlertTriangle, Plus, Trash2, X, RotateCcw, DollarSign, Image as ImageIcon, Upload, MessageCircle, Search as SearchIcon, Filter, MoreVertical, Eye, Download, Printer, CheckCircle, Check, Truck, MapPin, Edit, Copy, Activity, Loader2, HelpCircle, ExternalLink, Clock, ArrowLeft } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell } from "recharts";
 import { http, fmt, imgUrl, waLink } from "../lib/api";
 import { useStore } from "../context/StoreContext";
@@ -23,7 +23,15 @@ const ORDER_STATES = ["placed", "confirmed", "packed", "shipped", "out_for_deliv
 export default function Admin() {
   const { user, logout } = useStore();
   const navigate = useNavigate();
-  const [tab, setTab] = useState("overview");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = searchParams.get("tab") || "overview";
+
+  const setTab = (newTab) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("tab", newTab);
+    next.delete("orderId");
+    setSearchParams(next);
+  };
 
   useEffect(() => {
     if (!user) navigate("/login");
@@ -322,17 +330,31 @@ function Overview({ setTab }) {
 }
 
 function Orders() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const orderId = searchParams.get("orderId");
+
   const [data, setData] = useState({ orders: [], pagination: {}, status_counts: {} });
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState({ page: 1, limit: 10, status: "all", payment: "all", date: "all", search: "" });
   const [searchInput, setSearchInput] = useState("");
   const [selected, setSelected] = useState([]);
-  const [viewOrder, setViewOrder] = useState(null);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [confirmStatusUpdate, setConfirmStatusUpdate] = useState(null);
   const [showStatusGuide, setShowStatusGuide] = useState(false);
   const [showCreateOrderModal, setShowCreateOrderModal] = useState(false);
   const [trackParcelOrder, setTrackParcelOrder] = useState(null);
+
+  const openOrder = (o) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("orderId", o.order_number || o.id);
+    setSearchParams(next);
+  };
+
+  const closeOrder = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("orderId");
+    setSearchParams(next);
+  };
 
   const load = () => {
     setLoading(true);
@@ -475,6 +497,18 @@ function Orders() {
     { id: "refunded", label: "Refunded", count: data.status_counts?.refunded || 0 },
   ];
 
+  if (orderId) {
+    const existingOrder = data.orders.find(o => o.order_number === orderId || o.id === orderId);
+    return (
+      <OrderDetailPage
+        orderId={orderId}
+        initialOrder={existingOrder}
+        onBack={closeOrder}
+        onUpdate={load}
+      />
+    );
+  }
+
   return (
     <div className="pb-10">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
@@ -585,7 +619,7 @@ function Orders() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {data.orders.length === 0 ? <tr><td colSpan="9" className="p-10 text-center text-gray-400 font-medium">No orders found matching your criteria.</td></tr> : data.orders.map(o => (
-                <tr key={o.id} className="hover:bg-gray-50/80 transition-colors cursor-pointer group" onClick={() => setViewOrder(o)}>
+                <tr key={o.id} className="hover:bg-gray-50/80 transition-colors cursor-pointer group" onClick={() => openOrder(o)}>
                   <td className="p-3.5" onClick={e => e.stopPropagation()}><input type="checkbox" checked={selected.includes(o.id)} onChange={() => toggleSelect(o.id)} className="accent-black rounded" /></td>
                   <td className="p-3.5 font-mono font-bold text-gray-900 group-hover:text-fire transition-colors">#{o.order_number}</td>
                   <td className="p-3.5">
@@ -624,7 +658,7 @@ function Orders() {
                       <>
                         <div className="fixed inset-0 z-10" onClick={() => setActiveDropdown(null)}></div>
                         <div className="absolute right-8 top-8 w-48 bg-white border border-gray-200 rounded-xl shadow-xl z-20 flex flex-col text-left py-1 text-xs">
-                          <button onClick={() => { setViewOrder(o); setActiveDropdown(null); }} className="px-4 py-2 hover:bg-gray-50 flex items-center gap-2 text-gray-800 font-medium"><Eye size={14}/> View Details</button>
+                          <button onClick={() => { openOrder(o); setActiveDropdown(null); }} className="px-4 py-2 hover:bg-gray-50 flex items-center gap-2 text-gray-800 font-medium"><Eye size={14}/> View Details</button>
                           {(o.tracking_number || o.status === 'shipped') && (
                             <button onClick={() => { setTrackParcelOrder(o); setActiveDropdown(null); }} className="px-4 py-2 hover:bg-gray-50 flex items-center gap-2 text-blue-600 font-medium"><Truck size={14}/> Track Parcel ({o.courier_name || 'Courier'})</button>
                           )}
@@ -734,8 +768,6 @@ function Orders() {
           }}
         />
       )}
-
-      {viewOrder && <OrderDetailsDrawer order={viewOrder} onClose={() => setViewOrder(null)} onUpdate={() => { load(); setViewOrder(null); }} />}
 
       {/* Confirmation Modal */}
       {confirmStatusUpdate && (
@@ -1272,11 +1304,13 @@ function CreateOrderModal({ onClose, onCreated }) {
   );
 }
 
-function OrderDetailsDrawer({ order, onClose, onUpdate }) {
-  const [status, setStatus] = useState(order.status);
-  const [note, setNote] = useState(order.customer_note || "");
-  const [trackingNumber, setTrackingNumber] = useState(order.tracking_number || "");
-  const [courierName, setCourierName] = useState(order.courier_name || "");
+function OrderDetailPage({ orderId, initialOrder, onBack, onUpdate }) {
+  const [order, setOrder] = useState(initialOrder || null);
+  const [loading, setLoading] = useState(!initialOrder);
+  const [status, setStatus] = useState(initialOrder?.status || "placed");
+  const [note, setNote] = useState(initialOrder?.customer_note || "");
+  const [trackingNumber, setTrackingNumber] = useState(initialOrder?.tracking_number || "");
+  const [courierName, setCourierName] = useState(initialOrder?.courier_name || "");
   const [savingNote, setSavingNote] = useState(false);
   const [refundOrder, setRefundOrder] = useState(null);
   
@@ -1285,36 +1319,60 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
   const [bookingCourier, setBookingCourier] = useState(false);
   const [courierConfig, setCourierConfig] = useState(null);
 
+  const fetchOrder = async () => {
+    try {
+      const res = await http.get(`/admin/orders/${orderId}`);
+      const ord = res.data?.data;
+      if (ord) {
+        setOrder(ord);
+        setStatus(ord.status);
+        setNote(ord.customer_note || "");
+        setTrackingNumber(ord.tracking_number || "");
+        setCourierName(ord.courier_name || "");
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.detail || "Order not found");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
+    fetchOrder();
     http.get('/admin/courier/config')
       .then(res => setCourierConfig(res.data?.data || { configured: false }))
       .catch(() => setCourierConfig({ configured: false }));
-  }, []);
+  }, [orderId]);
 
   const updateStatus = async (newStatus) => {
+    if (!order) return;
     setStatus(newStatus);
     setUpdatingStatus(true);
     try {
       await http.patch(`/admin/orders/${order.id}/status`, { status: newStatus, tracking_number: trackingNumber, courier_name: courierName });
       toast.success(`Order status updated to ${newStatus}`);
-      onUpdate();
+      fetchOrder();
+      if (onUpdate) onUpdate();
     } finally {
       setUpdatingStatus(false);
     }
   };
   
   const saveTracking = async () => {
+    if (!order) return;
     setSavingTracking(true);
     try {
       await http.patch(`/admin/orders/${order.id}/status`, { status, tracking_number: trackingNumber, courier_name: courierName });
       toast.success("Tracking information saved");
-      onUpdate();
+      fetchOrder();
+      if (onUpdate) onUpdate();
     } finally {
       setSavingTracking(false);
     }
   };
 
   const markAsShipped = async () => {
+    if (!order) return;
     if (!trackingNumber.trim()) {
       toast.error("Please enter a tracking number before marking as shipped");
       return;
@@ -1328,7 +1386,8 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
       });
       setStatus('shipped');
       toast.success("Order marked as Shipped & tracking notification sent!");
-      onUpdate();
+      fetchOrder();
+      if (onUpdate) onUpdate();
     } catch (e) {
       toast.error(e.response?.data?.detail || "Failed to update status");
     } finally {
@@ -1337,6 +1396,7 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
   };
 
   const markAsDelivered = async () => {
+    if (!order) return;
     setUpdatingStatus(true);
     try {
       await http.patch(`/admin/orders/${order.id}/status`, {
@@ -1346,7 +1406,8 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
       });
       setStatus('delivered');
       toast.success("Order confirmed as Delivered!");
-      onUpdate();
+      fetchOrder();
+      if (onUpdate) onUpdate();
     } catch (e) {
       toast.error(e.response?.data?.detail || "Failed to update status");
     } finally {
@@ -1355,6 +1416,7 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
   };
 
   const saveNote = async () => {
+    if (!order) return;
     setSavingNote(true);
     await http.patch(`/admin/orders/${order.id}/note`, { note });
     setSavingNote(false);
@@ -1362,13 +1424,15 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
   };
 
   const bookCourier = async () => {
+    if (!order) return;
     setBookingCourier(true);
     try {
       const res = await http.post(`/admin/orders/${order.id}/book-courier`);
       setTrackingNumber(res.data.data.awb);
       setCourierName(res.data.data.courier_name);
       toast.success("Courier booked successfully via API");
-      onUpdate();
+      fetchOrder();
+      if (onUpdate) onUpdate();
     } catch (e) {
       toast.error(e.response?.data?.detail || "Failed to book courier");
     } finally {
@@ -1390,6 +1454,7 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
   };
 
   const copyCustomerDetails = () => {
+    if (!order) return;
     const text = `Customer: ${order.customer_name}\nPhone: ${order.customer_phone}\nAddress: ${formatAddress(order.shipping_address)}\nOrder: #${order.order_number}\nAmount to Collect: Rs. ${order.total?.toLocaleString()} (${order.payment_method || 'COD'})`;
     navigator.clipboard.writeText(text);
     toast.success("Customer delivery details copied to clipboard!");
@@ -1417,9 +1482,8 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
   const stepOrder = ["placed", "confirmed", "processing", "packed", "shipped", "out_for_delivery", "delivered"];
   const currentStepIdx = stepOrder.indexOf(status);
 
-  // Status history map for milestone timestamps
   const historyMap = {};
-  (order.status_history || []).forEach(h => {
+  (order?.status_history || []).forEach(h => {
     historyMap[h.status] = h.at;
   });
 
@@ -1437,111 +1501,157 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
 
   const trackingPortalUrl = getTrackingPortalUrl(courierName, trackingNumber);
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto" onClick={onClose}>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.97 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.97 }}
-        transition={{ duration: 0.16 }}
-        className="w-full max-w-5xl max-h-[92vh] bg-white border border-gray-200 rounded-2xl shadow-2xl flex flex-col overflow-hidden my-auto"
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Top Header - Clean, High Contrast & Polished */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4 flex flex-wrap justify-between items-center gap-3 shrink-0">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <span className="font-mono font-black text-xl text-gray-900 tracking-tight">
-              #{order.order_number}
-            </span>
+  if (loading && !order) {
+    return (
+      <div className="pb-10 max-w-6xl mx-auto space-y-6">
+        <div className="flex items-center gap-3">
+          <button onClick={onBack} className="inline-flex items-center gap-2 px-3 py-1.5 bg-white hover:bg-gray-100 text-gray-800 font-bold text-xs rounded-lg border border-gray-300 shadow-sm transition-colors">
+            <ArrowLeft size={16} /> Back to Orders
+          </button>
+          <span className="text-gray-400">/</span>
+          <span className="text-xs font-mono font-bold text-gray-500">Loading Order #{orderId}...</span>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-2xl p-12 shadow-sm flex flex-col items-center justify-center min-h-[350px] gap-3">
+          <Loader2 size={32} className="animate-spin text-fire" />
+          <p className="text-sm font-bold text-gray-700">Loading order drop details...</p>
+        </div>
+      </div>
+    );
+  }
 
-            {/* Status Badge */}
-            <span className={`text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${getStatusBadge(status)}`}>
+  if (!order) {
+    return (
+      <div className="pb-10 max-w-6xl mx-auto space-y-6">
+        <div className="flex items-center gap-3">
+          <button onClick={onBack} className="inline-flex items-center gap-2 px-3 py-1.5 bg-white hover:bg-gray-100 text-gray-800 font-bold text-xs rounded-lg border border-gray-300 shadow-sm transition-colors">
+            <ArrowLeft size={16} /> Back to Orders
+          </button>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-2xl p-12 shadow-sm text-center space-y-4">
+          <AlertTriangle size={36} className="text-fire mx-auto" />
+          <h2 className="text-lg font-bold text-gray-900">Order #{orderId} Not Found</h2>
+          <p className="text-sm text-gray-500 max-w-md mx-auto">This order does not exist or the reference in the URL is invalid.</p>
+          <button onClick={onBack} className="px-5 py-2 bg-black text-white font-bold text-xs rounded-lg hover:bg-fire transition-colors shadow-sm">
+            Return to Orders List
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="pb-10 max-w-6xl mx-auto space-y-6 animate-in fade-in duration-150">
+      {/* Breadcrumb & Navigation Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onBack}
+            className="inline-flex items-center gap-2 px-3.5 py-2 bg-white hover:bg-gray-100 text-gray-900 font-bold text-xs rounded-lg border border-gray-300 shadow-sm transition-all hover:-translate-x-0.5"
+          >
+            <ArrowLeft size={16} /> Back to Orders
+          </button>
+          <span className="text-gray-300 text-sm hidden sm:inline">/</span>
+          <span className="text-xs font-mono font-bold text-gray-500 hidden sm:inline">Orders</span>
+          <span className="text-gray-300 text-sm hidden sm:inline">/</span>
+          <span className="text-xs font-mono font-black text-gray-900 hidden sm:inline">#{order.order_number}</span>
+        </div>
+
+        <div className="flex items-center gap-2.5">
+          {updatingStatus && <Loader2 size={16} className="animate-spin text-gray-500" />}
+
+          <select
+            disabled={updatingStatus}
+            value={status}
+            onChange={(e) => updateStatus(e.target.value)}
+            className="border border-gray-300 bg-white text-gray-900 px-3 py-1.5 text-xs font-bold rounded-lg focus:outline-none focus:ring-1 focus:ring-black shadow-sm"
+          >
+            {ORDER_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+
+          <button
+            onClick={() => window.print()}
+            className="px-3.5 py-1.5 border border-gray-300 bg-white hover:bg-gray-50 text-gray-800 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors"
+            title="Print Thermal Shipping Slip"
+          >
+            <Printer size={14} /> <span>Print Slip</span>
+          </button>
+
+          <a
+            href={waLink(order.customer_phone, `Hi ${order.customer_name}, update regarding your SOLEKICKS order #${order.order_number}:`)}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#25D366] hover:bg-[#20ba59] text-white font-bold text-xs rounded-lg shadow-sm transition-colors"
+          >
+            <MessageCircle size={14} /> <span>WhatsApp</span>
+          </a>
+        </div>
+      </div>
+
+      {/* Main Order Card */}
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        {/* Top Order Title Header */}
+        <div className="p-6 border-b border-gray-200 flex flex-wrap justify-between items-center gap-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-mono font-black text-2xl text-gray-900 tracking-tight">
+              #{order.order_number}
+            </h1>
+            <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full border ${getStatusBadge(status)}`}>
               ● {status}
             </span>
-
-            {/* Payment Badge */}
-            <span className={`text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${
+            <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full border ${
               order.payment_status === 'paid'
                 ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
                 : 'bg-amber-50 text-amber-800 border-amber-300'
             }`}>
               Payment: {order.payment_status || 'COD'}
             </span>
-
-            <span className="text-xs text-gray-500 font-medium hidden sm:inline">
-              • Placed on {new Date(order.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+            <span className="text-xs text-gray-500 font-medium hidden md:inline">
+              • Placed on {new Date(order.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
           </div>
 
-          {/* Quick Controls */}
-          <div className="flex items-center gap-2">
-            {updatingStatus && <Loader2 size={16} className="animate-spin text-gray-500" />}
-
-            <select
-              disabled={updatingStatus}
-              value={status}
-              onChange={(e) => updateStatus(e.target.value)}
-              className="border border-gray-300 bg-white text-gray-900 px-3 py-1.5 text-xs font-bold rounded-lg focus:outline-none focus:ring-1 focus:ring-black shadow-sm"
-            >
-              {ORDER_STATES.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-
-            <button
-              onClick={() => window.print()}
-              className="px-3 py-1.5 border border-gray-300 bg-white hover:bg-gray-50 text-gray-800 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors"
-              title="Print Thermal Shipping Label"
-            >
-              <Printer size={14} /> <span className="hidden sm:inline">Print Slip</span>
-            </button>
-
-            <button
-              onClick={onClose}
-              className="p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Close Modal"
-            >
-              <X size={20} />
-            </button>
+          <div className="font-mono text-xl font-black text-gray-900">
+            {fmt(order.total)}
           </div>
         </div>
 
-        {/* At-a-Glance 4-Stat Strip */}
-        <div className="bg-gray-50/90 border-b border-gray-200 px-6 py-3 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs shrink-0">
+        {/* 4-Stat Quick Ribbon */}
+        <div className="bg-gray-50/90 border-b border-gray-200 px-6 py-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
           <div>
             <span className="text-gray-500 font-bold uppercase text-[10px] tracking-wider block">Total Payable</span>
-            <div className="flex items-baseline gap-1 mt-0.5">
-              <span className="font-mono text-base font-black text-gray-900">{fmt(order.total)}</span>
+            <div className="flex items-baseline gap-1 mt-1">
+              <span className="font-mono text-lg font-black text-gray-900">{fmt(order.total)}</span>
               <span className="text-[10px] font-bold text-gray-500">({order.payment_method || 'COD'})</span>
             </div>
           </div>
           <div>
             <span className="text-gray-500 font-bold uppercase text-[10px] tracking-wider block">Customer</span>
-            <span className="font-bold text-gray-900 truncate block mt-0.5">{order.customer_name}</span>
-            <span className="text-[10px] text-gray-500 font-mono">{order.customer_phone}</span>
+            <span className="font-bold text-gray-900 truncate block mt-1 text-sm">{order.customer_name}</span>
+            <span className="text-[11px] text-gray-500 font-mono">{order.customer_phone}</span>
           </div>
           <div>
             <span className="text-gray-500 font-bold uppercase text-[10px] tracking-wider block">Logistics Partner</span>
-            <span className="font-bold text-gray-900 block font-mono mt-0.5">
+            <span className="font-bold text-gray-900 block font-mono mt-1 text-sm">
               {order.courier_name || 'Unassigned'}
             </span>
-            <span className="text-[10px] text-gray-500 font-mono truncate block">
+            <span className="text-[11px] text-gray-500 font-mono truncate block">
               {trackingNumber ? `AWB: ${trackingNumber}` : 'Pending booking'}
             </span>
           </div>
           <div>
             <span className="text-gray-500 font-bold uppercase text-[10px] tracking-wider block">Status & Items</span>
-            <span className="font-bold text-gray-900 capitalize block mt-0.5">{status}</span>
-            <span className="text-[10px] text-gray-500">
+            <span className="font-bold text-gray-900 capitalize block mt-1 text-sm">{status}</span>
+            <span className="text-[11px] text-gray-500">
               {order.items?.length || 0} sneaker item{order.items?.length === 1 ? '' : 's'}
             </span>
           </div>
         </div>
 
-        {/* Milestone Progress Stepper */}
+        {/* Milestone Stepper */}
         {status !== 'cancelled' ? (
-          <div className="bg-white border-b border-gray-200 p-4 px-6 shrink-0">
+          <div className="p-6 border-b border-gray-200 bg-white">
             <div className="max-w-3xl mx-auto flex items-center justify-between relative">
-              {/* Connecting background line */}
-              <div className="absolute top-3.5 left-6 right-6 h-0.5 bg-gray-200 z-0"></div>
+              <div className="absolute top-4 left-6 right-6 h-0.5 bg-gray-200 z-0"></div>
 
               {STEPS.map((step, idx) => {
                 const targetIdx = stepOrder.indexOf(step.key);
@@ -1550,9 +1660,9 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
                 const timeStr = historyMap[step.key] ? new Date(historyMap[step.key]).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : null;
 
                 return (
-                  <div key={step.key} className="flex flex-col items-center relative z-10 bg-white px-2">
+                  <div key={step.key} className="flex flex-col items-center relative z-10 bg-white px-3">
                     <div
-                      className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs transition-all border-2 ${
+                      className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all border-2 ${
                         isPassed
                           ? "bg-black border-black text-white shadow-sm"
                           : isCurrent
@@ -1560,9 +1670,9 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
                           : "bg-white border-gray-300 text-gray-400"
                       }`}
                     >
-                      {isPassed ? <Check size={14} /> : idx + 1}
+                      {isPassed ? <Check size={16} /> : idx + 1}
                     </div>
-                    <span className={`text-[11px] font-bold uppercase tracking-wider mt-1.5 ${isCurrent ? "text-fire font-black" : isPassed ? "text-gray-900" : "text-gray-400"}`}>
+                    <span className={`text-xs font-bold uppercase tracking-wider mt-2 ${isCurrent ? "text-fire font-black" : isPassed ? "text-gray-900" : "text-gray-400"}`}>
                       {step.label}
                     </span>
                     {timeStr && <span className="font-mono text-[10px] text-gray-500">{timeStr}</span>}
@@ -1572,140 +1682,128 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
             </div>
           </div>
         ) : (
-          <div className="bg-rose-50 border-b border-rose-200 p-3 px-6 text-rose-800 text-xs font-bold flex items-center gap-2">
-            <AlertTriangle size={15} /> Order #{order.order_number} has been cancelled.
+          <div className="bg-rose-50 border-b border-rose-200 p-4 px-6 text-rose-800 text-xs font-bold flex items-center gap-2">
+            <AlertTriangle size={16} /> Order #{order.order_number} has been cancelled.
           </div>
         )}
 
-        {/* Modal Scrollable Body (Balanced 2-Columns) */}
-        <div className="flex flex-col lg:flex-row flex-1 overflow-y-auto divide-y lg:divide-y-0 lg:divide-x divide-gray-200">
+        {/* Two-Column Body */}
+        <div className="flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-gray-200">
           
-          {/* Left Column: Items Ordered & Financial Calculation (58% width) */}
-          <div className="w-full lg:w-[58%] p-5 sm:p-6 space-y-5 bg-white flex flex-col justify-between">
-            <div className="space-y-5">
-              
-              {/* Sneaker Items Card */}
-              <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-                <div className="bg-gray-50 p-3 px-4 border-b border-gray-200 flex justify-between items-center">
-                  <h3 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 flex items-center gap-2">
-                    <Package size={15} className="text-fire" /> Ordered Sneakers ({order.items?.length || 0})
-                  </h3>
-                  <span className="font-mono text-xs text-gray-500 font-medium">
-                    Order Ref #{order.order_number}
-                  </span>
-                </div>
+          {/* Left Column: Sneaker Items & Financial Summary (58% width) */}
+          <div className="w-full lg:w-[58%] p-6 space-y-6 bg-white">
+            
+            {/* Sneaker Items */}
+            <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+              <div className="bg-gray-50 p-3.5 px-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 flex items-center gap-2">
+                  <Package size={15} className="text-fire" /> Ordered Sneakers ({order.items?.length || 0})
+                </h3>
+                <span className="font-mono text-xs text-gray-500 font-medium">
+                  Order Ref #{order.order_number}
+                </span>
+              </div>
 
-                <div className="divide-y divide-gray-100 p-2">
-                  {order.items?.map((it, idx) => (
-                    <div key={idx} className="p-3 flex items-center justify-between gap-3 hover:bg-gray-50/70 rounded-lg transition-colors">
-                      <div className="flex items-center gap-3.5 min-w-0">
-                        {it.image_url ? (
-                          <img src={it.image_url} alt={it.product_name} className="w-16 h-16 object-cover bg-gray-50 rounded-lg border border-gray-200 shrink-0 shadow-sm" />
-                        ) : (
-                          <div className="w-16 h-16 bg-gray-100 rounded-lg grid place-items-center text-gray-400 shrink-0 border border-gray-200"><Package size={20}/></div>
-                        )}
-                        <div className="min-w-0">
-                          <p className="font-bold text-sm text-gray-900 truncate">{it.product_name}</p>
-                          <div className="flex items-center gap-2 mt-1.5">
-                            <span className="bg-black text-white font-mono text-[11px] font-bold px-2 py-0.5 rounded">
-                              EU {it.size}
-                            </span>
-                            <span className="text-gray-500 font-mono text-xs">
-                              {fmt(it.unit_price)} × {it.quantity}
-                            </span>
-                          </div>
+              <div className="divide-y divide-gray-100 p-2">
+                {order.items?.map((it, idx) => (
+                  <div key={idx} className="p-3.5 flex items-center justify-between gap-4 hover:bg-gray-50/70 rounded-lg transition-colors">
+                    <div className="flex items-center gap-4 min-w-0">
+                      {it.image_url ? (
+                        <img src={it.image_url} alt={it.product_name} className="w-16 h-16 object-cover bg-gray-50 rounded-lg border border-gray-200 shrink-0 shadow-sm" />
+                      ) : (
+                        <div className="w-16 h-16 bg-gray-100 rounded-lg grid place-items-center text-gray-400 shrink-0 border border-gray-200"><Package size={22}/></div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="font-bold text-sm text-gray-900 truncate">{it.product_name}</p>
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <span className="bg-black text-white font-mono text-xs font-bold px-2 py-0.5 rounded">
+                            EU {it.size}
+                          </span>
+                          <span className="text-gray-500 font-mono text-xs">
+                            {fmt(it.unit_price)} × {it.quantity}
+                          </span>
                         </div>
                       </div>
-                      <div className="text-right shrink-0">
-                        <span className="font-mono font-bold text-sm text-gray-900 block">
-                          {fmt(it.unit_price * it.quantity)}
-                        </span>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="font-mono font-bold text-base text-gray-900 block">
+                        {fmt(it.unit_price * it.quantity)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Financial Calculation Breakdown */}
+            <div className="bg-gray-50/80 border border-gray-200 rounded-xl p-5 space-y-3 text-xs shadow-sm">
+              <div className="flex justify-between text-gray-600 font-medium">
+                <span>Subtotal</span>
+                <span className="font-mono font-bold text-gray-900">{fmt(order.subtotal)}</span>
+              </div>
+              <div className="flex justify-between text-gray-600 font-medium">
+                <span>Shipping Fee</span>
+                <span className="font-mono font-bold">
+                  {order.shipping_fee === 0 ? <span className="text-emerald-700 font-bold uppercase text-[10px] bg-emerald-100 px-2 py-0.5 rounded">FREE SHIPPING</span> : fmt(order.shipping_fee)}
+                </span>
+              </div>
+              {order.discount_amount > 0 && (
+                <div className="flex justify-between text-fire font-bold">
+                  <span>Discount Applied</span>
+                  <span className="font-mono">-{fmt(order.discount_amount)}</span>
+                </div>
+              )}
+              {order.store_credit_used > 0 && (
+                <div className="flex justify-between text-emerald-700 font-bold">
+                  <span>Store Credit Used</span>
+                  <span className="font-mono">-{fmt(order.store_credit_used)}</span>
+                </div>
+              )}
+              <div className="pt-3.5 border-t border-gray-200 flex justify-between items-baseline text-sm">
+                <div>
+                  <span className="font-display font-black text-gray-900 block text-base">Total Due ({order.payment_method || 'COD'})</span>
+                  <span className="text-xs text-gray-500 font-medium">Cash to collect upon delivery</span>
+                </div>
+                <span className="font-mono text-2xl font-black text-fire">{fmt(order.total)}</span>
+              </div>
+            </div>
+
+            {/* Chronological Event Log */}
+            {order.status_history?.length > 0 && (
+              <div className="border border-gray-200 rounded-xl p-5 bg-white space-y-3 text-xs shadow-sm">
+                <p className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 flex items-center gap-1.5 border-b border-gray-100 pb-2.5">
+                  <Activity size={15} className="text-fire" /> Order Timeline & Event History
+                </p>
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {order.status_history.map((h, i) => (
+                    <div key={i} className="flex justify-between items-start text-xs py-1.5 border-b border-dashed border-gray-100 last:border-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold uppercase tracking-wider text-gray-900 bg-gray-100 px-2 py-0.5 rounded text-[10px]">{h.status}</span>
+                        <span className="text-gray-700 font-medium">{h.note || 'Status updated'}</span>
                       </div>
+                      <span className="font-mono text-[11px] text-gray-400 shrink-0 ml-2">
+                        {new Date(h.at).toLocaleDateString()} {new Date(h.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
                     </div>
                   ))}
                 </div>
               </div>
-
-              {/* Financial Calculation Breakdown */}
-              <div className="bg-gray-50/80 border border-gray-200 rounded-xl p-4 sm:p-5 space-y-2.5 text-xs shadow-sm">
-                <div className="flex justify-between text-gray-600 font-medium">
-                  <span>Subtotal</span>
-                  <span className="font-mono font-bold text-gray-900">{fmt(order.subtotal)}</span>
-                </div>
-                <div className="flex justify-between text-gray-600 font-medium">
-                  <span>Shipping Fee</span>
-                  <span className="font-mono font-bold">
-                    {order.shipping_fee === 0 ? <span className="text-emerald-700 font-bold uppercase text-[10px] bg-emerald-100 px-1.5 py-0.5 rounded">FREE SHIPPING</span> : fmt(order.shipping_fee)}
-                  </span>
-                </div>
-                {order.discount_amount > 0 && (
-                  <div className="flex justify-between text-fire font-bold">
-                    <span>Discount Applied</span>
-                    <span className="font-mono">-{fmt(order.discount_amount)}</span>
-                  </div>
-                )}
-                {order.store_credit_used > 0 && (
-                  <div className="flex justify-between text-emerald-700 font-bold">
-                    <span>Store Credit Used</span>
-                    <span className="font-mono">-{fmt(order.store_credit_used)}</span>
-                  </div>
-                )}
-                <div className="pt-3 border-t border-gray-200 flex justify-between items-baseline text-sm">
-                  <div>
-                    <span className="font-display font-black text-gray-900 block">Total Due ({order.payment_method || 'COD'})</span>
-                    <span className="text-[11px] text-gray-500 font-medium">Cash to collect upon delivery</span>
-                  </div>
-                  <span className="font-mono text-xl font-black text-fire">{fmt(order.total)}</span>
-                </div>
-              </div>
-
-              {/* Chronological Status Event Log */}
-              {order.status_history?.length > 0 && (
-                <div className="border border-gray-200 rounded-xl p-4 bg-white space-y-2.5 text-xs shadow-sm">
-                  <p className="font-display font-bold uppercase tracking-wider text-[11px] text-gray-900 flex items-center gap-1.5 border-b border-gray-100 pb-2">
-                    <Activity size={14} className="text-fire" /> Order Timeline & Event History
-                  </p>
-                  <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-                    {order.status_history.map((h, i) => (
-                      <div key={i} className="flex justify-between items-start text-xs py-1 border-b border-dashed border-gray-100 last:border-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold uppercase tracking-wider text-gray-900 bg-gray-100 px-1.5 py-0.5 rounded text-[10px]">{h.status}</span>
-                          <span className="text-gray-600">{h.note || 'Status updated'}</span>
-                        </div>
-                        <span className="font-mono text-[10px] text-gray-400 shrink-0 ml-2">
-                          {new Date(h.at).toLocaleDateString()} {new Date(h.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Modal Bottom Close Button */}
-            <div className="pt-4 border-t border-gray-100 flex justify-end gap-2">
-              <button
-                onClick={onClose}
-                className="px-6 py-2.5 border border-gray-300 rounded-lg text-xs font-bold hover:bg-gray-100 text-gray-800 transition-colors shadow-sm"
-              >
-                Close View
-              </button>
-            </div>
+            )}
           </div>
 
           {/* Right Column: Customer Details, Fulfillment & Logistics (42% width) */}
-          <div className="w-full lg:w-[42%] p-5 sm:p-6 space-y-5 bg-gray-50/70">
+          <div className="w-full lg:w-[42%] p-6 space-y-6 bg-gray-50/70">
             
             {/* Customer & Address Card */}
-            <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 shadow-sm space-y-3.5 text-xs">
-              <div className="flex justify-between items-center border-b border-gray-100 pb-2.5">
+            <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4 text-xs">
+              <div className="flex justify-between items-center border-b border-gray-100 pb-3">
                 <h3 className="font-display font-bold uppercase tracking-wider text-gray-900 flex items-center gap-1.5">
                   <Users size={15} className="text-fire" /> Customer & Destination
                 </h3>
                 <button
                   type="button"
                   onClick={copyCustomerDetails}
-                  className="text-[11px] font-bold text-gray-600 hover:text-black flex items-center gap-1 hover:underline"
+                  className="text-xs font-bold text-gray-600 hover:text-black flex items-center gap-1 hover:underline"
                   title="Copy full delivery address and details"
                 >
                   <Copy size={12} /> Copy All
@@ -1714,23 +1812,23 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
 
               <div>
                 <div className="flex justify-between items-baseline">
-                  <span className="font-extrabold text-sm text-gray-900">{order.customer_name}</span>
+                  <span className="font-extrabold text-base text-gray-900">{order.customer_name}</span>
                   <a
                     href={waLink(order.customer_phone, `Hi ${order.customer_name}, update regarding your SOLEKICKS order #${order.order_number}:`)}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 font-bold px-2.5 py-1 bg-[#25D366] hover:bg-[#20ba59] text-white rounded-md text-[11px] shadow-sm transition-colors"
+                    className="inline-flex items-center gap-1.5 font-bold px-2.5 py-1 bg-[#25D366] hover:bg-[#20ba59] text-white rounded-md text-xs shadow-sm transition-colors"
                   >
                     <MessageCircle size={13} /> WhatsApp
                   </a>
                 </div>
-                <p className="font-mono text-gray-700 font-bold mt-1">{order.customer_phone}</p>
+                <p className="font-mono text-gray-800 font-bold mt-1 text-sm">{order.customer_phone}</p>
                 {order.customer_email && <p className="text-gray-500 mt-0.5">{order.customer_email}</p>}
               </div>
 
-              <div className="pt-2.5 border-t border-gray-100 text-gray-700 leading-relaxed">
+              <div className="pt-3 border-t border-gray-100 text-gray-700 leading-relaxed">
                 <span className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Delivery Address</span>
-                <p className="font-medium text-gray-900 bg-gray-50 p-2.5 rounded-lg border border-gray-200 leading-normal">
+                <p className="font-medium text-gray-900 bg-gray-50 p-3 rounded-lg border border-gray-200 leading-normal">
                   {formatAddress(order.shipping_address)}
                 </p>
               </div>
@@ -1744,8 +1842,8 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
             </div>
 
             {/* Courier & Fulfillment Dispatch Card */}
-            <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 shadow-sm space-y-3.5 text-xs">
-              <div className="flex justify-between items-center border-b border-gray-100 pb-2.5">
+            <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4 text-xs">
+              <div className="flex justify-between items-center border-b border-gray-100 pb-3">
                 <h3 className="font-display font-bold uppercase tracking-wider text-gray-900 flex items-center gap-1.5">
                   <Truck size={15} className="text-fire" /> Courier & Fulfillment
                 </h3>
@@ -1764,7 +1862,7 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
                       key={c}
                       type="button"
                       onClick={() => setCourierName(c)}
-                      className={`px-2.5 py-1 text-xs font-bold font-mono rounded-md border transition-all ${
+                      className={`px-3 py-1 text-xs font-bold font-mono rounded-md border transition-all ${
                         courierName.toLowerCase().includes(c.toLowerCase())
                           ? "bg-black text-white border-black shadow-sm"
                           : "bg-gray-100 text-gray-700 border-gray-200 hover:border-black hover:text-black"
@@ -1780,7 +1878,7 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
                   placeholder="Courier Partner (e.g. TCS)"
                   value={courierName}
                   onChange={e => setCourierName(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs font-medium focus:border-black focus:ring-1 focus:ring-black focus:outline-none bg-white mb-2.5"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs font-medium focus:border-black focus:ring-1 focus:ring-black focus:outline-none bg-white mb-3"
                 />
 
                 <label className="text-[10px] font-bold uppercase text-gray-500 block mb-1.5">Consignment / Tracking Number</label>
@@ -1796,29 +1894,28 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
                     type="button"
                     onClick={saveTracking}
                     disabled={savingTracking || updatingStatus}
-                    className="absolute right-1.5 top-1/2 -translate-y-1/2 px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-[11px] rounded border border-gray-300 transition-colors"
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs rounded border border-gray-300 transition-colors"
                   >
                     {savingTracking ? <Loader2 size={12} className="animate-spin" /> : "Save"}
                   </button>
                 </div>
 
-                {/* Direct Link to Official Courier Tracking Portal */}
                 {trackingPortalUrl && (
                   <div className="mt-2 text-right">
                     <a
                       href={trackingPortalUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:underline"
+                      className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline"
                     >
-                      Open {courierName} Live Portal <ExternalLink size={12} />
+                      Open {courierName} Live Tracking Portal <ExternalLink size={12} />
                     </a>
                   </div>
                 )}
               </div>
 
               {/* Primary Dispatch Action Buttons */}
-              <div className="space-y-2 pt-1 border-t border-gray-100">
+              <div className="space-y-2 pt-2 border-t border-gray-100">
                 {status !== 'shipped' && status !== 'delivered' && status !== 'cancelled' && (
                   <button
                     onClick={markAsShipped}
@@ -1852,7 +1949,7 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
             </div>
 
             {/* Internal Staff Warehouse Note */}
-            <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 shadow-sm space-y-2.5 text-xs">
+            <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-3 text-xs">
               <h3 className="font-display font-bold uppercase tracking-wider text-gray-900 flex items-center gap-1.5">
                 <MapPin size={15} className="text-fire" /> Warehouse Staff Note
               </h3>
@@ -1860,7 +1957,7 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
                 value={note}
                 onChange={e => setNote(e.target.value)}
                 placeholder="Private remarks for warehouse staff / packers..."
-                className="w-full border border-gray-300 rounded-lg p-2.5 text-xs focus:border-black focus:ring-1 focus:ring-black focus:outline-none bg-gray-50 min-h-[60px] resize-none text-gray-800"
+                className="w-full border border-gray-300 rounded-lg p-2.5 text-xs focus:border-black focus:ring-1 focus:ring-black focus:outline-none bg-gray-50 min-h-[65px] resize-none text-gray-800"
               />
               <button
                 onClick={saveNote}
@@ -1880,7 +1977,7 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
             </button>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {refundOrder && (
         <RefundModal
@@ -1888,7 +1985,8 @@ function OrderDetailsDrawer({ order, onClose, onUpdate }) {
           onClose={() => setRefundOrder(null)}
           onDone={() => {
             setRefundOrder(null);
-            onUpdate();
+            fetchOrder();
+            if (onUpdate) onUpdate();
           }}
         />
       )}

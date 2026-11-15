@@ -652,6 +652,36 @@ router.get('/orders', async (req, res) => {
     }
 });
 
+router.get('/orders/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const order = await prisma.order.findFirst({
+            where: {
+                OR: [
+                    { id: id },
+                    { order_number: id }
+                ]
+            },
+            include: {
+                items: {
+                    include: { product: true }
+                },
+                status_history: {
+                    orderBy: { at: 'desc' }
+                }
+            }
+        });
+
+        if (!order) {
+            return res.status(404).json({ detail: 'Order not found' });
+        }
+
+        res.json({ success: true, data: order });
+    } catch (err) {
+        res.status(500).json({ detail: err.message });
+    }
+});
+
 router.post('/orders', async (req, res) => {
     try {
         const {
