@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Home, Megaphone, Tag, Layers, Zap, FileText, Search, LayoutDashboard, Package, ShoppingCart, Ticket, Star, Users, LogOut, TrendingUp, AlertTriangle, Plus, Trash2, X, RotateCcw, DollarSign, Image as ImageIcon, Upload, MessageCircle, Search as SearchIcon, Filter, MoreVertical, Eye, Download, Printer, CheckCircle, Check, Truck, MapPin, Edit, Copy, Activity, Loader2, HelpCircle, ExternalLink, Clock, ArrowLeft, ArrowUpRight, ArrowDownRight, RefreshCw, ShoppingBag, Box, ChevronRight, Sun, Moon, Bell } from "lucide-react";
+import { Home, Megaphone, Tag, Layers, Zap, FileText, Search, LayoutDashboard, Package, ShoppingCart, Ticket, Star, Users, LogOut, TrendingUp, AlertTriangle, Plus, Trash2, X, RotateCcw, DollarSign, Image as ImageIcon, Upload, MessageCircle, Search as SearchIcon, Filter, MoreVertical, Eye, Download, Printer, CheckCircle, Check, Truck, MapPin, Edit, Copy, Activity, Loader2, HelpCircle, ExternalLink, Clock, ArrowLeft, ArrowUpRight, ArrowDownRight, RefreshCw, ShoppingBag, Box, ChevronRight, ChevronDown, Sun, Moon, Bell } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell } from "recharts";
 import { http, fmt, imgUrl, waLink } from "../lib/api";
 import { useStore } from "../context/StoreContext";
@@ -18,7 +18,7 @@ import PagesCMS from './cms/PagesCMS';
 import SeoCMS from './cms/SeoCMS';
 
 
-const ORDER_STATES = ["placed", "confirmed", "packed", "shipped", "out_for_delivery", "delivered", "cancelled"];
+const ORDER_STATES = ["placed", "confirmed", "packed", "shipped", "out_for_delivery", "delivered", "cancelled", "returned"];
 
 export default function Admin() {
   const { user, logout } = useStore();
@@ -881,9 +881,88 @@ function Overview({ setTab, isDark }) {
   );
 }
 
+const STATUS_CONFIG = {
+  placed: { label: "Placed", dot: "bg-sky-500", badge: "bg-sky-50 text-sky-800 border-sky-300 dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-800" },
+  confirmed: { label: "Confirmed", dot: "bg-purple-500", badge: "bg-purple-50 text-purple-800 border-purple-300 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800" },
+  packed: { label: "Packed", dot: "bg-indigo-500", badge: "bg-indigo-50 text-indigo-800 border-indigo-300 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800" },
+  shipped: { label: "Shipped", dot: "bg-blue-500", badge: "bg-blue-50 text-blue-800 border-blue-300 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800" },
+  out_for_delivery: { label: "Out for Delivery", dot: "bg-amber-500", badge: "bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800" },
+  delivered: { label: "Delivered", dot: "bg-emerald-500", badge: "bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800" },
+  cancelled: { label: "Cancelled", dot: "bg-rose-500", badge: "bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800" },
+  returned: { label: "Returned", dot: "bg-zinc-500", badge: "bg-zinc-100 text-zinc-800 border-zinc-300 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700" },
+};
+
+function StatusBadgeDropdown({ currentStatus, onSelect, disabled = false, size = "sm" }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const cfg = STATUS_CONFIG[currentStatus] || { label: currentStatus || "Unknown", dot: "bg-gray-400", badge: "bg-gray-100 text-gray-800 border-gray-300 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700" };
+
+  useEffect(() => {
+    const handleOutside = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    if (open) {
+      document.addEventListener("mousedown", handleOutside);
+      return () => document.removeEventListener("mousedown", handleOutside);
+    }
+  }, [open]);
+
+  return (
+    <div className="relative inline-block text-left" ref={ref} onClick={e => e.stopPropagation()}>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setOpen(!open)}
+        className={`inline-flex items-center gap-1.5 rounded-full border font-bold uppercase tracking-wider transition-all shadow-sm ${cfg.badge} ${size === "md" ? "px-3.5 py-1.5 text-xs" : "px-2.5 py-1 text-[11px]"} hover:scale-[1.02] active:scale-[0.98] cursor-pointer`}
+        title="Click to change order status"
+      >
+        <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot} animate-pulse`} />
+        <span>{cfg.label}</span>
+        <ChevronDown size={11} className={`transition-transform duration-150 ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 sm:left-0 sm:right-auto mt-1.5 w-48 rounded-xl bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
+          <div className="px-3 py-1 text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider border-b border-gray-100 dark:border-zinc-800 mb-1">
+            Change Status
+          </div>
+          {ORDER_STATES.map((s) => {
+            const itemCfg = STATUS_CONFIG[s] || { label: s, dot: "bg-gray-400" };
+            const isSelected = s === currentStatus;
+            return (
+              <button
+                key={s}
+                type="button"
+                onClick={() => {
+                  onSelect(s);
+                  setOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-left transition-colors ${
+                  isSelected
+                    ? "bg-fire/10 text-fire font-bold dark:bg-fire/20"
+                    : "text-gray-700 dark:text-zinc-200 hover:bg-gray-50 dark:hover:bg-zinc-800"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className={`w-2 h-2 rounded-full ${itemCfg.dot}`} />
+                  <span>{itemCfg.label}</span>
+                </div>
+                {isSelected && <Check size={13} className="text-fire" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Orders() {
   const [searchParams, setSearchParams] = useSearchParams();
   const orderId = searchParams.get("orderId");
+  const action = searchParams.get("action");
 
   const [data, setData] = useState({ orders: [], pagination: {}, status_counts: {} });
   const [loading, setLoading] = useState(true);
@@ -891,19 +970,26 @@ function Orders() {
   const [searchInput, setSearchInput] = useState("");
   const [selected, setSelected] = useState([]);
   const [activeDropdown, setActiveDropdown] = useState(null);
-  const [confirmStatusUpdate, setConfirmStatusUpdate] = useState(null);
   const [showStatusGuide, setShowStatusGuide] = useState(false);
-  const [showCreateOrderModal, setShowCreateOrderModal] = useState(false);
   const [trackParcelOrder, setTrackParcelOrder] = useState(null);
 
   const openOrder = (o) => {
     const next = new URLSearchParams(searchParams);
     next.set("orderId", o.order_number || o.id);
+    next.delete("action");
     setSearchParams(next);
   };
 
   const closeOrder = () => {
     const next = new URLSearchParams(searchParams);
+    next.delete("orderId");
+    next.delete("action");
+    setSearchParams(next);
+  };
+
+  const openNewOrder = () => {
+    const next = new URLSearchParams(searchParams);
+    next.set("action", "new");
     next.delete("orderId");
     setSearchParams(next);
   };
@@ -931,11 +1017,20 @@ function Orders() {
     return () => clearTimeout(handler);
   }, [searchInput]);
 
-  const updateStatus = async (id, status) => { await http.patch(`/admin/orders/${id}/status`, { status }); toast.success("Status updated"); load(); };
+  const updateStatus = async (id, status) => {
+    try {
+      await http.patch(`/admin/orders/${id}/status`, { status });
+      toast.success(`Order status updated to ${status}`);
+      load();
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "Failed to update status");
+    }
+  };
+
   const bulkUpdateStatus = async (status) => { 
     if(!window.confirm(`Mark ${selected.length} orders as ${status}?`)) return;
     await http.patch(`/admin/orders/bulk-status`, { orderIds: selected, status });
-    toast.success(`Updated ${selected.length} orders`);
+    toast.success(`Updated ${selected.length} orders to ${status}`);
     load();
   };
 
@@ -958,10 +1053,10 @@ function Orders() {
         .section { margin: 8px 0; }
         .label { font-size: 9px; text-transform: uppercase; color: #666; font-weight: bold; letter-spacing: 1px; }
         table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-        th { background: #f0f0f0; padding: 5px 8px; text-align: left; font-size: 9px; text-transform: uppercase; }
-        td { padding: 5px 8px; border-bottom: 1px solid #eee; }
-        .total-row td { font-weight: bold; border-top: 2px solid #111; }
-        .barcode { text-align: center; font-family: monospace; font-size: 14px; letter-spacing: 4px; margin-top: 10px; border: 1px solid #ccc; padding: 6px; }
+        th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
+        th { background: #f0f0f0; }
+        .total-row { font-weight: bold; }
+        .barcode { text-align: center; margin-top: 15px; font-family: monospace; font-size: 20px; letter-spacing: 3px; }
       </style></head><body>
       ${selectedOrders.map(o => `
         <div class="slip">
@@ -969,14 +1064,13 @@ function Orders() {
             <div class="logo">SOLEKICKS<span class="dot">.</span></div>
             <div class="order-num">#${o.order_number}</div>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div style="display:flex; justify-content:space-between;">
             <div class="section">
-              <div class="label">Ship To</div>
+              <div class="label">Customer</div>
               <strong>${o.customer_name}</strong><br>
               ${o.shipping_address?.address_l1 || ''}<br>
-              ${o.shipping_address?.address_l2 ? o.shipping_address.address_l2 + '<br>' : ''}
               ${o.shipping_address?.city || ''}, ${o.shipping_address?.province || ''}<br>
-              ${o.customer_phone}
+              Phone: ${o.customer_phone}
             </div>
             <div class="section">
               <div class="label">Order Info</div>
@@ -1041,13 +1135,31 @@ function Orders() {
 
   const TABS = [
     { id: "all", label: "All", count: data.status_counts?.all || 0 },
-    { id: "pending", label: "Pending", count: data.status_counts?.pending || 0 },
-    { id: "processing", label: "Processing", count: data.status_counts?.processing || 0 },
+    { id: "placed", label: "Placed", count: data.status_counts?.placed || 0 },
+    { id: "confirmed", label: "Confirmed", count: data.status_counts?.confirmed || 0 },
+    { id: "packed", label: "Packed", count: data.status_counts?.packed || 0 },
     { id: "shipped", label: "Shipped", count: data.status_counts?.shipped || 0 },
     { id: "delivered", label: "Delivered", count: data.status_counts?.delivered || 0 },
     { id: "cancelled", label: "Cancelled", count: data.status_counts?.cancelled || 0 },
-    { id: "refunded", label: "Refunded", count: data.status_counts?.refunded || 0 },
+    { id: "returned", label: "Returned", count: data.status_counts?.returned || 0 },
   ];
+
+  if (action === "new") {
+    return (
+      <CreateOrderPage
+        onBack={closeOrder}
+        onCreated={(created) => {
+          const next = new URLSearchParams(searchParams);
+          next.delete("action");
+          if (created?.order_number || created?.id) {
+            next.set("orderId", created.order_number || created.id);
+          }
+          setSearchParams(next);
+          load();
+        }}
+      />
+    );
+  }
 
   if (orderId) {
     const existingOrder = data.orders.find(o => o.order_number === orderId || o.id === orderId);
@@ -1065,43 +1177,51 @@ function Orders() {
     <div className="pb-10">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="font-display tracking-tight text-2xl font-black text-gray-900">Orders Management</h1>
-          <p className="text-sm text-gray-600 font-medium">Search, dispatch, track, and fulfill customer sneaker drops</p>
+          <h1 className="font-display tracking-tight text-2xl font-black text-gray-900 dark:text-zinc-100">Orders Management</h1>
+          <p className="text-sm text-gray-600 dark:text-zinc-400 font-medium">Search, dispatch, track, and fulfill customer sneaker drops</p>
         </div>
         <div className="flex gap-2.5">
-          <button onClick={() => setShowStatusGuide(true)} className="px-3 py-2 text-xs font-bold border border-gray-300 rounded-lg bg-white hover:bg-gray-50 text-gray-800 transition-colors flex items-center gap-1.5 shadow-sm">
-            <HelpCircle size={14} className="text-gray-500" /> Status Guide
+          <button onClick={() => setShowStatusGuide(true)} className="px-3 py-2 text-xs font-bold border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-700 text-gray-800 dark:text-zinc-200 transition-colors flex items-center gap-1.5 shadow-sm">
+            <HelpCircle size={14} className="text-gray-500 dark:text-zinc-400" /> Status Guide
           </button>
-          <button onClick={exportOrders} className="px-3 py-2 text-xs font-bold border border-gray-300 rounded-lg bg-white hover:bg-gray-50 text-gray-800 transition-colors flex items-center gap-1.5 shadow-sm">
-            <Download size={14} className="text-gray-500" /> Export CSV
+          <button onClick={exportOrders} className="px-3 py-2 text-xs font-bold border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-700 text-gray-800 dark:text-zinc-200 transition-colors flex items-center gap-1.5 shadow-sm">
+            <Download size={14} className="text-gray-500 dark:text-zinc-400" /> Export CSV
           </button>
-          <button onClick={() => setShowCreateOrderModal(true)} className="px-4 py-2 text-xs font-bold bg-black text-white hover:bg-fire rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
+          <button onClick={openNewOrder} className="px-4 py-2 text-xs font-bold bg-black dark:bg-fire text-white hover:bg-fire dark:hover:bg-fire/90 rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
             <Plus size={15} /> Create Order
           </button>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex overflow-x-auto hide-scrollbar border-b border-gray-200 mb-6 gap-1">
+      {/* Status Filter Tabs */}
+      <div className="flex overflow-x-auto hide-scrollbar border-b border-gray-200 dark:border-zinc-800 mb-6 gap-1">
         {TABS.map(t => (
           <button key={t.id} onClick={() => setQuery({ ...query, status: t.id, page: 1 })}
-            className={`px-4 py-3 text-sm font-bold whitespace-nowrap border-b-2 flex items-center gap-2 transition-all ${query.status === t.id ? 'border-black text-black' : 'border-transparent text-gray-500 hover:text-black hover:border-gray-300'}`}>
+            className={`px-4 py-3 text-sm font-bold whitespace-nowrap border-b-2 flex items-center gap-2 transition-all ${
+              query.status === t.id
+                ? 'border-fire text-fire dark:border-fire dark:text-fire font-black'
+                : 'border-transparent text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 hover:border-gray-300'
+            }`}>
             {t.label}
-            <span className={`text-xs px-2.5 py-0.5 rounded-full font-mono font-bold ${query.status === t.id ? 'bg-black text-white' : 'bg-gray-100 text-gray-700 border border-gray-200'}`}>{t.count}</span>
+            <span className={`text-xs px-2.5 py-0.5 rounded-full font-mono font-bold ${
+              query.status === t.id
+                ? 'bg-fire text-white'
+                : 'bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 border border-gray-200 dark:border-zinc-700'
+            }`}>{t.count}</span>
           </button>
         ))}
       </div>
 
-      {/* Filters & Search */}
-      <div className="bg-white p-4 border border-gray-200 mb-6 flex flex-col lg:flex-row gap-4 items-center shadow-sm rounded-xl">
+      {/* Search & Dynamic Filter Bar */}
+      <div className="bg-white dark:bg-zinc-900 p-4 border border-gray-200 dark:border-zinc-800 mb-6 flex flex-col lg:flex-row gap-4 items-center shadow-sm rounded-xl">
         <form onSubmit={handleSearch} className="flex-1 relative w-full">
-          <SearchIcon size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <SearchIcon size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-500" />
           <input
             type="text"
-            placeholder="Live search by order #, customer, phone, or email..."
+            placeholder="Live search by order #, customer name, phone, or email..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            className="w-full pl-10 pr-9 py-2 border border-gray-300 text-sm font-medium text-gray-900 placeholder:text-gray-400 focus:border-black focus:ring-1 focus:ring-black focus:outline-none rounded-lg bg-white"
+            className="w-full pl-10 pr-9 py-2 border border-gray-300 dark:border-zinc-700 text-sm font-medium text-gray-900 dark:text-zinc-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:border-black dark:focus:border-fire focus:ring-1 focus:ring-black dark:focus:ring-fire focus:outline-none rounded-lg bg-white dark:bg-zinc-800"
           />
           {searchInput && (
             <button
@@ -1118,109 +1238,138 @@ function Orders() {
           )}
         </form>
         <div className="flex flex-wrap gap-2 w-full lg:w-auto">
-          <select value={query.status} onChange={(e) => setQuery({ ...query, status: e.target.value, page: 1 })} className="border border-gray-300 px-3 py-2 text-xs font-bold text-gray-800 focus:outline-none rounded-lg bg-white shadow-sm">
+          <select
+            value={query.status}
+            onChange={(e) => setQuery({ ...query, status: e.target.value, page: 1 })}
+            className="border border-gray-300 dark:border-zinc-700 px-3 py-2 text-xs font-bold text-gray-800 dark:text-zinc-100 focus:outline-none rounded-lg bg-white dark:bg-zinc-800 shadow-sm"
+          >
             <option value="all">Status: All</option>
             {ORDER_STATES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
-          <select value={query.payment} onChange={(e) => setQuery({ ...query, payment: e.target.value, page: 1 })} className="border border-gray-300 px-3 py-2 text-xs font-bold text-gray-800 focus:outline-none rounded-lg bg-white shadow-sm">
+          <select
+            value={query.payment}
+            onChange={(e) => setQuery({ ...query, payment: e.target.value, page: 1 })}
+            className="border border-gray-300 dark:border-zinc-700 px-3 py-2 text-xs font-bold text-gray-800 dark:text-zinc-100 focus:outline-none rounded-lg bg-white dark:bg-zinc-800 shadow-sm"
+          >
             <option value="all">Payment: All</option>
             <option value="paid">Paid</option>
             <option value="pending">Pending</option>
             <option value="failed">Failed</option>
             <option value="refunded">Refunded</option>
           </select>
-          <select value={query.date} onChange={(e) => setQuery({ ...query, date: e.target.value, page: 1 })} className="border border-gray-300 px-3 py-2 text-xs font-bold text-gray-800 focus:outline-none rounded-lg bg-white shadow-sm">
+          <select
+            value={query.date}
+            onChange={(e) => setQuery({ ...query, date: e.target.value, page: 1 })}
+            className="border border-gray-300 dark:border-zinc-700 px-3 py-2 text-xs font-bold text-gray-800 dark:text-zinc-100 focus:outline-none rounded-lg bg-white dark:bg-zinc-800 shadow-sm"
+          >
             <option value="all">Date: All time</option>
             <option value="today">Today</option>
             <option value="yesterday">Yesterday</option>
             <option value="7d">Last 7 days</option>
             <option value="30d">Last 30 days</option>
           </select>
-          <button onClick={resetFilters} className="text-xs font-bold text-gray-500 hover:text-fire px-3 py-2">Reset</button>
+          <button onClick={resetFilters} className="text-xs font-bold text-gray-500 dark:text-zinc-400 hover:text-fire px-3 py-2">
+            Reset
+          </button>
         </div>
       </div>
 
-      {/* Bulk Actions */}
+      {/* Bulk Actions Floating Bar */}
       {selected.length > 0 && (
-        <div className="bg-black text-white p-3.5 flex justify-between items-center mb-4 sticky top-0 z-10 shadow-lg rounded-xl">
-          <span className="font-bold text-sm">{selected.length} orders selected</span>
+        <div className="bg-black dark:bg-zinc-900 border border-zinc-800 text-white p-3.5 flex justify-between items-center mb-4 sticky top-14 z-20 shadow-xl rounded-xl animate-in slide-in-from-top-2 duration-150">
+          <span className="font-bold text-sm flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-fire animate-ping" />
+            {selected.length} order{selected.length === 1 ? '' : 's'} selected
+          </span>
           <div className="flex gap-2">
             <button onClick={printPackingSlips} className="px-3 py-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 rounded-md transition-colors flex items-center gap-1.5"><Printer size={13}/> Print Slips</button>
-            <button onClick={() => bulkUpdateStatus('processing')} className="px-3 py-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 rounded-md transition-colors">Mark Processing</button>
+            <button onClick={() => bulkUpdateStatus('packed')} className="px-3 py-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 rounded-md transition-colors">Mark Packed</button>
             <button onClick={() => bulkUpdateStatus('shipped')} className="px-3 py-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 rounded-md transition-colors">Mark Shipped</button>
           </div>
         </div>
       )}
 
-      {/* Table */}
-      <div className="bg-white border border-gray-200 overflow-x-auto min-h-[400px] rounded-xl shadow-sm">
-        {loading ? <div className="p-10 flex justify-center"><div className="w-6 h-6 border-2 border-black border-t-transparent rounded-full animate-spin"></div></div> : (
-          <table className="w-full text-sm text-left">
-            <thead className="bg-gray-50 border-b border-gray-200 font-mono text-[11px] font-bold uppercase tracking-wider text-gray-700">
-              <tr>
-                <th className="p-3.5 w-10"><input type="checkbox" checked={data.orders.length > 0 && selected.length === data.orders.length} onChange={selectAll} className="accent-black rounded" /></th>
-                <th className="p-3.5">Order</th>
+      {/* Orders Data Table */}
+      <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm">
+        {loading ? (
+          <div className="p-12 text-center text-gray-400 dark:text-zinc-500 font-mono flex items-center justify-center gap-2">
+            <Loader2 size={18} className="animate-spin text-fire" /> Loading orders drop...
+          </div>
+        ) : (
+          <table className="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr className="border-b border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/80 text-gray-600 dark:text-zinc-300 font-bold uppercase tracking-wider text-[11px]">
+                <th className="p-3.5 w-10"><input type="checkbox" checked={selected.length === data.orders.length && data.orders.length > 0} onChange={selectAll} className="accent-black rounded" /></th>
+                <th className="p-3.5">Order Ref</th>
                 <th className="p-3.5">Customer</th>
-                <th className="p-3.5">Items</th>
+                <th className="p-3.5">Sneakers</th>
                 <th className="p-3.5">Total</th>
                 <th className="p-3.5">Payment</th>
-                <th className="p-3.5">Status</th>
+                <th className="p-3.5">Status (1-Click)</th>
                 <th className="p-3.5">Date</th>
                 <th className="p-3.5 text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
-              {data.orders.length === 0 ? <tr><td colSpan="9" className="p-10 text-center text-gray-400 font-medium">No orders found matching your criteria.</td></tr> : data.orders.map(o => (
-                <tr key={o.id} className="hover:bg-gray-50/80 transition-colors cursor-pointer group" onClick={() => openOrder(o)}>
-                  <td className="p-3.5" onClick={e => e.stopPropagation()}><input type="checkbox" checked={selected.includes(o.id)} onChange={() => toggleSelect(o.id)} className="accent-black rounded" /></td>
-                  <td className="p-3.5 font-mono font-bold text-gray-900 group-hover:text-fire transition-colors">#{o.order_number}</td>
-                  <td className="p-3.5">
-                    <div className="font-semibold text-gray-900">{o.customer_name}</div>
-                    <div className="text-xs text-gray-500 font-mono">{o.customer_phone}</div>
+            <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
+              {data.orders.length === 0 ? (
+                <tr>
+                  <td colSpan="9" className="p-12 text-center text-gray-400 dark:text-zinc-500 font-medium">
+                    No sneaker orders found matching your filters.
                   </td>
-                  <td className="p-3.5 font-mono text-gray-600">{o.items?.length || 0} pair{o.items?.length === 1 ? '' : 's'}</td>
-                  <td className="p-3.5 font-mono font-bold text-gray-900">{fmt(o.total)}</td>
+                </tr>
+              ) : data.orders.map(o => (
+                <tr key={o.id} className="hover:bg-gray-50/80 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer group" onClick={() => openOrder(o)}>
+                  <td className="p-3.5" onClick={e => e.stopPropagation()}>
+                    <input type="checkbox" checked={selected.includes(o.id)} onChange={() => toggleSelect(o.id)} className="accent-black rounded" />
+                  </td>
+                  <td className="p-3.5 font-mono font-bold text-gray-900 dark:text-zinc-100 group-hover:text-fire transition-colors">
+                    #{o.order_number}
+                  </td>
+                  <td className="p-3.5">
+                    <div className="font-semibold text-gray-900 dark:text-zinc-100">{o.customer_name}</div>
+                    <div className="text-xs text-gray-500 dark:text-zinc-400 font-mono">{o.customer_phone}</div>
+                  </td>
+                  <td className="p-3.5 font-mono text-gray-600 dark:text-zinc-300">
+                    {o.items?.length || 0} pair{o.items?.length === 1 ? '' : 's'}
+                  </td>
+                  <td className="p-3.5 font-mono font-bold text-gray-900 dark:text-zinc-100">
+                    {fmt(o.total)}
+                  </td>
                   <td className="p-3.5">
                     <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${
-                      o.payment_status === 'paid' ? 'bg-emerald-50 text-emerald-700 border-emerald-300' :
-                      o.payment_status === 'failed' ? 'bg-rose-50 text-rose-700 border-rose-300' :
-                      'bg-amber-50 text-amber-800 border-amber-300'
+                      o.payment_status === 'paid' ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800' :
+                      o.payment_status === 'failed' ? 'bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800' :
+                      'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800'
                     }`}>
                       {o.payment_status || 'COD'}
                     </span>
                   </td>
-                  <td className="p-3.5">
-                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${
-                      o.status === 'delivered' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
-                      o.status === 'shipped' ? 'bg-blue-50 text-blue-800 border-blue-300' :
-                      o.status === 'processing' ? 'bg-amber-50 text-amber-800 border-amber-300' :
-                      o.status === 'confirmed' ? 'bg-purple-50 text-purple-800 border-purple-300' :
-                      o.status === 'cancelled' ? 'bg-rose-50 text-rose-800 border-rose-300' :
-                      'bg-gray-100 text-gray-800 border-gray-300'
-                    }`}>
-                      {o.status}
-                    </span>
+                  <td className="p-3.5" onClick={e => e.stopPropagation()}>
+                    <StatusBadgeDropdown
+                      currentStatus={o.status}
+                      onSelect={(newStatus) => updateStatus(o.id, newStatus)}
+                    />
                   </td>
-                  <td className="p-3.5 text-gray-500 font-mono text-xs">{new Date(o.created_at).toLocaleDateString()}</td>
+                  <td className="p-3.5 text-gray-500 dark:text-zinc-400 font-mono text-xs">
+                    {new Date(o.created_at).toLocaleDateString()}
+                  </td>
                   <td className="p-3.5 text-center relative" onClick={e => e.stopPropagation()}>
-                    <button onClick={() => setActiveDropdown(activeDropdown === o.id ? null : o.id)} className="p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors">
+                    <button onClick={() => setActiveDropdown(activeDropdown === o.id ? null : o.id)} className="p-1.5 text-gray-400 hover:text-gray-900 dark:hover:text-zinc-100 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-md transition-colors">
                       <MoreVertical size={16}/>
                     </button>
                     {activeDropdown === o.id && (
                       <>
-                        <div className="fixed inset-0 z-10" onClick={() => setActiveDropdown(null)}></div>
-                        <div className="absolute right-8 top-8 w-48 bg-white border border-gray-200 rounded-xl shadow-xl z-20 flex flex-col text-left py-1 text-xs">
-                          <button onClick={() => { openOrder(o); setActiveDropdown(null); }} className="px-4 py-2 hover:bg-gray-50 flex items-center gap-2 text-gray-800 font-medium"><Eye size={14}/> View Details</button>
+                        <div className="fixed inset-0 z-30" onClick={() => setActiveDropdown(null)}></div>
+                        <div className="absolute right-8 top-8 w-44 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl shadow-xl z-40 flex flex-col text-left py-1 text-xs">
+                          <button onClick={() => { openOrder(o); setActiveDropdown(null); }} className="px-4 py-2 hover:bg-gray-50 dark:hover:bg-zinc-800 flex items-center gap-2 text-gray-800 dark:text-zinc-100 font-medium"><Eye size={14}/> View Full Order</button>
                           {(o.tracking_number || o.status === 'shipped') && (
-                            <button onClick={() => { setTrackParcelOrder(o); setActiveDropdown(null); }} className="px-4 py-2 hover:bg-gray-50 flex items-center gap-2 text-blue-600 font-medium"><Truck size={14}/> Track Parcel ({o.courier_name || 'Courier'})</button>
+                            <button onClick={() => { setTrackParcelOrder(o); setActiveDropdown(null); }} className="px-4 py-2 hover:bg-gray-50 dark:hover:bg-zinc-800 flex items-center gap-2 text-blue-600 dark:text-blue-400 font-medium"><Truck size={14}/> Track Parcel</button>
                           )}
-                          <div className="border-t border-gray-100 my-1"></div>
-                          <div className="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Update Status</div>
-                          {ORDER_STATES.map(s => (
-                            <button key={s} onClick={() => { setConfirmStatusUpdate({ order: o, newStatus: s }); setActiveDropdown(null); }} className={`px-4 py-1.5 hover:bg-gray-50 text-left capitalize ${o.status === s ? 'font-bold bg-gray-50 text-gray-900' : 'text-gray-600'}`}>
-                              {s}
-                            </button>
-                          ))}
+                          <button onClick={() => {
+                            navigator.clipboard.writeText(o.order_number);
+                            toast.success("Order reference copied!");
+                            setActiveDropdown(null);
+                          }} className="px-4 py-2 hover:bg-gray-50 dark:hover:bg-zinc-800 flex items-center gap-2 text-gray-600 dark:text-zinc-300 font-medium"><Copy size={14}/> Copy Order #</button>
                         </div>
                       </>
                     )}
@@ -1232,23 +1381,23 @@ function Orders() {
         )}
       </div>
 
-      {/* Proper Pagination Bar */}
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 bg-white p-4 border border-gray-200 rounded-xl shadow-sm">
-        <div className="flex items-center gap-3 text-xs text-gray-700 font-medium">
+      {/* Pagination Bar */}
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 bg-white dark:bg-zinc-900 p-4 border border-gray-200 dark:border-zinc-800 rounded-xl shadow-sm">
+        <div className="flex items-center gap-3 text-xs text-gray-700 dark:text-zinc-300 font-medium">
           <span>Rows per page:</span>
           <select
             value={query.limit}
             onChange={(e) => setQuery({ ...query, limit: Number(e.target.value), page: 1 })}
-            className="border border-gray-300 rounded-md px-2.5 py-1 text-xs font-mono font-bold bg-white text-gray-900 focus:outline-none focus:ring-1 focus:ring-black shadow-sm"
+            className="border border-gray-300 dark:border-zinc-700 rounded-md px-2.5 py-1 text-xs font-mono font-bold bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-black shadow-sm"
           >
             <option value={10}>10</option>
             <option value={25}>25</option>
             <option value={50}>50</option>
             <option value={100}>100</option>
           </select>
-          <span className="font-mono text-gray-600">
+          <span className="font-mono text-gray-600 dark:text-zinc-400">
             {data.pagination?.totalCount > 0 ? (
-              <>Showing <strong className="text-gray-900">{(query.page - 1) * query.limit + 1}</strong> to <strong className="text-gray-900">{Math.min(query.page * query.limit, data.pagination.totalCount)}</strong> of <strong className="text-gray-900">{data.pagination.totalCount}</strong> orders</>
+              <>Showing <strong className="text-gray-900 dark:text-zinc-100">{(query.page - 1) * query.limit + 1}</strong> to <strong className="text-gray-900 dark:text-zinc-100">{Math.min(query.page * query.limit, data.pagination.totalCount)}</strong> of <strong className="text-gray-900 dark:text-zinc-100">{data.pagination.totalCount}</strong> orders</>
             ) : "0 orders found"}
           </span>
         </div>
@@ -1258,7 +1407,7 @@ function Orders() {
             <button
               disabled={query.page === 1}
               onClick={() => setQuery({ ...query, page: 1 })}
-              className="px-2.5 py-1 border border-gray-300 rounded-md bg-white hover:bg-gray-100 disabled:opacity-40 text-xs font-bold text-gray-800 transition-colors shadow-sm"
+              className="px-2.5 py-1 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 disabled:opacity-40 text-xs font-bold text-gray-800 dark:text-zinc-200 transition-colors shadow-sm"
               title="First Page"
             >
               «
@@ -1266,7 +1415,7 @@ function Orders() {
             <button
               disabled={query.page === 1}
               onClick={() => setQuery({ ...query, page: query.page - 1 })}
-              className="px-3 py-1 border border-gray-300 rounded-md bg-white hover:bg-gray-100 disabled:opacity-40 text-xs font-bold text-gray-800 transition-colors shadow-sm"
+              className="px-3 py-1 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 disabled:opacity-40 text-xs font-bold text-gray-800 dark:text-zinc-200 transition-colors shadow-sm"
             >
               Prev
             </button>
@@ -1283,8 +1432,8 @@ function Orders() {
                   onClick={() => setQuery({ ...query, page: pNum })}
                   className={`w-8 h-7 text-xs font-bold font-mono rounded-md border transition-all ${
                     query.page === pNum
-                      ? "bg-black text-white border-black shadow-sm"
-                      : "bg-white text-gray-800 border-gray-300 hover:bg-gray-100 hover:border-black"
+                      ? "bg-black dark:bg-fire text-white border-black dark:border-fire shadow-sm"
+                      : "bg-white dark:bg-zinc-800 text-gray-800 dark:text-zinc-200 border-gray-300 dark:border-zinc-700 hover:bg-gray-100 dark:hover:bg-zinc-700"
                   }`}
                 >
                   {pNum}
@@ -1295,14 +1444,14 @@ function Orders() {
             <button
               disabled={query.page === data.pagination.totalPages}
               onClick={() => setQuery({ ...query, page: query.page + 1 })}
-              className="px-3 py-1 border border-gray-300 rounded-md bg-white hover:bg-gray-100 disabled:opacity-40 text-xs font-bold text-gray-800 transition-colors shadow-sm"
+              className="px-3 py-1 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 disabled:opacity-40 text-xs font-bold text-gray-800 dark:text-zinc-200 transition-colors shadow-sm"
             >
               Next
             </button>
             <button
               disabled={query.page === data.pagination.totalPages}
               onClick={() => setQuery({ ...query, page: data.pagination.totalPages })}
-              className="px-2.5 py-1 border border-gray-300 rounded-md bg-white hover:bg-gray-100 disabled:opacity-40 text-xs font-bold text-gray-800 transition-colors shadow-sm"
+              className="px-2.5 py-1 border border-gray-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 disabled:opacity-40 text-xs font-bold text-gray-800 dark:text-zinc-200 transition-colors shadow-sm"
               title="Last Page"
             >
               »
@@ -1311,106 +1460,37 @@ function Orders() {
         )}
       </div>
 
-      {showCreateOrderModal && (
-        <CreateOrderModal
-          onClose={() => setShowCreateOrderModal(false)}
-          onCreated={() => {
-            load();
-            setShowCreateOrderModal(false);
-          }}
-        />
-      )}
-
-      {/* Confirmation Modal */}
-      {confirmStatusUpdate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-obsidian/40 backdrop-blur-sm" onClick={() => setConfirmStatusUpdate(null)}>
-          <div className="bg-white p-6 max-w-sm w-full shadow-2xl border-t-4 border-obsidian" onClick={e => e.stopPropagation()}>
-            <h3 className="font-display text-lg font-semibold mb-2">Update Status</h3>
-            <p className="text-sm text-ink-500 mb-6">Are you sure you want to mark Order <strong>#{confirmStatusUpdate.order.order_number}</strong> as <strong className="capitalize text-obsidian">{confirmStatusUpdate.newStatus}</strong>?</p>
-            <div className="flex gap-3 justify-end">
-              <button onClick={() => setConfirmStatusUpdate(null)} className="px-4 py-2 text-sm font-bold text-ink-500 hover:text-obsidian">Cancel</button>
-              <button onClick={() => { updateStatus(confirmStatusUpdate.order.id, confirmStatusUpdate.newStatus); setConfirmStatusUpdate(null); }} className="px-4 py-2 text-sm font-bold bg-obsidian text-white hover:bg-fire transition-colors">Confirm Update</button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Status Guide Modal */}
       {showStatusGuide && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-obsidian/40 backdrop-blur-sm" onClick={() => setShowStatusGuide(false)}>
-          <div className="bg-white max-w-2xl w-full shadow-2xl flex flex-col max-h-[80vh]" onClick={e => e.stopPropagation()}>
-            <div className="p-6 border-b border-ink-200 flex justify-between items-center bg-ink-50">
-              <h3 className="font-display text-lg font-semibold flex items-center gap-2"><HelpCircle size={18}/> Order Status Guide</h3>
-              <button onClick={() => setShowStatusGuide(false)} className="text-ink-400 hover:text-fire"><X size={20}/></button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setShowStatusGuide(false)}>
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 max-w-xl w-full shadow-2xl rounded-2xl overflow-hidden flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
+            <div className="p-5 border-b border-gray-200 dark:border-zinc-800 flex justify-between items-center bg-gray-50 dark:bg-zinc-800/50">
+              <h3 className="font-display text-base font-bold text-gray-900 dark:text-zinc-100 flex items-center gap-2"><HelpCircle size={18} className="text-fire"/> Order Status Lifecycle Guide</h3>
+              <button onClick={() => setShowStatusGuide(false)} className="text-gray-400 hover:text-fire"><X size={20}/></button>
             </div>
-            <div className="p-6 overflow-y-auto">
-              <div className="space-y-6">
-                <div>
-                  <h4 className="font-bold text-sm mb-3 text-obsidian border-b border-ink-200 pb-2">Internal Statuses</h4>
-                  <ul className="space-y-3 text-sm">
-                    <li><strong className="bg-ink-100 px-2 py-0.5 rounded mr-2">placed</strong> Customer has completed checkout. Action needed: Review payment.</li>
-                    <li><strong className="bg-ink-100 px-2 py-0.5 rounded mr-2">confirmed</strong> Payment verified. Action needed: Pick items.</li>
-                    <li><strong className="bg-ink-100 px-2 py-0.5 rounded mr-2">processing</strong> Order is currently being handled/packed in the warehouse.</li>
-                    <li><strong className="bg-ink-100 px-2 py-0.5 rounded mr-2">packed</strong> Ready for courier pickup. Label should be generated.</li>
-                    <li><strong className="bg-ink-100 px-2 py-0.5 rounded mr-2">shipped</strong> Handed over to courier (e.g. TCS). Tracking is active.</li>
-                    <li><strong className="bg-ink-100 px-2 py-0.5 rounded mr-2">delivered</strong> Courier confirms successful delivery to customer.</li>
-                    <li><strong className="bg-ink-100 px-2 py-0.5 rounded mr-2">cancelled</strong> Order terminated before shipping.</li>
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="font-bold text-sm mb-3 text-obsidian border-b border-ink-200 pb-2">TCS Tracking Integration</h4>
-                  <p className="text-sm text-ink-500 mb-2">When an order is marked as <strong>shipped</strong> or a tracking number is generated via "Book Courier via TCS", the system will map the following TCS events:</p>
-                  <ul className="space-y-2 text-sm">
-                    <li><span className="text-blue-500 font-bold">Transit:</span> Parcel is moving through TCS network.</li>
-                    <li><span className="text-orange-500 font-bold">Out for Delivery:</span> Rider is on the way to the customer today.</li>
-                    <li><span className="text-red-500 font-bold">Exception:</span> Delivery attempt failed, address issue, or customer refused.</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Track Parcel Modal (Admin View) */}
-      {trackParcelOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-obsidian/40 backdrop-blur-sm" onClick={() => setTrackParcelOrder(null)}>
-          <div className="bg-white max-w-lg w-full shadow-2xl flex flex-col max-h-[80vh]" onClick={e => e.stopPropagation()}>
-            <div className="p-4 border-b border-ink-200 flex justify-between items-center bg-obsidian text-white">
-              <h3 className="font-display text-base font-semibold flex items-center gap-2"><Truck size={16}/> Tracking: #{trackParcelOrder.tracking_number || trackParcelOrder.order_number}</h3>
-              <button onClick={() => setTrackParcelOrder(null)} className="text-white/70 hover:text-white"><X size={20}/></button>
-            </div>
-            <div className="p-6 overflow-y-auto">
-              <div className="mb-6 p-4 border border-ink-200 bg-ink-50 text-sm flex justify-between">
-                <div>
-                  <div className="font-bold text-obsidian">{trackParcelOrder.courier_name || 'TCS'} Delivery</div>
-                  <div className="text-ink-500">{trackParcelOrder.customer_name}</div>
-                </div>
-                <div className="text-right">
-                  <div className="font-mono font-bold text-fire">{trackParcelOrder.tracking_number || 'N/A'}</div>
-                </div>
-              </div>
-              <div className="relative pl-6 border-l-2 border-ink-200 space-y-6">
-                {/* Mock timeline for now, typically this would fetch from API */}
-                <div className="relative">
-                  <div className="absolute -left-[31px] bg-white border-2 border-green-500 w-4 h-4 rounded-full"></div>
-                  <p className="text-sm font-bold text-green-600">Shipped</p>
-                  <p className="text-xs text-ink-400">Package handed to courier</p>
-                </div>
-                <div className="relative">
-                  <div className="absolute -left-[31px] bg-white border-2 border-blue-500 w-4 h-4 rounded-full"></div>
-                  <p className="text-sm font-bold text-blue-600">In Transit</p>
-                  <p className="text-xs text-ink-400">Arrived at origin facility</p>
-                </div>
-                <div className="relative">
-                  <div className="absolute -left-[31px] bg-white border-2 border-ink-300 w-4 h-4 rounded-full"></div>
-                  <p className="text-sm font-bold text-ink-400">Out for Delivery</p>
-                </div>
-                <div className="relative">
-                  <div className="absolute -left-[31px] bg-white border-2 border-ink-300 w-4 h-4 rounded-full"></div>
-                  <p className="text-sm font-bold text-ink-400">Delivered</p>
-                </div>
-              </div>
+            <div className="p-6 overflow-y-auto space-y-4 text-xs">
+              {ORDER_STATES.map(s => {
+                const cfg = STATUS_CONFIG[s] || { label: s, dot: "bg-gray-400" };
+                const descriptions = {
+                  placed: "Order received through online storefront or manual admin POS. Inventory reserved.",
+                  confirmed: "Customer phone verified or payment proof accepted by store agent.",
+                  packed: "Box inspected, QC passed, and placed in courier dispatch parcel polybag.",
+                  shipped: "Handed over to courier (TCS, Trax, Leopards) with active AWB tracking number.",
+                  out_for_delivery: "Rider is actively attempting doorstep delivery and collecting COD amount.",
+                  delivered: "Successfully received by customer, payment reconciled in bank/account.",
+                  cancelled: "Order terminated prior to dispatch. Stock automatically released back.",
+                  returned: "Customer refused parcel or return-to-origin completed by courier."
+                };
+                return (
+                  <div key={s} className="p-3 rounded-lg border border-gray-100 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/40 flex items-start gap-3">
+                    <span className={`w-2.5 h-2.5 rounded-full mt-1 shrink-0 ${cfg.dot}`} />
+                    <div>
+                      <span className="font-bold uppercase tracking-wider text-gray-900 dark:text-zinc-100 text-xs block mb-0.5">{cfg.label}</span>
+                      <p className="text-gray-600 dark:text-zinc-400 leading-relaxed">{descriptions[s]}</p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -1419,7 +1499,7 @@ function Orders() {
   );
 }
 
-function CreateOrderModal({ onClose, onCreated }) {
+function CreateOrderPage({ onBack, onCreated }) {
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState([]);
   const [fetchingProducts, setFetchingProducts] = useState(true);
@@ -1444,6 +1524,18 @@ function CreateOrderModal({ onClose, onCreated }) {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedQty, setSelectedQty] = useState(1);
+
+  const CITIES = [
+    { name: "Karachi", prov: "Sindh" },
+    { name: "Lahore", prov: "Punjab" },
+    { name: "Islamabad", prov: "Islamabad Capital" },
+    { name: "Rawalpindi", prov: "Punjab" },
+    { name: "Faisalabad", prov: "Punjab" },
+    { name: "Multan", prov: "Punjab" },
+    { name: "Peshawar", prov: "KPK" },
+    { name: "Quetta", prov: "Balochistan" },
+    { name: "Sialkot", prov: "Punjab" },
+  ];
 
   useEffect(() => {
     http.get('/products?limit=50')
@@ -1559,7 +1651,7 @@ function CreateOrderModal({ onClose, onCreated }) {
 
       const res = await http.post('/admin/orders', payload);
       toast.success(`Order #${res.data?.data?.order_number} created successfully!`);
-      onCreated();
+      onCreated(res.data?.data);
     } catch (err) {
       toast.error(err.response?.data?.detail || "Failed to create order");
     } finally {
@@ -1568,139 +1660,260 @@ function CreateOrderModal({ onClose, onCreated }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto" onClick={onClose}>
-      <div className="bg-white max-w-3xl w-full shadow-2xl border border-gray-200 rounded-2xl max-h-[92vh] flex flex-col my-auto overflow-hidden" onClick={e => e.stopPropagation()}>
-        {/* Header - High Contrast Clean White */}
-        <div className="p-5 px-6 border-b border-gray-200 bg-white flex justify-between items-center shrink-0">
-          <div>
-            <h2 className="font-display font-extrabold text-lg text-gray-900 flex items-center gap-2">
-              <Package size={18} className="text-fire" /> Create Customer Order
-            </h2>
-            <p className="text-xs text-gray-500 font-medium">Manually place an order for phone, WhatsApp, or in-store customer with live stock check</p>
-          </div>
-          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
-            <X size={20} />
+    <div className="pb-12 max-w-6xl mx-auto space-y-6 animate-in fade-in duration-150">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onBack}
+            className="inline-flex items-center gap-2 px-3.5 py-2 bg-white dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-900 dark:text-zinc-100 font-bold text-xs rounded-lg border border-gray-300 dark:border-zinc-700 shadow-sm transition-all hover:-translate-x-0.5"
+          >
+            <ArrowLeft size={16} /> Back to Orders
           </button>
+          <span className="text-gray-300 dark:text-zinc-700 text-sm hidden sm:inline">/</span>
+          <span className="text-xs font-mono font-bold text-gray-500 dark:text-zinc-400 hidden sm:inline">Orders</span>
+          <span className="text-gray-300 dark:text-zinc-700 text-sm hidden sm:inline">/</span>
+          <span className="text-xs font-mono font-black text-fire hidden sm:inline">New Order</span>
         </div>
+      </div>
 
-        {/* Scrollable Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
-          {/* Section 1: Customer & Address */}
-          <div>
-            <h3 className="font-display text-xs font-bold uppercase tracking-wider text-obsidian mb-3 border-b border-ink-100 pb-1 flex items-center gap-1.5">
-              <Users size={14}/> 1. Customer & Delivery Destination
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div>
+        <h1 className="font-display tracking-tight text-2xl font-black text-gray-900 dark:text-zinc-100">Create Customer Order</h1>
+        <p className="text-sm text-gray-600 dark:text-zinc-400 font-medium">Direct manual order booking for WhatsApp, phone, or in-store drop with live stock validation.</p>
+      </div>
+
+      {/* Main 2-Column Form */}
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Column: Customer & Delivery Address (7 cols) */}
+        <div className="lg:col-span-7 space-y-6">
+          {/* Customer Info Card */}
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm space-y-4">
+            <h2 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-2 border-b border-gray-100 dark:border-zinc-800 pb-3">
+              <Users size={16} className="text-fire" /> 1. Customer Information
+            </h2>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="font-bold text-ink-600 block mb-1">Full Name *</label>
-                <input required type="text" placeholder="e.g. Bilal Ahmed" value={customerName} onChange={e => setCustomerName(e.target.value)} className="w-full border border-ink-200 px-3 py-2 text-xs focus:border-obsidian focus:outline-none bg-white" />
+                <label className="font-bold text-xs text-gray-700 dark:text-zinc-300 block mb-1">Customer Full Name *</label>
+                <input
+                  required
+                  type="text"
+                  placeholder="e.g. Tariq Mehmood"
+                  value={customerName}
+                  onChange={e => setCustomerName(e.target.value)}
+                  className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg px-3.5 py-2 text-xs font-medium text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-fire"
+                />
               </div>
               <div>
-                <label className="font-bold text-ink-600 block mb-1">Phone Number (COD) *</label>
-                <input required type="text" placeholder="e.g. 03001234567" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} className="w-full border border-ink-200 px-3 py-2 text-xs focus:border-obsidian focus:outline-none font-mono bg-white" />
-              </div>
-              <div>
-                <label className="font-bold text-ink-600 block mb-1">Email (Optional)</label>
-                <input type="email" placeholder="customer@gmail.com" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} className="w-full border border-ink-200 px-3 py-2 text-xs focus:border-obsidian focus:outline-none bg-white" />
+                <label className="font-bold text-xs text-gray-700 dark:text-zinc-300 block mb-1">Phone Number (COD Contact) *</label>
+                <input
+                  required
+                  type="text"
+                  placeholder="e.g. 03001234567"
+                  value={customerPhone}
+                  onChange={e => setCustomerPhone(e.target.value)}
+                  className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg px-3.5 py-2 text-xs font-mono font-bold text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-fire"
+                />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-              <div>
-                <label className="font-bold text-ink-600 block mb-1">Street Address Line 1 *</label>
-                <input required type="text" placeholder="House/Flat #, Street, Sector / Area" value={addressL1} onChange={e => setAddressL1(e.target.value)} className="w-full border border-ink-200 px-3 py-2 text-xs focus:border-obsidian focus:outline-none bg-white" />
-              </div>
-              <div>
-                <label className="font-bold text-ink-600 block mb-1">Address Line 2 (Optional)</label>
-                <input type="text" placeholder="Near landmark / colony" value={addressL2} onChange={e => setAddressL2(e.target.value)} className="w-full border border-ink-200 px-3 py-2 text-xs focus:border-obsidian focus:outline-none bg-white" />
+            <div>
+              <label className="font-bold text-xs text-gray-700 dark:text-zinc-300 block mb-1">Email Address (Optional)</label>
+              <input
+                type="email"
+                placeholder="customer@gmail.com (for shipping invoice email)"
+                value={customerEmail}
+                onChange={e => setCustomerEmail(e.target.value)}
+                className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg px-3.5 py-2 text-xs font-medium text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-fire"
+              />
+            </div>
+          </div>
+
+          {/* Delivery Destination Card */}
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm space-y-4">
+            <h2 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-2 border-b border-gray-100 dark:border-zinc-800 pb-3">
+              <MapPin size={16} className="text-fire" /> 2. Delivery Destination
+            </h2>
+
+            {/* Quick City Buttons */}
+            <div>
+              <label className="font-bold text-[11px] uppercase tracking-wider text-gray-500 dark:text-zinc-400 block mb-2">Quick City Selection</label>
+              <div className="flex flex-wrap gap-1.5">
+                {CITIES.map(c => (
+                  <button
+                    key={c.name}
+                    type="button"
+                    onClick={() => {
+                      setCity(c.name);
+                      setProvince(c.prov);
+                    }}
+                    className={`px-2.5 py-1 text-xs font-bold rounded-lg border transition-all ${
+                      city.toLowerCase() === c.name.toLowerCase()
+                        ? "bg-black dark:bg-fire text-white border-black dark:border-fire shadow-sm"
+                        : "bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 border-gray-200 dark:border-zinc-700 hover:border-black"
+                    }`}
+                  >
+                    {c.name}
+                  </button>
+                ))}
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="font-bold text-ink-600 block mb-1">City *</label>
-                <input required type="text" placeholder="e.g. Lahore, Karachi, Islamabad" value={city} onChange={e => setCity(e.target.value)} className="w-full border border-ink-200 px-3 py-2 text-xs focus:border-obsidian focus:outline-none bg-white" />
+                <label className="font-bold text-xs text-gray-700 dark:text-zinc-300 block mb-1">City *</label>
+                <input
+                  required
+                  type="text"
+                  placeholder="e.g. Karachi"
+                  value={city}
+                  onChange={e => setCity(e.target.value)}
+                  className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg px-3.5 py-2 text-xs font-medium text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-fire"
+                />
               </div>
               <div>
-                <label className="font-bold text-ink-600 block mb-1">Province *</label>
-                <select value={province} onChange={e => setProvince(e.target.value)} className="w-full border border-ink-200 px-3 py-2 text-xs focus:border-obsidian focus:outline-none bg-white">
-                  <option value="Punjab">Punjab</option>
+                <label className="font-bold text-xs text-gray-700 dark:text-zinc-300 block mb-1">Province *</label>
+                <select
+                  value={province}
+                  onChange={e => setProvince(e.target.value)}
+                  className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg px-3.5 py-2 text-xs font-semibold text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-fire"
+                >
                   <option value="Sindh">Sindh</option>
+                  <option value="Punjab">Punjab</option>
                   <option value="Islamabad Capital">Islamabad Capital</option>
                   <option value="KPK">Khyber Pakhtunkhwa (KPK)</option>
                   <option value="Balochistan">Balochistan</option>
                   <option value="Azad Kashmir">Azad Kashmir</option>
                 </select>
               </div>
-              <div className="col-span-2 sm:col-span-1">
-                <label className="font-bold text-ink-600 block mb-1">Country</label>
-                <input disabled type="text" value="Pakistan (PK)" className="w-full border border-ink-200 px-3 py-2 text-xs bg-ink-50 text-ink-400 font-bold" />
-              </div>
+            </div>
+
+            <div>
+              <label className="font-bold text-xs text-gray-700 dark:text-zinc-300 block mb-1">Street Address Line 1 *</label>
+              <input
+                required
+                type="text"
+                placeholder="House / Flat #, Street, Block, Sector / Area"
+                value={addressL1}
+                onChange={e => setAddressL1(e.target.value)}
+                className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg px-3.5 py-2 text-xs font-medium text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-fire"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold text-xs text-gray-700 dark:text-zinc-300 block mb-1">Address Line 2 (Optional Landmark)</label>
+              <input
+                type="text"
+                placeholder="Near landmark / mosque / school"
+                value={addressL2}
+                onChange={e => setAddressL2(e.target.value)}
+                className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg px-3.5 py-2 text-xs font-medium text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-fire"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold text-xs text-gray-700 dark:text-zinc-300 block mb-1">Delivery / Internal Staff Note (Optional)</label>
+              <textarea
+                rows={2}
+                placeholder="e.g. Call before delivery, handle with care, WhatsApp customer"
+                value={customerNote}
+                onChange={e => setCustomerNote(e.target.value)}
+                className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg p-3 text-xs text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-fire resize-none"
+              />
             </div>
           </div>
+        </div>
 
-          {/* Section 2: Sneaker Items Selector */}
-          <div>
-            <h3 className="font-display text-xs font-bold uppercase tracking-wider text-obsidian mb-3 border-b border-ink-100 pb-1 flex items-center gap-1.5">
-              <Package size={14}/> 2. Add Sneaker Items
-            </h3>
-            
+        {/* Right Column: Sneaker Inventory Picker & Price Calculation (5 cols) */}
+        <div className="lg:col-span-5 space-y-6">
+          {/* Sneaker Picker Card */}
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm space-y-4">
+            <h2 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-2 border-b border-gray-100 dark:border-zinc-800 pb-3">
+              <Package size={16} className="text-fire" /> 3. Select Sneaker Drop
+            </h2>
+
             {fetchingProducts ? (
-              <div className="p-4 text-center text-ink-400 font-mono flex items-center justify-center gap-2">
-                <Loader2 size={16} className="animate-spin" /> Loading sneaker catalog...
+              <div className="p-6 text-center text-gray-400 dark:text-zinc-500 font-mono flex items-center justify-center gap-2">
+                <Loader2 size={16} className="animate-spin text-fire" /> Loading sneaker inventory...
               </div>
             ) : (
-              <div className="bg-ink-50 p-4 border border-ink-200 space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-                  <div className="sm:col-span-6">
-                    <label className="font-bold text-ink-600 block mb-1">Sneaker Model</label>
-                    <select
-                      value={selectedProduct?.id || ""}
-                      onChange={e => handleProductChange(e.target.value)}
-                      className="w-full border border-ink-200 px-3 py-2 text-xs bg-white focus:outline-none focus:border-obsidian font-semibold"
-                    >
-                      {products.map(p => (
-                        <option key={p.id} value={p.id}>
-                          {p.name} — Rs. {(p.is_flash_sale && p.flash_sale_price ? p.flash_sale_price : p.base_price).toLocaleString()}
-                        </option>
-                      ))}
-                    </select>
+              <div className="space-y-4">
+                <div>
+                  <label className="font-bold text-xs text-gray-700 dark:text-zinc-300 block mb-1.5">Sneaker Silhouette</label>
+                  <select
+                    value={selectedProduct?.id || ""}
+                    onChange={e => handleProductChange(e.target.value)}
+                    className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg px-3.5 py-2.5 text-xs font-semibold text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-fire"
+                  >
+                    {products.map(p => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} — Rs. {(p.is_flash_sale && p.flash_sale_price ? p.flash_sale_price : p.base_price).toLocaleString()}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* EU Size Pill Selector with live stock */}
+                <div>
+                  <label className="font-bold text-xs text-gray-700 dark:text-zinc-300 block mb-1.5">Select EU Size</label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {selectedProduct?.sizes?.map(s => {
+                      const isSelected = selectedSize === s.size;
+                      const inStock = s.stock > 0;
+                      return (
+                        <button
+                          key={s.size}
+                          type="button"
+                          disabled={!inStock}
+                          onClick={() => setSelectedSize(s.size)}
+                          className={`py-2 px-1 text-center rounded-lg border text-xs font-mono transition-all ${
+                            isSelected
+                              ? "bg-black dark:bg-fire text-white border-black dark:border-fire shadow-sm font-bold"
+                              : inStock
+                              ? "bg-white dark:bg-zinc-800 text-gray-800 dark:text-zinc-200 border-gray-200 dark:border-zinc-700 hover:border-black font-semibold"
+                              : "bg-gray-100 dark:bg-zinc-950 text-gray-400 dark:text-zinc-600 border-gray-200 dark:border-zinc-800 cursor-not-allowed opacity-50"
+                          }`}
+                        >
+                          <span className="block font-bold">EU {s.size}</span>
+                          <span className="text-[10px] block opacity-80">{inStock ? `${s.stock} left` : 'Sold Out'}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Quantity and Add Button */}
+                <div className="flex items-center gap-3 pt-2">
+                  <div className="w-28">
+                    <label className="font-bold text-xs text-gray-700 dark:text-zinc-300 block mb-1">Quantity</label>
+                    <div className="flex items-center border border-gray-300 dark:border-zinc-700 rounded-lg overflow-hidden bg-white dark:bg-zinc-800">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedQty(Math.max(1, selectedQty - 1))}
+                        className="px-2.5 py-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-600 dark:text-zinc-300 font-bold"
+                      >
+                        -
+                      </button>
+                      <span className="flex-1 text-center font-mono font-bold text-xs text-gray-900 dark:text-zinc-100">
+                        {selectedQty}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedQty(selectedQty + 1)}
+                        className="px-2.5 py-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-600 dark:text-zinc-300 font-bold"
+                      >
+                        +
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="sm:col-span-3">
-                    <label className="font-bold text-ink-600 block mb-1">EU Size</label>
-                    <select
-                      value={selectedSize}
-                      onChange={e => setSelectedSize(e.target.value)}
-                      className="w-full border border-ink-200 px-3 py-2 text-xs bg-white focus:outline-none focus:border-obsidian font-mono"
-                    >
-                      {selectedProduct?.sizes?.map(s => (
-                        <option key={s.size} value={s.size} disabled={s.stock <= 0}>
-                          EU {s.size} ({s.stock > 0 ? `${s.stock} in stock` : 'Out of stock'})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="sm:col-span-1">
-                    <label className="font-bold text-ink-600 block mb-1">Qty</label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={10}
-                      value={selectedQty}
-                      onChange={e => setSelectedQty(Math.max(1, parseInt(e.target.value) || 1))}
-                      className="w-full border border-ink-200 px-2 py-2 text-xs text-center font-mono bg-white focus:outline-none focus:border-obsidian"
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2">
+                  <div className="flex-1 pt-5">
                     <button
                       type="button"
                       onClick={addItem}
-                      className="w-full bg-obsidian text-white font-bold py-2 hover:bg-fire transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+                      className="w-full bg-black dark:bg-zinc-800 hover:bg-fire dark:hover:bg-fire text-white font-bold py-2.5 rounded-lg text-xs transition-colors flex items-center justify-center gap-2 shadow-sm uppercase tracking-wider"
                     >
-                      <Plus size={14} /> Add
+                      <Plus size={15} /> Add to Order
                     </button>
                   </div>
                 </div>
@@ -1708,37 +1921,40 @@ function CreateOrderModal({ onClose, onCreated }) {
             )}
 
             {/* Added Items List */}
-            <div className="mt-3">
+            <div className="pt-2">
+              <label className="font-bold text-[11px] uppercase tracking-wider text-gray-500 dark:text-zinc-400 block mb-2">
+                Order Items ({items.length})
+              </label>
               {items.length === 0 ? (
-                <div className="p-6 text-center text-ink-400 border border-dashed border-ink-200 font-mono">
-                  No sneakers added to this order yet. Select a model above and click "Add".
+                <div className="p-6 text-center text-gray-400 dark:text-zinc-500 border border-dashed border-gray-200 dark:border-zinc-800 rounded-xl font-mono text-xs">
+                  No sneakers added yet. Pick a model and size above.
                 </div>
               ) : (
-                <div className="border border-ink-200 overflow-hidden divide-y divide-ink-100">
+                <div className="border border-gray-200 dark:border-zinc-800 rounded-xl divide-y divide-gray-100 dark:divide-zinc-800 overflow-hidden bg-gray-50/50 dark:bg-zinc-800/40">
                   {items.map((it, idx) => (
-                    <div key={idx} className="p-3 bg-white flex items-center justify-between gap-3">
+                    <div key={idx} className="p-3 flex items-center justify-between gap-3 text-xs">
                       <div className="flex items-center gap-3 min-w-0">
                         {it.image ? (
-                          <img src={it.image} alt={it.name} className="w-12 h-12 object-cover bg-ink-50 border border-ink-200 shrink-0" />
+                          <img src={it.image} alt={it.name} className="w-12 h-12 object-cover rounded-lg border border-gray-200 dark:border-zinc-700 shrink-0" />
                         ) : (
-                          <div className="w-12 h-12 bg-ink-100 grid place-items-center text-ink-400 shrink-0"><Package size={16}/></div>
+                          <div className="w-12 h-12 bg-gray-100 dark:bg-zinc-800 rounded-lg grid place-items-center text-gray-400 shrink-0"><Package size={18}/></div>
                         )}
                         <div className="min-w-0">
-                          <p className="font-bold text-obsidian truncate">{it.name}</p>
-                          <p className="text-ink-500 font-mono text-[11px]">Size EU {it.size} &nbsp;·&nbsp; Rs. {it.unit_price.toLocaleString()} × {it.quantity}</p>
+                          <p className="font-bold text-gray-900 dark:text-zinc-100 truncate">{it.name}</p>
+                          <p className="text-gray-500 dark:text-zinc-400 font-mono text-[11px]">EU {it.size} · Rs. {it.unit_price.toLocaleString()} × {it.quantity}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <span className="font-mono font-bold text-obsidian text-sm">
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono font-bold text-gray-900 dark:text-zinc-100">
                           Rs. {(it.unit_price * it.quantity).toLocaleString()}
                         </span>
                         <button
                           type="button"
                           onClick={() => removeItem(idx)}
-                          className="text-ink-400 hover:text-fire p-1"
+                          className="text-gray-400 hover:text-fire p-1"
                           title="Remove item"
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={15} />
                         </button>
                       </div>
                     </div>
@@ -1748,110 +1964,88 @@ function CreateOrderModal({ onClose, onCreated }) {
             </div>
           </div>
 
-          {/* Section 3: Payment, Shipping, and Summary */}
-          <div>
-            <h3 className="font-display text-xs font-bold uppercase tracking-wider text-obsidian mb-3 border-b border-ink-100 pb-1 flex items-center gap-1.5">
-              <DollarSign size={14}/> 3. Payment & Order Summary
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <div>
-                  <label className="font-bold text-ink-600 block mb-1">Payment Method</label>
-                  <select
-                    value={paymentMethod}
-                    onChange={e => setPaymentMethod(e.target.value)}
-                    className="w-full border border-ink-200 px-3 py-2 text-xs bg-white focus:outline-none focus:border-obsidian font-semibold"
-                  >
-                    <option value="COD">Cash on Delivery (COD)</option>
-                    <option value="Card">Online Card / Safepay</option>
-                    <option value="Bank Transfer">Direct Bank Transfer</option>
-                  </select>
-                </div>
+          {/* Payment & Invoice Summary Card */}
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm space-y-4">
+            <h2 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-2 border-b border-gray-100 dark:border-zinc-800 pb-3">
+              <DollarSign size={16} className="text-fire" /> 4. Payment & Financial Total
+            </h2>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="font-bold text-ink-600 block mb-1">Shipping Fee (Rs.)</label>
-                    <input
-                      type="number"
-                      min={0}
-                      value={shippingFee}
-                      onChange={e => setShippingFee(Number(e.target.value) || 0)}
-                      className="w-full border border-ink-200 px-3 py-2 text-xs font-mono bg-white focus:outline-none focus:border-obsidian"
-                    />
-                  </div>
-                  <div>
-                    <label className="font-bold text-ink-600 block mb-1">Discount (Rs.)</label>
-                    <input
-                      type="number"
-                      min={0}
-                      value={discountAmount}
-                      onChange={e => setDiscountAmount(Number(e.target.value) || 0)}
-                      className="w-full border border-ink-200 px-3 py-2 text-xs font-mono bg-white focus:outline-none focus:border-obsidian"
-                    />
-                  </div>
-                </div>
+            <div>
+              <label className="font-bold text-xs text-gray-700 dark:text-zinc-300 block mb-1">Payment Method</label>
+              <select
+                value={paymentMethod}
+                onChange={e => setPaymentMethod(e.target.value)}
+                className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg px-3.5 py-2 text-xs font-semibold text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-fire"
+              >
+                <option value="COD">Cash on Delivery (COD)</option>
+                <option value="Card">Safepay / Debit & Credit Card</option>
+                <option value="Bank Transfer">Direct Bank Transfer</option>
+              </select>
+            </div>
 
-                <div>
-                  <label className="font-bold text-ink-600 block mb-1">Internal Note (Optional)</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Call before delivery / booked on WhatsApp"
-                    value={customerNote}
-                    onChange={e => setCustomerNote(e.target.value)}
-                    className="w-full border border-ink-200 px-3 py-2 text-xs bg-white focus:outline-none focus:border-obsidian"
-                  />
-                </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-bold text-xs text-gray-700 dark:text-zinc-300 block mb-1">Shipping Fee (Rs.)</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={shippingFee}
+                  onChange={e => setShippingFee(Number(e.target.value) || 0)}
+                  className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs font-mono font-bold text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-fire"
+                />
               </div>
-
-              {/* Financial Box */}
-              <div className="bg-ink-50 p-4 border border-ink-200 flex flex-col justify-between">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-ink-600">
-                    <span>Items Subtotal ({items.reduce((c, i) => c + i.quantity, 0)} items)</span>
-                    <span className="font-mono font-bold">Rs. {subtotal.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between text-ink-600">
-                    <span>Shipping Fee</span>
-                    <span className="font-mono font-bold">
-                      {shippingFee === 0 ? <span className="text-green-600 font-bold uppercase text-[10px]">FREE</span> : `Rs. ${Number(shippingFee).toLocaleString()}`}
-                    </span>
-                  </div>
-                  {discountAmount > 0 && (
-                    <div className="flex justify-between text-fire font-bold">
-                      <span>Discount</span>
-                      <span className="font-mono">-Rs. {Number(discountAmount).toLocaleString()}</span>
-                    </div>
-                  )}
-                  <div className="pt-3 border-t border-gray-200 flex justify-between items-baseline">
-                    <span className="font-display text-sm font-black text-gray-900">Net Total to Collect</span>
-                    <span className="font-mono text-xl font-black text-fire">
-                      Rs. {total.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-gray-200 flex justify-end gap-2.5">
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="px-4 py-2 text-xs font-bold text-gray-600 hover:text-black transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={loading || items.length === 0}
-                    className="px-6 py-2.5 text-xs font-bold bg-black text-white hover:bg-fire transition-colors disabled:opacity-50 flex items-center gap-2 rounded-lg shadow-sm"
-                  >
-                    {loading ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
-                    <span>Confirm & Create Order</span>
-                  </button>
-                </div>
+              <div>
+                <label className="font-bold text-xs text-gray-700 dark:text-zinc-300 block mb-1">Discount (Rs.)</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={discountAmount}
+                  onChange={e => setDiscountAmount(Number(e.target.value) || 0)}
+                  className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs font-mono font-bold text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-fire"
+                />
               </div>
             </div>
+
+            {/* Calculations Breakdown */}
+            <div className="pt-3 border-t border-gray-100 dark:border-zinc-800 space-y-2 text-xs">
+              <div className="flex justify-between text-gray-600 dark:text-zinc-400">
+                <span>Items Subtotal</span>
+                <span className="font-mono font-bold text-gray-900 dark:text-zinc-100">Rs. {subtotal.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-gray-600 dark:text-zinc-400">
+                <span>Shipping</span>
+                <span className="font-mono font-bold text-gray-900 dark:text-zinc-100">
+                  {shippingFee === 0 ? <span className="text-emerald-600 dark:text-emerald-400 font-bold uppercase text-[10px]">FREE</span> : `Rs. ${Number(shippingFee).toLocaleString()}`}
+                </span>
+              </div>
+              {discountAmount > 0 && (
+                <div className="flex justify-between text-fire font-bold">
+                  <span>Discount</span>
+                  <span className="font-mono">-Rs. {Number(discountAmount).toLocaleString()}</span>
+                </div>
+              )}
+              <div className="pt-3 border-t border-gray-200 dark:border-zinc-700 flex justify-between items-baseline">
+                <div>
+                  <span className="font-display text-sm font-black text-gray-900 dark:text-zinc-100 block">Total Due</span>
+                  <span className="text-[10px] text-gray-500 dark:text-zinc-400 font-medium">{paymentMethod}</span>
+                </div>
+                <span className="font-mono text-2xl font-black text-fire">
+                  Rs. {total.toLocaleString()}
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading || items.length === 0}
+              className="w-full bg-black dark:bg-fire hover:bg-fire dark:hover:bg-fire/90 text-white font-bold py-3 rounded-xl transition-all shadow-md text-xs uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50 mt-2"
+            >
+              {loading ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+              <span>Create Order & Issue Invoice</span>
+            </button>
           </div>
-        </form>
-      </div>
+        </div>
+      </form>
     </div>
   );
 }
@@ -1905,6 +2099,8 @@ function OrderDetailPage({ orderId, initialOrder, onBack, onUpdate }) {
       toast.success(`Order status updated to ${newStatus}`);
       fetchOrder();
       if (onUpdate) onUpdate();
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "Failed to update status");
     } finally {
       setUpdatingStatus(false);
     }
@@ -2026,12 +2222,12 @@ function OrderDetailPage({ orderId, initialOrder, onBack, onUpdate }) {
   const STEPS = [
     { key: "placed", label: "Placed" },
     { key: "confirmed", label: "Confirmed" },
-    { key: "processing", label: "Processing" },
+    { key: "packed", label: "Packed" },
     { key: "shipped", label: "Shipped" },
     { key: "delivered", label: "Delivered" }
   ];
 
-  const stepOrder = ["placed", "confirmed", "processing", "packed", "shipped", "out_for_delivery", "delivered"];
+  const stepOrder = ["placed", "confirmed", "packed", "shipped", "out_for_delivery", "delivered"];
   const currentStepIdx = stepOrder.indexOf(status);
 
   const historyMap = {};
@@ -2039,33 +2235,21 @@ function OrderDetailPage({ orderId, initialOrder, onBack, onUpdate }) {
     historyMap[h.status] = h.at;
   });
 
-  const getStatusBadge = (st) => {
-    switch (st) {
-      case 'delivered': return 'bg-emerald-50 text-emerald-800 border-emerald-300';
-      case 'shipped': return 'bg-blue-50 text-blue-800 border-blue-300';
-      case 'processing': return 'bg-amber-50 text-amber-800 border-amber-300';
-      case 'confirmed': return 'bg-purple-50 text-purple-800 border-purple-300';
-      case 'placed': return 'bg-sky-50 text-sky-800 border-sky-300';
-      case 'cancelled': return 'bg-rose-50 text-rose-800 border-rose-300';
-      default: return 'bg-gray-100 text-gray-800 border-gray-300';
-    }
-  };
-
   const trackingPortalUrl = getTrackingPortalUrl(courierName, trackingNumber);
 
   if (loading && !order) {
     return (
       <div className="pb-10 max-w-6xl mx-auto space-y-6">
         <div className="flex items-center gap-3">
-          <button onClick={onBack} className="inline-flex items-center gap-2 px-3 py-1.5 bg-white hover:bg-gray-100 text-gray-800 font-bold text-xs rounded-lg border border-gray-300 shadow-sm transition-colors">
+          <button onClick={onBack} className="inline-flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-800 dark:text-zinc-200 font-bold text-xs rounded-lg border border-gray-300 dark:border-zinc-700 shadow-sm transition-colors">
             <ArrowLeft size={16} /> Back to Orders
           </button>
           <span className="text-gray-400">/</span>
           <span className="text-xs font-mono font-bold text-gray-500">Loading Order #{orderId}...</span>
         </div>
-        <div className="bg-white border border-gray-200 rounded-2xl p-12 shadow-sm flex flex-col items-center justify-center min-h-[350px] gap-3">
+        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-12 shadow-sm flex flex-col items-center justify-center min-h-[350px] gap-3">
           <Loader2 size={32} className="animate-spin text-fire" />
-          <p className="text-sm font-bold text-gray-700">Loading order drop details...</p>
+          <p className="text-sm font-bold text-gray-700 dark:text-zinc-300">Loading order drop details...</p>
         </div>
       </div>
     );
@@ -2075,15 +2259,15 @@ function OrderDetailPage({ orderId, initialOrder, onBack, onUpdate }) {
     return (
       <div className="pb-10 max-w-6xl mx-auto space-y-6">
         <div className="flex items-center gap-3">
-          <button onClick={onBack} className="inline-flex items-center gap-2 px-3 py-1.5 bg-white hover:bg-gray-100 text-gray-800 font-bold text-xs rounded-lg border border-gray-300 shadow-sm transition-colors">
+          <button onClick={onBack} className="inline-flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-800 dark:text-zinc-200 font-bold text-xs rounded-lg border border-gray-300 dark:border-zinc-700 shadow-sm transition-colors">
             <ArrowLeft size={16} /> Back to Orders
           </button>
         </div>
-        <div className="bg-white border border-gray-200 rounded-2xl p-12 shadow-sm text-center space-y-4">
+        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-12 shadow-sm text-center space-y-4">
           <AlertTriangle size={36} className="text-fire mx-auto" />
-          <h2 className="text-lg font-bold text-gray-900">Order #{orderId} Not Found</h2>
-          <p className="text-sm text-gray-500 max-w-md mx-auto">This order does not exist or the reference in the URL is invalid.</p>
-          <button onClick={onBack} className="px-5 py-2 bg-black text-white font-bold text-xs rounded-lg hover:bg-fire transition-colors shadow-sm">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-zinc-100">Order #{orderId} Not Found</h2>
+          <p className="text-sm text-gray-500 dark:text-zinc-400 max-w-md mx-auto">This order does not exist or the reference in the URL is invalid.</p>
+          <button onClick={onBack} className="px-5 py-2 bg-black dark:bg-fire text-white font-bold text-xs rounded-lg hover:bg-fire transition-colors shadow-sm">
             Return to Orders List
           </button>
         </div>
@@ -2093,36 +2277,35 @@ function OrderDetailPage({ orderId, initialOrder, onBack, onUpdate }) {
 
   return (
     <div className="pb-10 max-w-6xl mx-auto space-y-6 animate-in fade-in duration-150">
-      {/* Breadcrumb & Navigation Bar */}
+      {/* Breadcrumb & Navigation Top Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
-            className="inline-flex items-center gap-2 px-3.5 py-2 bg-white hover:bg-gray-100 text-gray-900 font-bold text-xs rounded-lg border border-gray-300 shadow-sm transition-all hover:-translate-x-0.5"
+            className="inline-flex items-center gap-2 px-3.5 py-2 bg-white dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-900 dark:text-zinc-100 font-bold text-xs rounded-lg border border-gray-300 dark:border-zinc-700 shadow-sm transition-all hover:-translate-x-0.5"
           >
             <ArrowLeft size={16} /> Back to Orders
           </button>
-          <span className="text-gray-300 text-sm hidden sm:inline">/</span>
-          <span className="text-xs font-mono font-bold text-gray-500 hidden sm:inline">Orders</span>
-          <span className="text-gray-300 text-sm hidden sm:inline">/</span>
-          <span className="text-xs font-mono font-black text-gray-900 hidden sm:inline">#{order.order_number}</span>
+          <span className="text-gray-300 dark:text-zinc-700 text-sm hidden sm:inline">/</span>
+          <span className="text-xs font-mono font-bold text-gray-500 dark:text-zinc-400 hidden sm:inline">Orders</span>
+          <span className="text-gray-300 dark:text-zinc-700 text-sm hidden sm:inline">/</span>
+          <span className="text-xs font-mono font-black text-gray-900 dark:text-zinc-100 hidden sm:inline">#{order.order_number}</span>
         </div>
 
         <div className="flex items-center gap-2.5">
-          {updatingStatus && <Loader2 size={16} className="animate-spin text-gray-500" />}
+          {updatingStatus && <Loader2 size={16} className="animate-spin text-fire" />}
 
-          <select
+          {/* Clean 1-Click Status Dropdown */}
+          <StatusBadgeDropdown
+            size="md"
+            currentStatus={status}
+            onSelect={updateStatus}
             disabled={updatingStatus}
-            value={status}
-            onChange={(e) => updateStatus(e.target.value)}
-            className="border border-gray-300 bg-white text-gray-900 px-3 py-1.5 text-xs font-bold rounded-lg focus:outline-none focus:ring-1 focus:ring-black shadow-sm"
-          >
-            {ORDER_STATES.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
+          />
 
           <button
             onClick={() => window.print()}
-            className="px-3.5 py-1.5 border border-gray-300 bg-white hover:bg-gray-50 text-gray-800 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors"
+            className="px-3.5 py-1.5 border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-700 text-gray-800 dark:text-zinc-200 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors"
             title="Print Thermal Shipping Slip"
           >
             <Printer size={14} /> <span>Print Slip</span>
@@ -2140,60 +2323,57 @@ function OrderDetailPage({ orderId, initialOrder, onBack, onUpdate }) {
       </div>
 
       {/* Main Order Card */}
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl shadow-sm overflow-hidden">
         {/* Top Order Title Header */}
-        <div className="p-6 border-b border-gray-200 flex flex-wrap justify-between items-center gap-4">
+        <div className="p-6 border-b border-gray-200 dark:border-zinc-800 flex flex-wrap justify-between items-center gap-4">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="font-mono font-black text-2xl text-gray-900 tracking-tight">
+            <h1 className="font-mono font-black text-2xl text-gray-900 dark:text-zinc-100 tracking-tight">
               #{order.order_number}
             </h1>
-            <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full border ${getStatusBadge(status)}`}>
-              ● {status}
-            </span>
             <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full border ${
               order.payment_status === 'paid'
-                ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                : 'bg-amber-50 text-amber-800 border-amber-300'
+                ? 'bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800'
+                : 'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800'
             }`}>
               Payment: {order.payment_status || 'COD'}
             </span>
-            <span className="text-xs text-gray-500 font-medium hidden md:inline">
+            <span className="text-xs text-gray-500 dark:text-zinc-400 font-medium hidden md:inline">
               • Placed on {new Date(order.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
           </div>
 
-          <div className="font-mono text-xl font-black text-gray-900">
+          <div className="font-mono text-xl font-black text-gray-900 dark:text-zinc-100">
             {fmt(order.total)}
           </div>
         </div>
 
-        {/* 4-Stat Quick Ribbon */}
-        <div className="bg-gray-50/90 border-b border-gray-200 px-6 py-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+        {/* 4-Stat High Impact Ribbon */}
+        <div className="bg-gray-50/90 dark:bg-zinc-800/50 border-b border-gray-200 dark:border-zinc-800 px-6 py-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
           <div>
-            <span className="text-gray-500 font-bold uppercase text-[10px] tracking-wider block">Total Payable</span>
+            <span className="text-gray-500 dark:text-zinc-400 font-bold uppercase text-[10px] tracking-wider block">Total Payable</span>
             <div className="flex items-baseline gap-1 mt-1">
-              <span className="font-mono text-lg font-black text-gray-900">{fmt(order.total)}</span>
-              <span className="text-[10px] font-bold text-gray-500">({order.payment_method || 'COD'})</span>
+              <span className="font-mono text-lg font-black text-gray-900 dark:text-zinc-100">{fmt(order.total)}</span>
+              <span className="text-[10px] font-bold text-gray-500 dark:text-zinc-400">({order.payment_method || 'COD'})</span>
             </div>
           </div>
           <div>
-            <span className="text-gray-500 font-bold uppercase text-[10px] tracking-wider block">Customer</span>
-            <span className="font-bold text-gray-900 truncate block mt-1 text-sm">{order.customer_name}</span>
-            <span className="text-[11px] text-gray-500 font-mono">{order.customer_phone}</span>
+            <span className="text-gray-500 dark:text-zinc-400 font-bold uppercase text-[10px] tracking-wider block">Customer</span>
+            <span className="font-bold text-gray-900 dark:text-zinc-100 truncate block mt-1 text-sm">{order.customer_name}</span>
+            <span className="text-[11px] text-gray-500 dark:text-zinc-400 font-mono">{order.customer_phone}</span>
           </div>
           <div>
-            <span className="text-gray-500 font-bold uppercase text-[10px] tracking-wider block">Logistics Partner</span>
-            <span className="font-bold text-gray-900 block font-mono mt-1 text-sm">
+            <span className="text-gray-500 dark:text-zinc-400 font-bold uppercase text-[10px] tracking-wider block">Logistics Partner</span>
+            <span className="font-bold text-gray-900 dark:text-zinc-100 block font-mono mt-1 text-sm">
               {order.courier_name || 'Unassigned'}
             </span>
-            <span className="text-[11px] text-gray-500 font-mono truncate block">
+            <span className="text-[11px] text-gray-500 dark:text-zinc-400 font-mono truncate block">
               {trackingNumber ? `AWB: ${trackingNumber}` : 'Pending booking'}
             </span>
           </div>
           <div>
-            <span className="text-gray-500 font-bold uppercase text-[10px] tracking-wider block">Status & Items</span>
-            <span className="font-bold text-gray-900 capitalize block mt-1 text-sm">{status}</span>
-            <span className="text-[11px] text-gray-500">
+            <span className="text-gray-500 dark:text-zinc-400 font-bold uppercase text-[10px] tracking-wider block">Status & Items</span>
+            <span className="font-bold text-gray-900 dark:text-zinc-100 capitalize block mt-1 text-sm">{status}</span>
+            <span className="text-[11px] text-gray-500 dark:text-zinc-400">
               {order.items?.length || 0} sneaker item{order.items?.length === 1 ? '' : 's'}
             </span>
           </div>
@@ -2201,9 +2381,9 @@ function OrderDetailPage({ orderId, initialOrder, onBack, onUpdate }) {
 
         {/* Milestone Stepper */}
         {status !== 'cancelled' ? (
-          <div className="p-6 border-b border-gray-200 bg-white">
+          <div className="p-6 border-b border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
             <div className="max-w-3xl mx-auto flex items-center justify-between relative">
-              <div className="absolute top-4 left-6 right-6 h-0.5 bg-gray-200 z-0"></div>
+              <div className="absolute top-4 left-6 right-6 h-0.5 bg-gray-200 dark:bg-zinc-800 z-0"></div>
 
               {STEPS.map((step, idx) => {
                 const targetIdx = stepOrder.indexOf(step.key);
@@ -2212,73 +2392,75 @@ function OrderDetailPage({ orderId, initialOrder, onBack, onUpdate }) {
                 const timeStr = historyMap[step.key] ? new Date(historyMap[step.key]).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : null;
 
                 return (
-                  <div key={step.key} className="flex flex-col items-center relative z-10 bg-white px-3">
+                  <div key={step.key} className="flex flex-col items-center relative z-10 bg-white dark:bg-zinc-900 px-3">
                     <div
                       className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all border-2 ${
                         isPassed
-                          ? "bg-black border-black text-white shadow-sm"
+                          ? "bg-black dark:bg-fire border-black dark:border-fire text-white shadow-sm"
                           : isCurrent
                           ? "bg-fire border-fire text-white shadow-sm ring-4 ring-fire/20"
-                          : "bg-white border-gray-300 text-gray-400"
+                          : "bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-700 text-gray-400 dark:text-zinc-500"
                       }`}
                     >
                       {isPassed ? <Check size={16} /> : idx + 1}
                     </div>
-                    <span className={`text-xs font-bold uppercase tracking-wider mt-2 ${isCurrent ? "text-fire font-black" : isPassed ? "text-gray-900" : "text-gray-400"}`}>
+                    <span className={`text-xs font-bold uppercase tracking-wider mt-2 ${
+                      isCurrent ? "text-fire font-black" : isPassed ? "text-gray-900 dark:text-zinc-100" : "text-gray-400 dark:text-zinc-500"
+                    }`}>
                       {step.label}
                     </span>
-                    {timeStr && <span className="font-mono text-[10px] text-gray-500">{timeStr}</span>}
+                    {timeStr && <span className="font-mono text-[10px] text-gray-500 dark:text-zinc-400">{timeStr}</span>}
                   </div>
                 );
               })}
             </div>
           </div>
         ) : (
-          <div className="bg-rose-50 border-b border-rose-200 p-4 px-6 text-rose-800 text-xs font-bold flex items-center gap-2">
+          <div className="bg-rose-50 dark:bg-rose-950/40 border-b border-rose-200 dark:border-rose-900 p-4 px-6 text-rose-800 dark:text-rose-300 text-xs font-bold flex items-center gap-2">
             <AlertTriangle size={16} /> Order #{order.order_number} has been cancelled.
           </div>
         )}
 
         {/* Two-Column Body */}
-        <div className="flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-gray-200">
+        <div className="flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-gray-200 dark:divide-zinc-800">
           
           {/* Left Column: Sneaker Items & Financial Summary (58% width) */}
-          <div className="w-full lg:w-[58%] p-6 space-y-6 bg-white">
+          <div className="w-full lg:w-[58%] p-6 space-y-6 bg-white dark:bg-zinc-900">
             
             {/* Sneaker Items */}
-            <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-              <div className="bg-gray-50 p-3.5 px-4 border-b border-gray-200 flex justify-between items-center">
-                <h3 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 flex items-center gap-2">
+            <div className="border border-gray-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm">
+              <div className="bg-gray-50 dark:bg-zinc-800/80 p-3.5 px-4 border-b border-gray-200 dark:border-zinc-800 flex justify-between items-center">
+                <h3 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-2">
                   <Package size={15} className="text-fire" /> Ordered Sneakers ({order.items?.length || 0})
                 </h3>
-                <span className="font-mono text-xs text-gray-500 font-medium">
+                <span className="font-mono text-xs text-gray-500 dark:text-zinc-400 font-medium">
                   Order Ref #{order.order_number}
                 </span>
               </div>
 
-              <div className="divide-y divide-gray-100 p-2">
+              <div className="divide-y divide-gray-100 dark:divide-zinc-800 p-2">
                 {order.items?.map((it, idx) => (
-                  <div key={idx} className="p-3.5 flex items-center justify-between gap-4 hover:bg-gray-50/70 rounded-lg transition-colors">
+                  <div key={idx} className="p-3.5 flex items-center justify-between gap-4 hover:bg-gray-50/70 dark:hover:bg-zinc-800/50 rounded-lg transition-colors">
                     <div className="flex items-center gap-4 min-w-0">
                       {it.image_url ? (
-                        <img src={it.image_url} alt={it.product_name} className="w-16 h-16 object-cover bg-gray-50 rounded-lg border border-gray-200 shrink-0 shadow-sm" />
+                        <img src={it.image_url} alt={it.product_name} className="w-16 h-16 object-cover bg-gray-50 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700 shrink-0 shadow-sm" />
                       ) : (
-                        <div className="w-16 h-16 bg-gray-100 rounded-lg grid place-items-center text-gray-400 shrink-0 border border-gray-200"><Package size={22}/></div>
+                        <div className="w-16 h-16 bg-gray-100 dark:bg-zinc-800 rounded-lg grid place-items-center text-gray-400 shrink-0 border border-gray-200 dark:border-zinc-700"><Package size={22}/></div>
                       )}
                       <div className="min-w-0">
-                        <p className="font-bold text-sm text-gray-900 truncate">{it.product_name}</p>
+                        <p className="font-bold text-sm text-gray-900 dark:text-zinc-100 truncate">{it.product_name}</p>
                         <div className="flex items-center gap-2 mt-1.5">
-                          <span className="bg-black text-white font-mono text-xs font-bold px-2 py-0.5 rounded">
+                          <span className="bg-black dark:bg-fire text-white font-mono text-xs font-bold px-2 py-0.5 rounded">
                             EU {it.size}
                           </span>
-                          <span className="text-gray-500 font-mono text-xs">
+                          <span className="text-gray-500 dark:text-zinc-400 font-mono text-xs">
                             {fmt(it.unit_price)} × {it.quantity}
                           </span>
                         </div>
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <span className="font-mono font-bold text-base text-gray-900 block">
+                      <span className="font-mono font-bold text-base text-gray-900 dark:text-zinc-100 block">
                         {fmt(it.unit_price * it.quantity)}
                       </span>
                     </div>
@@ -2288,15 +2470,15 @@ function OrderDetailPage({ orderId, initialOrder, onBack, onUpdate }) {
             </div>
 
             {/* Financial Calculation Breakdown */}
-            <div className="bg-gray-50/80 border border-gray-200 rounded-xl p-5 space-y-3 text-xs shadow-sm">
-              <div className="flex justify-between text-gray-600 font-medium">
+            <div className="bg-gray-50/80 dark:bg-zinc-800/50 border border-gray-200 dark:border-zinc-800 rounded-xl p-5 space-y-3 text-xs shadow-sm">
+              <div className="flex justify-between text-gray-600 dark:text-zinc-400 font-medium">
                 <span>Subtotal</span>
-                <span className="font-mono font-bold text-gray-900">{fmt(order.subtotal)}</span>
+                <span className="font-mono font-bold text-gray-900 dark:text-zinc-100">{fmt(order.subtotal)}</span>
               </div>
-              <div className="flex justify-between text-gray-600 font-medium">
+              <div className="flex justify-between text-gray-600 dark:text-zinc-400 font-medium">
                 <span>Shipping Fee</span>
                 <span className="font-mono font-bold">
-                  {order.shipping_fee === 0 ? <span className="text-emerald-700 font-bold uppercase text-[10px] bg-emerald-100 px-2 py-0.5 rounded">FREE SHIPPING</span> : fmt(order.shipping_fee)}
+                  {order.shipping_fee === 0 ? <span className="text-emerald-700 dark:text-emerald-400 font-bold uppercase text-[10px] bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded">FREE SHIPPING</span> : fmt(order.shipping_fee)}
                 </span>
               </div>
               {order.discount_amount > 0 && (
@@ -2306,15 +2488,15 @@ function OrderDetailPage({ orderId, initialOrder, onBack, onUpdate }) {
                 </div>
               )}
               {order.store_credit_used > 0 && (
-                <div className="flex justify-between text-emerald-700 font-bold">
+                <div className="flex justify-between text-emerald-700 dark:text-emerald-400 font-bold">
                   <span>Store Credit Used</span>
                   <span className="font-mono">-{fmt(order.store_credit_used)}</span>
                 </div>
               )}
-              <div className="pt-3.5 border-t border-gray-200 flex justify-between items-baseline text-sm">
+              <div className="pt-3.5 border-t border-gray-200 dark:border-zinc-700 flex justify-between items-baseline text-sm">
                 <div>
-                  <span className="font-display font-black text-gray-900 block text-base">Total Due ({order.payment_method || 'COD'})</span>
-                  <span className="text-xs text-gray-500 font-medium">Cash to collect upon delivery</span>
+                  <span className="font-display font-black text-gray-900 dark:text-zinc-100 block text-base">Total Due ({order.payment_method || 'COD'})</span>
+                  <span className="text-xs text-gray-500 dark:text-zinc-400 font-medium">Cash to collect upon delivery</span>
                 </div>
                 <span className="font-mono text-2xl font-black text-fire">{fmt(order.total)}</span>
               </div>
@@ -2322,18 +2504,18 @@ function OrderDetailPage({ orderId, initialOrder, onBack, onUpdate }) {
 
             {/* Chronological Event Log */}
             {order.status_history?.length > 0 && (
-              <div className="border border-gray-200 rounded-xl p-5 bg-white space-y-3 text-xs shadow-sm">
-                <p className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 flex items-center gap-1.5 border-b border-gray-100 pb-2.5">
+              <div className="border border-gray-200 dark:border-zinc-800 rounded-xl p-5 bg-white dark:bg-zinc-900 space-y-3 text-xs shadow-sm">
+                <p className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-1.5 border-b border-gray-100 dark:border-zinc-800 pb-2.5">
                   <Activity size={15} className="text-fire" /> Order Timeline & Event History
                 </p>
                 <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                   {order.status_history.map((h, i) => (
-                    <div key={i} className="flex justify-between items-start text-xs py-1.5 border-b border-dashed border-gray-100 last:border-0">
+                    <div key={i} className="flex justify-between items-start text-xs py-1.5 border-b border-dashed border-gray-100 dark:border-zinc-800 last:border-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold uppercase tracking-wider text-gray-900 bg-gray-100 px-2 py-0.5 rounded text-[10px]">{h.status}</span>
-                        <span className="text-gray-700 font-medium">{h.note || 'Status updated'}</span>
+                        <span className="font-bold uppercase tracking-wider text-gray-900 dark:text-zinc-100 bg-gray-100 dark:bg-zinc-800 px-2 py-0.5 rounded text-[10px]">{h.status}</span>
+                        <span className="text-gray-700 dark:text-zinc-300 font-medium">{h.note || 'Status updated'}</span>
                       </div>
-                      <span className="font-mono text-[11px] text-gray-400 shrink-0 ml-2">
+                      <span className="font-mono text-[11px] text-gray-400 dark:text-zinc-500 shrink-0 ml-2">
                         {new Date(h.at).toLocaleDateString()} {new Date(h.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
@@ -2344,18 +2526,18 @@ function OrderDetailPage({ orderId, initialOrder, onBack, onUpdate }) {
           </div>
 
           {/* Right Column: Customer Details, Fulfillment & Logistics (42% width) */}
-          <div className="w-full lg:w-[42%] p-6 space-y-6 bg-gray-50/70">
+          <div className="w-full lg:w-[42%] p-6 space-y-6 bg-gray-50/70 dark:bg-zinc-900/60">
             
             {/* Customer & Address Card */}
-            <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4 text-xs">
-              <div className="flex justify-between items-center border-b border-gray-100 pb-3">
-                <h3 className="font-display font-bold uppercase tracking-wider text-gray-900 flex items-center gap-1.5">
+            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm space-y-4 text-xs">
+              <div className="flex justify-between items-center border-b border-gray-100 dark:border-zinc-800 pb-3">
+                <h3 className="font-display font-bold uppercase tracking-wider text-gray-900 dark:text-zinc-100 flex items-center gap-1.5">
                   <Users size={15} className="text-fire" /> Customer & Destination
                 </h3>
                 <button
                   type="button"
                   onClick={copyCustomerDetails}
-                  className="text-xs font-bold text-gray-600 hover:text-black flex items-center gap-1 hover:underline"
+                  className="text-xs font-bold text-gray-600 dark:text-zinc-400 hover:text-black dark:hover:text-white flex items-center gap-1 hover:underline"
                   title="Copy full delivery address and details"
                 >
                   <Copy size={12} /> Copy All
@@ -2364,7 +2546,7 @@ function OrderDetailPage({ orderId, initialOrder, onBack, onUpdate }) {
 
               <div>
                 <div className="flex justify-between items-baseline">
-                  <span className="font-extrabold text-base text-gray-900">{order.customer_name}</span>
+                  <span className="font-extrabold text-base text-gray-900 dark:text-zinc-100">{order.customer_name}</span>
                   <a
                     href={waLink(order.customer_phone, `Hi ${order.customer_name}, update regarding your SOLEKICKS order #${order.order_number}:`)}
                     target="_blank"
@@ -2374,19 +2556,19 @@ function OrderDetailPage({ orderId, initialOrder, onBack, onUpdate }) {
                     <MessageCircle size={13} /> WhatsApp
                   </a>
                 </div>
-                <p className="font-mono text-gray-800 font-bold mt-1 text-sm">{order.customer_phone}</p>
-                {order.customer_email && <p className="text-gray-500 mt-0.5">{order.customer_email}</p>}
+                <p className="font-mono text-gray-800 dark:text-zinc-200 font-bold mt-1 text-sm">{order.customer_phone}</p>
+                {order.customer_email && <p className="text-gray-500 dark:text-zinc-400 mt-0.5">{order.customer_email}</p>}
               </div>
 
-              <div className="pt-3 border-t border-gray-100 text-gray-700 leading-relaxed">
-                <span className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Delivery Address</span>
-                <p className="font-medium text-gray-900 bg-gray-50 p-3 rounded-lg border border-gray-200 leading-normal">
+              <div className="pt-3 border-t border-gray-100 dark:border-zinc-800 text-gray-700 dark:text-zinc-300 leading-relaxed">
+                <span className="text-[10px] font-bold uppercase text-gray-400 dark:text-zinc-500 block mb-1">Delivery Address</span>
+                <p className="font-medium text-gray-900 dark:text-zinc-100 bg-gray-50 dark:bg-zinc-800/80 p-3 rounded-lg border border-gray-200 dark:border-zinc-700 leading-normal">
                   {formatAddress(order.shipping_address)}
                 </p>
               </div>
 
               {order.customer_note && (
-                <div className="pt-2 border-t border-gray-100 bg-amber-50 p-3 text-amber-900 text-xs rounded-lg border border-amber-200">
+                <div className="pt-2 border-t border-gray-100 dark:border-zinc-800 bg-amber-50 dark:bg-amber-950/30 p-3 text-amber-900 dark:text-amber-300 text-xs rounded-lg border border-amber-200 dark:border-amber-900/50">
                   <span className="font-bold block text-[11px] uppercase tracking-wider mb-0.5">Special Customer Instructions:</span>
                   {order.customer_note}
                 </div>
@@ -2394,20 +2576,20 @@ function OrderDetailPage({ orderId, initialOrder, onBack, onUpdate }) {
             </div>
 
             {/* Courier & Fulfillment Dispatch Card */}
-            <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4 text-xs">
-              <div className="flex justify-between items-center border-b border-gray-100 pb-3">
-                <h3 className="font-display font-bold uppercase tracking-wider text-gray-900 flex items-center gap-1.5">
+            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm space-y-4 text-xs">
+              <div className="flex justify-between items-center border-b border-gray-100 dark:border-zinc-800 pb-3">
+                <h3 className="font-display font-bold uppercase tracking-wider text-gray-900 dark:text-zinc-100 flex items-center gap-1.5">
                   <Truck size={15} className="text-fire" /> Courier & Fulfillment
                 </h3>
                 {trackingNumber && (
-                  <span className="font-mono text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200 px-2 py-0.5 rounded-full">
+                  <span className="font-mono text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800 px-2 py-0.5 rounded-full">
                     AWB Active
                   </span>
                 )}
               </div>
 
               <div>
-                <label className="text-[10px] font-bold uppercase text-gray-500 block mb-1.5">Select Courier Partner</label>
+                <label className="text-[10px] font-bold uppercase text-gray-500 dark:text-zinc-400 block mb-1.5">Select Courier Partner</label>
                 <div className="flex flex-wrap gap-1.5 mb-2.5">
                   {['TCS', 'Leopards', 'Trax', 'PostEx', 'Call Courier'].map(c => (
                     <button
@@ -2416,8 +2598,8 @@ function OrderDetailPage({ orderId, initialOrder, onBack, onUpdate }) {
                       onClick={() => setCourierName(c)}
                       className={`px-3 py-1 text-xs font-bold font-mono rounded-md border transition-all ${
                         courierName.toLowerCase().includes(c.toLowerCase())
-                          ? "bg-black text-white border-black shadow-sm"
-                          : "bg-gray-100 text-gray-700 border-gray-200 hover:border-black hover:text-black"
+                          ? "bg-black dark:bg-fire text-white border-black dark:border-fire shadow-sm"
+                          : "bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 border-gray-200 dark:border-zinc-700 hover:border-black"
                       }`}
                     >
                       {c}
@@ -2430,23 +2612,23 @@ function OrderDetailPage({ orderId, initialOrder, onBack, onUpdate }) {
                   placeholder="Courier Partner (e.g. TCS)"
                   value={courierName}
                   onChange={e => setCourierName(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs font-medium focus:border-black focus:ring-1 focus:ring-black focus:outline-none bg-white mb-3"
+                  className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs font-medium focus:border-black focus:ring-1 focus:ring-black focus:outline-none bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 mb-3"
                 />
 
-                <label className="text-[10px] font-bold uppercase text-gray-500 block mb-1.5">Consignment / Tracking Number</label>
+                <label className="text-[10px] font-bold uppercase text-gray-500 dark:text-zinc-400 block mb-1.5">Consignment / Tracking Number</label>
                 <div className="relative">
                   <input
                     type="text"
                     placeholder="e.g. TCS-7729104 or TR-88219"
                     value={trackingNumber}
                     onChange={e => setTrackingNumber(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs font-mono font-bold text-gray-900 focus:border-black focus:ring-1 focus:ring-black focus:outline-none bg-white pr-20"
+                    className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs font-mono font-bold text-gray-900 dark:text-zinc-100 focus:border-black focus:ring-1 focus:ring-black focus:outline-none bg-white dark:bg-zinc-800 pr-20"
                   />
                   <button
                     type="button"
                     onClick={saveTracking}
                     disabled={savingTracking || updatingStatus}
-                    className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs rounded border border-gray-300 transition-colors"
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3 py-1 bg-gray-100 dark:bg-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-600 text-gray-800 dark:text-zinc-200 font-bold text-xs rounded border border-gray-300 dark:border-zinc-600 transition-colors"
                   >
                     {savingTracking ? <Loader2 size={12} className="animate-spin" /> : "Save"}
                   </button>
@@ -2458,7 +2640,7 @@ function OrderDetailPage({ orderId, initialOrder, onBack, onUpdate }) {
                       href={trackingPortalUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline"
+                      className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 hover:underline"
                     >
                       Open {courierName} Live Tracking Portal <ExternalLink size={12} />
                     </a>
@@ -2467,12 +2649,12 @@ function OrderDetailPage({ orderId, initialOrder, onBack, onUpdate }) {
               </div>
 
               {/* Primary Dispatch Action Buttons */}
-              <div className="space-y-2 pt-2 border-t border-gray-100">
+              <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-zinc-800">
                 {status !== 'shipped' && status !== 'delivered' && status !== 'cancelled' && (
                   <button
                     onClick={markAsShipped}
                     disabled={updatingStatus}
-                    className="w-full bg-black hover:bg-fire text-white font-bold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm text-xs uppercase tracking-wider"
+                    className="w-full bg-black dark:bg-fire hover:bg-fire dark:hover:bg-fire/90 text-white font-bold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm text-xs uppercase tracking-wider"
                   >
                     <Truck size={15} /> Dispatch & Mark as Shipped
                   </button>
@@ -2501,20 +2683,20 @@ function OrderDetailPage({ orderId, initialOrder, onBack, onUpdate }) {
             </div>
 
             {/* Internal Staff Warehouse Note */}
-            <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-3 text-xs">
-              <h3 className="font-display font-bold uppercase tracking-wider text-gray-900 flex items-center gap-1.5">
+            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm space-y-3 text-xs">
+              <h3 className="font-display font-bold uppercase tracking-wider text-gray-900 dark:text-zinc-100 flex items-center gap-1.5">
                 <MapPin size={15} className="text-fire" /> Warehouse Staff Note
               </h3>
               <textarea
                 value={note}
                 onChange={e => setNote(e.target.value)}
                 placeholder="Private remarks for warehouse staff / packers..."
-                className="w-full border border-gray-300 rounded-lg p-2.5 text-xs focus:border-black focus:ring-1 focus:ring-black focus:outline-none bg-gray-50 min-h-[65px] resize-none text-gray-800"
+                className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg p-2.5 text-xs focus:border-black focus:ring-1 focus:ring-black focus:outline-none bg-gray-50 dark:bg-zinc-800 min-h-[65px] resize-none text-gray-800 dark:text-zinc-100"
               />
               <button
                 onClick={saveNote}
                 disabled={savingNote}
-                className="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg text-xs font-bold transition-colors border border-gray-300 shadow-sm"
+                className="w-full py-2 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-800 dark:text-zinc-200 rounded-lg text-xs font-bold transition-colors border border-gray-300 dark:border-zinc-700 shadow-sm"
               >
                 {savingNote ? "Saving..." : "Save Staff Note"}
               </button>
@@ -2523,7 +2705,7 @@ function OrderDetailPage({ orderId, initialOrder, onBack, onUpdate }) {
             {/* Refund Trigger */}
             <button
               onClick={() => setRefundOrder(order)}
-              className="w-full py-2.5 border border-fire/40 text-fire rounded-lg text-xs font-bold hover:bg-fire hover:text-white transition-colors bg-white shadow-sm flex items-center justify-center gap-1.5"
+              className="w-full py-2.5 border border-fire/40 text-fire rounded-lg text-xs font-bold hover:bg-fire hover:text-white transition-colors bg-white dark:bg-zinc-900 shadow-sm flex items-center justify-center gap-1.5"
             >
               <RotateCcw size={13} /> Initiate Customer Refund
             </button>
