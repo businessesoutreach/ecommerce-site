@@ -152,19 +152,20 @@ router.get('/analytics/profitability', async (req, res) => {
 
 router.get('/analytics/overview', async (req, res) => {
     try {
+        const { range = '30d' } = req.query;
         const now = new Date();
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(now.getDate() - 30);
-        const sixtyDaysAgo = new Date();
-        sixtyDaysAgo.setDate(now.getDate() - 60);
+        const days = range === '7d' ? 7 : range === '90d' ? 90 : range === '1y' ? 365 : 30;
+        
+        const periodStart = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+        const prevPeriodStart = new Date(periodStart.getTime() - days * 24 * 60 * 60 * 1000);
 
         // Fetch all orders
         const allOrders = await prisma.order.findMany({ include: { items: { include: { product: true } } } });
         const validOrders = allOrders.filter(o => o.status !== 'cancelled' && o.status !== 'failed');
         
-        // KPIs (30d vs previous 30d)
-        const currentOrders = validOrders.filter(o => o.created_at >= thirtyDaysAgo);
-        const previousOrders = validOrders.filter(o => o.created_at >= sixtyDaysAgo && o.created_at < thirtyDaysAgo);
+        // KPIs (current range vs previous period of same duration)
+        const currentOrders = validOrders.filter(o => o.created_at >= periodStart);
+        const previousOrders = validOrders.filter(o => o.created_at >= prevPeriodStart && o.created_at < periodStart);
 
         const isCollected = (o) => o.payment_status === 'paid' || o.cod_remittance_status === 'remitted';
         const currentRev = currentOrders.filter(isCollected).reduce((sum, o) => sum + o.total, 0);
@@ -179,8 +180,8 @@ router.get('/analytics/overview', async (req, res) => {
         const prevAOV = prevCount ? prevRev / prevCount : 0;
 
         const allUsers = await prisma.user.findMany();
-        const currentUsers = allUsers.filter(u => u.created_at >= thirtyDaysAgo).length;
-        const prevUsers = allUsers.filter(u => u.created_at >= sixtyDaysAgo && u.created_at < thirtyDaysAgo).length;
+        const currentUsers = allUsers.filter(u => u.created_at >= periodStart).length;
+        const prevUsers = allUsers.filter(u => u.created_at >= prevPeriodStart && u.created_at < periodStart).length;
 
         const calcTrend = (curr, prev) => {
             if (prev === 0) return curr > 0 ? 100 : 0;
@@ -203,11 +204,10 @@ router.get('/analytics/overview', async (req, res) => {
             aov: { value: currentAOV, trend: calcTrend(currentAOV, prevAOV) }
         };
 
-        // Chart Data (30d)
+        // Chart Data (aggregated by day)
         const dailyMap = {};
-        for(let i=0; i<30; i++) {
-            const d = new Date(now);
-            d.setDate(now.getDate() - i);
+        for(let i = days - 1; i >= 0; i--) {
+            const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
             dailyMap[d.toISOString().split('T')[0]] = { revenue: 0, orders: 0 };
         }
         for (const o of currentOrders) {
@@ -227,15 +227,20 @@ router.get('/analytics/overview', async (req, res) => {
         const productStats = {};
         let catStats = {};
         for (const o of currentOrders) {
-            // Only count towards top products if delivered
-            const isDelivered = o.status === 'delivered';
-            
             for (const item of o.items) {
-                if (isDelivered) {
-                    if (!productStats[item.product_id]) productStats[item.product_id] = { sold: 0, rev: 0, name: item.product?.name || 'Unknown' };
-                    productStats[item.product_id].sold += item.quantity;
-                    productStats[item.product_id].rev += (item.unit_price * item.quantity);
+                if (!productStats[item.product_id]) {
+                    productStats[item.product_id] = { 
+                        id: item.product_id,
+                        sold: 0, 
+                        rev: 0, 
+                        name: item.product?.name || 'Unknown',
+                        image: item.product?.images?.[0] || item.product?.hover_image || '',
+                        category: item.product?.category_slug || 'Sneakers',
+                        price: item.product?.base_price || item.unit_price || 0
+                    };
                 }
+                productStats[item.product_id].sold += item.quantity;
+                productStats[item.product_id].rev += (item.unit_price * item.quantity);
 
                 // Category sales include all valid orders
                 const cat = item.product?.category_slug || 'uncategorized';
@@ -248,10 +253,15 @@ router.get('/analytics/overview', async (req, res) => {
 
         // Recent Orders
         const recent_orders = allOrders.sort((a,b) => b.created_at - a.created_at).slice(0, 8).map(o => ({
+            id: o.id,
             order_number: o.order_number,
             customer_name: o.customer_name,
+            customer_email: o.customer_email,
+            payment_method: o.payment_method,
+            payment_status: o.payment_status,
             total: o.total,
             status: o.status,
+            items_count: o.items?.length || 0,
             created_at: o.created_at
         }));
 

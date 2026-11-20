@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Home, Megaphone, Tag, Layers, Zap, FileText, Search, LayoutDashboard, Package, ShoppingCart, Ticket, Star, Users, LogOut, TrendingUp, AlertTriangle, Plus, Trash2, X, RotateCcw, DollarSign, Image as ImageIcon, Upload, MessageCircle, Search as SearchIcon, Filter, MoreVertical, Eye, Download, Printer, CheckCircle, Check, Truck, MapPin, Edit, Copy, Activity, Loader2, HelpCircle, ExternalLink, Clock, ArrowLeft } from "lucide-react";
+import { Home, Megaphone, Tag, Layers, Zap, FileText, Search, LayoutDashboard, Package, ShoppingCart, Ticket, Star, Users, LogOut, TrendingUp, AlertTriangle, Plus, Trash2, X, RotateCcw, DollarSign, Image as ImageIcon, Upload, MessageCircle, Search as SearchIcon, Filter, MoreVertical, Eye, Download, Printer, CheckCircle, Check, Truck, MapPin, Edit, Copy, Activity, Loader2, HelpCircle, ExternalLink, Clock, ArrowLeft, ArrowUpRight, ArrowDownRight, RefreshCw, ShoppingBag, Box, ChevronRight } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell } from "recharts";
 import { http, fmt, imgUrl, waLink } from "../lib/api";
 import { useStore } from "../context/StoreContext";
@@ -166,220 +166,593 @@ export default function Admin() {
 
 function Overview({ setTab }) {
   const [d, setD] = useState(null);
-  useEffect(() => { http.get("/admin/analytics/overview").then(({ data }) => setD(data.data)); }, []);
-  if (!d) return <div className="skeleton h-64 rounded-none" />;
+  const [range, setRange] = useState("30d");
+  const [chartView, setChartView] = useState("revenue"); // "revenue" | "orders"
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const navigate = useNavigate();
+
+  const fetchOverview = (selectedRange = range) => {
+    setIsRefreshing(true);
+    http.get(`/admin/analytics/overview?range=${selectedRange}`)
+      .then(({ data }) => setD(data.data))
+      .catch((err) => toast.error("Failed to load overview data"))
+      .finally(() => setIsRefreshing(false));
+  };
+
+  useEffect(() => {
+    fetchOverview(range);
+  }, [range]);
+
+  if (!d && isRefreshing) {
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div className="h-20 bg-gray-200 rounded-xl" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-gray-200 rounded-xl" />)}
+        </div>
+        <div className="h-80 bg-gray-200 rounded-xl" />
+      </div>
+    );
+  }
+
+  if (!d) return <div className="p-8 text-center text-gray-400">Loading overview...</div>;
 
   const { kpis, sales_chart, top_products, sales_by_category, recent_orders, customer_overview, needs_attention, inventory_by_category } = d;
 
-  const COLORS = ['#FF3B30', '#111111', '#666666', '#E5E5E5', '#A3A3A3'];
+  const COLORS = ['#FF3B30', '#2563EB', '#10B981', '#F59E0B', '#8B5CF6', '#64748B'];
 
-  const Trend = ({ val }) => (
-    <span className={`text-xs font-mono font-bold ${val > 0 ? 'text-green-500' : val < 0 ? 'text-fire' : 'text-ink-400'}`}>
-      {val > 0 ? '↑' : val < 0 ? '↓' : ''} {Math.abs(val).toFixed(1)}%
-    </span>
-  );
+  const TrendBadge = ({ val }) => {
+    const isPos = val > 0;
+    const isNeg = val < 0;
+    return (
+      <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[11px] font-mono font-bold ${
+        isPos ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+        isNeg ? 'bg-rose-50 text-rose-700 border border-rose-200' :
+        'bg-gray-100 text-gray-600 border border-gray-200'
+      }`}>
+        {isPos ? <ArrowUpRight size={13} className="stroke-[2.5]" /> : isNeg ? <ArrowDownRight size={13} className="stroke-[2.5]" /> : null}
+        {isPos ? '+' : ''}{Number(val).toFixed(1)}%
+      </span>
+    );
+  };
+
+  const totalCategoryRev = (sales_by_category || []).reduce((acc, c) => acc + (c.value || 0), 0);
 
   return (
-    <div className="pb-10">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-        <h1 className="font-display tracking-tight text-2xl font-semibold">Dashboard</h1>
-        <div className="flex flex-wrap gap-2">
-          <button onClick={() => setTab("products")} className="px-3 py-1.5 text-xs font-bold  border border-ink-200 bg-white hover:bg-obsidian hover:text-white transition-colors">+ Add Product</button>
-          <button onClick={() => setTab("coupons")} className="px-3 py-1.5 text-xs font-bold  border border-ink-200 bg-white hover:bg-obsidian hover:text-white transition-colors">+ Create Coupon</button>
-          <button onClick={() => setTab("orders")} className="px-3 py-1.5 text-xs font-bold  bg-obsidian text-white hover:bg-fire transition-colors">View Orders</button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-4 mb-6">
-        <div className="bg-white rounded-none p-5 border border-ink-200 xl:col-span-2">
-           <div className="flex justify-between items-start"><span className="font-mono text-xs  tracking-wider text-ink-400">Collected Revenue</span><DollarSign size={18} className="text-green-500" /></div>
-           <p className="font-display font-semibold text-2xl mt-2">{fmt(kpis.revenue.value)}</p>
-           <Trend val={kpis.revenue.trend} />
-        </div>
-        <div className="bg-white rounded-none p-5 border border-ink-200 xl:col-span-2">
-           <div className="flex justify-between items-start"><span className="font-mono text-xs  tracking-wider text-ink-400">Total Orders</span><ShoppingCart size={18} className="text-fire" /></div>
-           <p className="font-display font-semibold text-2xl mt-2">{kpis.total_orders?.value || 0}</p>
-           <span className="text-xs font-mono font-bold text-ink-400">All Time</span>
-        </div>
-        <div className="bg-white rounded-none p-5 border border-ink-200 xl:col-span-2">
-           <div className="flex justify-between items-start"><span className="font-mono text-xs  tracking-wider text-ink-400">Delivered Orders</span><CheckCircle size={18} className="text-blue-500" /></div>
-           <p className="font-display font-semibold text-2xl mt-2">{kpis.delivered_orders?.value || 0}</p>
-           <span className="text-xs font-mono font-bold text-ink-400">Last 30 Days</span>
-        </div>
-        <div className="bg-white rounded-none p-5 border border-ink-200 xl:col-span-2">
-           <div className="flex justify-between items-start"><span className="font-mono text-xs  tracking-wider text-ink-400">Confirmed Orders</span><Package size={18} className="text-green-500" /></div>
-           <p className="font-display font-semibold text-2xl mt-2">{kpis.confirmed_orders?.value || 0}</p>
-           <span className="text-xs font-mono font-bold text-ink-400">Last 30 Days</span>
-        </div>
-        <div className="bg-white rounded-none p-5 border border-ink-200 xl:col-span-2">
-           <div className="flex justify-between items-start"><span className="font-mono text-xs  tracking-wider text-ink-400">Pending Orders</span><ShoppingCart size={18} className="text-orange-500" /></div>
-           <p className="font-display font-semibold text-2xl mt-2">{kpis.pending_orders?.value || 0}</p>
-           <span className="text-xs font-mono font-bold text-ink-400">Last 30 Days</span>
-        </div>
-        <div className="bg-white rounded-none p-5 border border-ink-200 xl:col-span-2">
-           <div className="flex justify-between items-start"><span className="font-mono text-xs  tracking-wider text-ink-400">Customers</span><Users size={18} className="text-fire" /></div>
-           <p className="font-display font-semibold text-2xl mt-2">{kpis.customers.value}</p>
-           <Trend val={kpis.customers.trend} />
-        </div>
-        <div className="bg-white rounded-none p-5 border border-ink-200 xl:col-span-2">
-           <div className="flex justify-between items-start"><span className="font-mono text-xs  tracking-wider text-ink-400">Avg Order Value</span><Package size={18} className="text-fire" /></div>
-           <p className="font-display font-semibold text-2xl mt-2">{fmt(kpis.aov.value)}</p>
-           <Trend val={kpis.aov.trend} />
-        </div>
-        <div className="bg-white rounded-none p-5 border border-ink-200 xl:col-span-2">
-           <div className="flex justify-between items-start"><span className="font-mono text-xs  tracking-wider text-ink-400">Pending COD</span><Truck size={18} className="text-orange-500" /></div>
-           <p className="font-display font-semibold text-2xl mt-2">{fmt(kpis.pending_cod?.value || 0)}</p>
-           <span className="text-xs font-mono font-bold text-ink-400">Awaiting Remittance</span>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-none p-5 border border-ink-200 mb-6">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="font-display text-lg font-semibold">Sales Overview (Last 30 Days)</h3>
-        </div>
-        <ResponsiveContainer width="100%" height={300}>
-          <AreaChart data={sales_chart} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
-            <defs>
-              <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#FF3B30" stopOpacity={0.3}/>
-                <stop offset="95%" stopColor="#FF3B30" stopOpacity={0}/>
-              </linearGradient>
-            </defs>
-            <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-            <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => `Rs ${v/1000}k`} />
-            <Tooltip contentStyle={{ borderRadius: 0, border: '1px solid #e5e5e5', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-            <Area type="monotone" dataKey="revenue" stroke="#FF3B30" strokeWidth={2} fillOpacity={1} fill="url(#colorRev)" />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
-
-      <div className="grid lg:grid-cols-3 gap-6 mb-6">
-        <div className="lg:col-span-2 bg-white rounded-none p-5 border border-ink-200">
-          <h3 className="font-display text-lg font-semibold mb-4">Top Selling Products</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-ink-100 font-mono text-[10px]  text-ink-500">
-                <tr><th className="p-3">Product</th><th className="p-3">Sold</th><th className="p-3">Revenue</th></tr>
-              </thead>
-              <tbody>
-                {top_products.map((p, i) => (
-                  <tr key={i} className="border-b border-ink-100 last:border-0">
-                    <td className="p-3 font-semibold">{p.name}</td>
-                    <td className="p-3">{p.sold}</td>
-                    <td className="p-3 text-fire font-mono">{fmt(p.rev)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+    <div className="space-y-6 pb-12 max-w-[1600px] mx-auto">
+      {/* Top Header & Executive Controls */}
+      <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-xs flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h1 className="font-display tracking-tight text-2xl font-black text-gray-900">Executive Overview</h1>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              Store Operational
+            </span>
           </div>
-          <button onClick={() => setTab("products")} className="w-full text-center text-xs font-bold  mt-4 text-ink-500 hover:text-obsidian">View All Products</button>
+          <p className="text-xs text-gray-500 mt-1">
+            Real-time financial telemetry, order fulfillment radar, and customer analytics.
+          </p>
         </div>
-        
-        <div className="bg-white rounded-none p-5 border border-ink-200">
-          <h3 className="font-display text-lg font-semibold mb-4">Sales by Category</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <PieChart>
-              <Pie data={sales_by_category} innerRadius={60} outerRadius={80} paddingAngle={2} dataKey="value" stroke="none">
-                {sales_by_category.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(value) => fmt(value)} />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="mt-4 space-y-2">
-            {sales_by_category.map((c, i) => (
-              <div key={i} className="flex justify-between items-center text-xs">
-                <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full" style={{backgroundColor: COLORS[i % COLORS.length]}}/>{c.name}</span>
-                <span className="font-mono font-bold">{fmt(c.value)}</span>
-              </div>
+
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Time Range Selector */}
+          <div className="flex items-center bg-gray-100 p-1 rounded-xl border border-gray-200">
+            {[
+              { id: "7d", label: "7D" },
+              { id: "30d", label: "30D" },
+              { id: "90d", label: "90D" },
+              { id: "1y", label: "1Y" },
+            ].map(r => (
+              <button
+                key={r.id}
+                onClick={() => setRange(r.id)}
+                className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                  range === r.id
+                    ? "bg-white text-gray-900 shadow-xs border border-gray-200/80"
+                    : "text-gray-500 hover:text-gray-900"
+                }`}
+              >
+                {r.label}
+              </button>
             ))}
           </div>
+
+          {/* Refresh Button */}
+          <button
+            onClick={() => fetchOverview(range)}
+            disabled={isRefreshing}
+            title="Refresh Data"
+            className="p-2 bg-white hover:bg-gray-50 border border-gray-200 rounded-xl text-gray-600 transition-colors"
+          >
+            <RefreshCw size={15} className={isRefreshing ? "animate-spin text-fire" : ""} />
+          </button>
+
+          {/* Direct Action Shortcuts */}
+          <button
+            onClick={() => setTab("orders")}
+            className="px-3.5 py-1.5 text-xs font-bold rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 transition-colors shadow-xs"
+          >
+            Orders Feed
+          </button>
+          <button
+            onClick={() => setTab("products")}
+            className="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-gray-900 hover:bg-fire text-white transition-colors shadow-xs flex items-center gap-1.5"
+          >
+            <Plus size={14} /> Add Product
+          </button>
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white rounded-none p-5 border border-ink-200">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-display text-lg font-semibold">Recent Orders</h3>
-            <button onClick={() => setTab("orders")} className="text-xs font-bold  text-fire hover:underline">View All</button>
+      {/* Tier 1: Core Financial KPI Grid (4 High-Contrast Cards) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Revenue */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold tracking-wider text-gray-500 uppercase">Net Revenue</span>
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+              <DollarSign size={17} />
+            </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-ink-100 font-mono text-[10px]  text-ink-500">
-                <tr><th className="p-3">Order</th><th className="p-3">Customer</th><th className="p-3">Total</th><th className="p-3">Status</th><th className="p-3 hidden sm:table-cell">Date</th></tr>
-              </thead>
-              <tbody>
-                {recent_orders.map((o, i) => (
-                  <tr key={i} className="border-b border-ink-100 last:border-0">
-                    <td className="p-3 font-mono font-bold text-fire">#{o.order_number}</td>
-                    <td className="p-3">{o.customer_name}</td>
-                    <td className="p-3">{fmt(o.total)}</td>
-                    <td className="p-3"><span className="text-[10px] font-bold  tracking-wider bg-ink-100 px-2 py-1">{o.status}</span></td>
-                    <td className="p-3 hidden sm:table-cell text-ink-400 font-mono text-xs">{new Date(o.created_at).toLocaleDateString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="mt-3">
+            <div className="text-2xl font-black font-display text-gray-900 tracking-tight">
+              {fmt(kpis.revenue.value)}
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              <TrendBadge val={kpis.revenue.trend} />
+              <span className="text-[11px] text-gray-400">vs prev {range}</span>
+            </div>
+          </div>
+          <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+            <span>Pending COD</span>
+            <span className="font-mono font-bold text-gray-900">{fmt(kpis.pending_cod?.value || 0)}</span>
           </div>
         </div>
 
-        <div className="space-y-6">
-          <div className="bg-white rounded-none p-5 border border-ink-200">
-            <h3 className="font-display text-lg font-semibold mb-4">Customer Overview</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-ink-500">Total Customers</span>
-                <span className="font-bold">{customer_overview.total}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-ink-500">New (Last 30d)</span>
-                <span className="font-bold text-green-500">+{customer_overview.new}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-ink-500">Returning (Active)</span>
-                <span className="font-bold">{customer_overview.returning}</span>
-              </div>
+        {/* Orders Volume */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold tracking-wider text-gray-500 uppercase">Orders Volume</span>
+            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+              <ShoppingCart size={17} />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-2xl font-black font-display text-gray-900 tracking-tight">
+              {kpis.orders.value} <span className="text-xs font-bold text-gray-400">orders</span>
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              <TrendBadge val={kpis.orders.trend} />
+              <span className="text-[11px] text-gray-400">vs prev {range}</span>
+            </div>
+          </div>
+          <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+            <span>Delivered / Confirmed</span>
+            <span className="font-mono font-bold text-emerald-600">
+              {kpis.delivered_orders?.value || 0} / {kpis.confirmed_orders?.value || 0}
+            </span>
+          </div>
+        </div>
+
+        {/* Average Order Value (AOV) */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold tracking-wider text-gray-500 uppercase">Avg Order Value</span>
+            <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
+              <ShoppingBag size={17} />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-2xl font-black font-display text-gray-900 tracking-tight">
+              {fmt(kpis.aov.value)}
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              <TrendBadge val={kpis.aov.trend} />
+              <span className="text-[11px] text-gray-400">basket health</span>
+            </div>
+          </div>
+          <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+            <span>Lifetime Orders</span>
+            <span className="font-mono font-bold text-gray-900">{kpis.total_orders?.value || 0}</span>
+          </div>
+        </div>
+
+        {/* Customers Reach */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold tracking-wider text-gray-500 uppercase">Active Accounts</span>
+            <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
+              <Users size={17} />
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-2xl font-black font-display text-gray-900 tracking-tight">
+              {kpis.customers.value}
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              <TrendBadge val={kpis.customers.trend} />
+              <span className="text-[11px] text-gray-400">new user signups</span>
+            </div>
+          </div>
+          <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+            <span>Returning Cohort</span>
+            <span className="font-mono font-bold text-gray-900">{customer_overview?.returning || 0} active</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Tier 2: Actionable Operational Status Radar (4 Shortcuts) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <button
+          onClick={() => setTab("orders")}
+          className="text-left bg-white hover:bg-gray-50/80 border border-gray-200 hover:border-gray-300 rounded-xl p-3.5 transition-all shadow-xs flex items-center justify-between group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-rose-50 text-fire flex items-center justify-center font-bold">
+              {needs_attention.pending_orders}
+            </div>
+            <div>
+              <div className="text-xs font-bold text-gray-900">Unfulfilled Orders</div>
+              <div className="text-[11px] text-gray-500">Awaiting dispatch</div>
+            </div>
+          </div>
+          <ChevronRight size={16} className="text-gray-400 group-hover:text-gray-900 transition-colors" />
+        </button>
+
+        <button
+          onClick={() => setTab("cod")}
+          className="text-left bg-white hover:bg-gray-50/80 border border-gray-200 hover:border-gray-300 rounded-xl p-3.5 transition-all shadow-xs flex items-center justify-between group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+              <Truck size={17} />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-gray-900">COD Remittance</div>
+              <div className="text-[11px] text-gray-500">{fmt(kpis.pending_cod?.value || 0)}</div>
+            </div>
+          </div>
+          <ChevronRight size={16} className="text-gray-400 group-hover:text-gray-900 transition-colors" />
+        </button>
+
+        <button
+          onClick={() => setTab("inventory")}
+          className="text-left bg-white hover:bg-gray-50/80 border border-gray-200 hover:border-gray-300 rounded-xl p-3.5 transition-all shadow-xs flex items-center justify-between group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center font-bold">
+              {needs_attention.low_stock}
+            </div>
+            <div>
+              <div className="text-xs font-bold text-gray-900">Low Stock SKUs</div>
+              <div className="text-[11px] text-gray-500">&lt; 5 units remaining</div>
+            </div>
+          </div>
+          <ChevronRight size={16} className="text-gray-400 group-hover:text-gray-900 transition-colors" />
+        </button>
+
+        <button
+          onClick={() => setTab("returns")}
+          className="text-left bg-white hover:bg-gray-50/80 border border-gray-200 hover:border-gray-300 rounded-xl p-3.5 transition-all shadow-xs flex items-center justify-between group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+              {needs_attention.refund_requests}
+            </div>
+            <div>
+              <div className="text-xs font-bold text-gray-900">Returns & Claims</div>
+              <div className="text-[11px] text-gray-500">Customer requests</div>
+            </div>
+          </div>
+          <ChevronRight size={16} className="text-gray-400 group-hover:text-gray-900 transition-colors" />
+        </button>
+      </div>
+
+      {/* Main Charts Row: Revenue Velocity + Category Distribution */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Interactive Main Chart (2 cols) */}
+        <div className="lg:col-span-2 bg-white border border-gray-200 rounded-2xl p-5 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+            <div>
+              <h2 className="font-display text-base font-bold text-gray-900">Sales Velocity & Volume</h2>
+              <p className="text-xs text-gray-500">Day-by-day telemetry for the selected period</p>
+            </div>
+
+            {/* Metric Switcher */}
+            <div className="flex items-center bg-gray-100 p-0.5 rounded-lg border border-gray-200 self-start">
+              <button
+                onClick={() => setChartView("revenue")}
+                className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
+                  chartView === "revenue" ? "bg-white text-gray-900 shadow-xs" : "text-gray-500 hover:text-gray-900"
+                }`}
+              >
+                Revenue (PKR)
+              </button>
+              <button
+                onClick={() => setChartView("orders")}
+                className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
+                  chartView === "orders" ? "bg-white text-gray-900 shadow-xs" : "text-gray-500 hover:text-gray-900"
+                }`}
+              >
+                Orders Volume
+              </button>
             </div>
           </div>
 
-          <div className="bg-white rounded-none p-5 border-l-4 border-l-fire border-y border-r border-ink-200">
-            <h3 className="font-display text-lg font-semibold mb-4 flex items-center gap-2"><AlertTriangle size={18} className="text-fire"/> Needs Attention</h3>
-            <ul className="space-y-3 text-sm">
-              <li className="flex justify-between items-center">
-                <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-fire"></span> {needs_attention.pending_orders} pending orders</span>
-                <button onClick={() => setTab("orders")} className="text-xs text-ink-400 hover:text-obsidian  font-bold">View</button>
-              </li>
-              <li className="flex justify-between items-center">
-                <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-orange-400"></span> {needs_attention.low_stock} products low stock</span>
-                <button onClick={() => setTab("products")} className="text-xs text-ink-400 hover:text-obsidian  font-bold">View</button>
-              </li>
-              <li className="flex justify-between items-center">
-                <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-red-600"></span> {needs_attention.failed_payments} failed payments</span>
-                <button onClick={() => setTab("orders")} className="text-xs text-ink-400 hover:text-obsidian  font-bold">View</button>
-              </li>
-              <li className="flex justify-between items-center">
-                <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-yellow-400"></span> {needs_attention.pending_reviews} pending reviews</span>
-                <button onClick={() => setTab("reviews")} className="text-xs text-ink-400 hover:text-obsidian  font-bold">View</button>
-              </li>
-              <li className="flex justify-between items-center">
-                <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-orange-500"></span> {needs_attention.refund_requests} refund requests</span>
-                <button onClick={() => setTab("refunds")} className="text-xs text-ink-400 hover:text-obsidian  font-bold">View</button>
-              </li>
-            </ul>
+          <div className="h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={sales_chart} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={chartView === "revenue" ? "#FF3B30" : "#2563EB"} stopOpacity={0.25} />
+                    <stop offset="95%" stopColor={chartView === "revenue" ? "#FF3B30" : "#2563EB"} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 11, fill: '#9CA3AF' }}
+                  tickLine={false}
+                  axisLine={{ stroke: '#E5E7EB' }}
+                  tickFormatter={(val) => {
+                    const parts = val.split('-');
+                    return parts.length === 3 ? `${parts[1]}/${parts[2]}` : val;
+                  }}
+                />
+                <YAxis
+                  tick={{ fontSize: 11, fill: '#9CA3AF' }}
+                  tickLine={false}
+                  axisLine={{ stroke: '#E5E7EB' }}
+                  tickFormatter={(v) => chartView === "revenue" ? `${(v/1000).toFixed(0)}k` : v}
+                />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: '12px',
+                    border: '1px solid #E5E7EB',
+                    boxShadow: '0 10px 15px -3px rgba(0,0,0,0.07)',
+                    backgroundColor: '#FFFFFF',
+                    padding: '8px 12px'
+                  }}
+                  formatter={(value, name) => [
+                    chartView === "revenue" ? fmt(value) : `${value} orders`,
+                    chartView === "revenue" ? "Revenue" : "Volume"
+                  ]}
+                  labelFormatter={(lbl) => `Date: ${lbl}`}
+                />
+                <Area
+                  type="monotone"
+                  dataKey={chartView}
+                  stroke={chartView === "revenue" ? "#FF3B30" : "#2563EB"}
+                  strokeWidth={2.5}
+                  fillOpacity={1}
+                  fill="url(#areaGradient)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Sales by Category (1 col) */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="font-display text-base font-bold text-gray-900">Revenue by Category</h2>
+              <span className="text-[11px] font-mono text-gray-400">Total: {fmt(totalCategoryRev)}</span>
+            </div>
+            <p className="text-xs text-gray-500 mb-4">Volume distribution across sneaker categories</p>
+
+            {sales_by_category && sales_by_category.length > 0 ? (
+              <>
+                <div className="h-44 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={sales_by_category}
+                        innerRadius={50}
+                        outerRadius={70}
+                        paddingAngle={3}
+                        dataKey="value"
+                        stroke="none"
+                      >
+                        {sales_by_category.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => fmt(value)} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="space-y-2 mt-4 max-h-48 overflow-y-auto pr-1">
+                  {sales_by_category.map((c, i) => {
+                    const pct = totalCategoryRev > 0 ? Math.round((c.value / totalCategoryRev) * 100) : 0;
+                    return (
+                      <div key={i} className="flex justify-between items-center text-xs">
+                        <span className="flex items-center gap-2 text-gray-700 capitalize">
+                          <span
+                            className="w-2.5 h-2.5 rounded-full shrink-0"
+                            style={{ backgroundColor: COLORS[i % COLORS.length] }}
+                          />
+                          <span className="truncate max-w-[130px]">{c.name.replace(/-/g, ' ')}</span>
+                          <span className="text-gray-400 font-mono text-[10px]">({pct}%)</span>
+                        </span>
+                        <span className="font-mono font-bold text-gray-900">{fmt(c.value)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <div className="py-12 text-center text-gray-400 text-xs">
+                No categorical sales logged in this period.
+              </div>
+            )}
           </div>
 
-          <div className="bg-white rounded-none p-5 border border-ink-200">
-            <h3 className="font-display text-lg font-semibold mb-4 flex items-center gap-2"><Layers size={18} className="text-obsidian"/> Inventory by Category</h3>
-            <ul className="space-y-3 text-sm">
-              {inventory_by_category && inventory_by_category.map((inv, idx) => (
-                <li key={idx} className="flex justify-between items-center">
-                  <span className="capitalize">{inv.name.replace(/-/g, ' ')}</span>
-                  <span className="font-bold bg-ink-100 px-2 py-0.5">{inv.count} Products</span>
-                </li>
-              ))}
-              {(!inventory_by_category || inventory_by_category.length === 0) && <li className="text-ink-400">No data</li>}
-            </ul>
+          <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+            <span>Catalog categories</span>
+            <button onClick={() => setTab("products")} className="font-bold text-fire hover:underline">
+              View Catalog →
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Row 3: Top Selling Sneakers & Live Orders Stream */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* Top Selling Sneakers (2 cols) */}
+        <div className="lg:col-span-2 bg-white border border-gray-200 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="font-display text-base font-bold text-gray-900">Top Performing Sneakers</h2>
+              <button onClick={() => setTab("products")} className="text-xs font-bold text-fire hover:underline">
+                All Products
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 mb-4">Highest volume and revenue drivers</p>
+
+            {top_products && top_products.length > 0 ? (
+              <div className="divide-y divide-gray-100">
+                {top_products.map((p, i) => {
+                  const maxSold = Math.max(...top_products.map(x => x.sold || 1));
+                  const pct = Math.round(((p.sold || 0) / maxSold) * 100);
+                  return (
+                    <div key={i} className="py-3 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="text-xs font-mono font-bold text-gray-400 w-4 text-center shrink-0">
+                          #{i + 1}
+                        </span>
+                        <div className="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
+                          {p.image ? (
+                            <img src={imgUrl(p.image)} alt={p.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <Package size={18} className="text-gray-400" />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-gray-900 truncate hover:text-fire cursor-pointer" onClick={() => setTab("products")}>
+                            {p.name}
+                          </p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[10px] font-mono text-gray-400 uppercase">{p.category || 'Sneakers'}</span>
+                            <span className="text-[10px] text-gray-300">•</span>
+                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1 rounded">{p.sold} sold</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-right shrink-0">
+                        <div className="text-xs font-mono font-bold text-gray-900">{fmt(p.rev)}</div>
+                        <div className="w-16 bg-gray-100 rounded-full h-1.5 mt-1 ml-auto overflow-hidden">
+                          <div className="bg-fire h-1.5 rounded-full" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="py-12 text-center text-gray-400 text-xs">
+                No delivered sneaker sales recorded in this period.
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={() => setTab("products")}
+            className="w-full mt-4 py-2 text-center text-xs font-bold text-gray-600 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors border border-gray-200"
+          >
+            Manage Product Catalog
+          </button>
+        </div>
+
+        {/* Live Orders Stream (3 cols) */}
+        <div className="lg:col-span-3 bg-white border border-gray-200 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <div>
+                <h2 className="font-display text-base font-bold text-gray-900">Recent Customer Orders</h2>
+                <p className="text-xs text-gray-500">Live order queue with instant detail inspection</p>
+              </div>
+              <button
+                onClick={() => setTab("orders")}
+                className="text-xs font-bold text-fire hover:underline"
+              >
+                View All Orders →
+              </button>
+            </div>
+
+            <div className="overflow-x-auto mt-4">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-gray-200 text-gray-400 font-mono text-[10px] uppercase">
+                    <th className="pb-2.5 font-bold">Order</th>
+                    <th className="pb-2.5 font-bold">Customer</th>
+                    <th className="pb-2.5 font-bold">Payment</th>
+                    <th className="pb-2.5 font-bold">Total</th>
+                    <th className="pb-2.5 font-bold">Status</th>
+                    <th className="pb-2.5 font-bold text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {recent_orders && recent_orders.map((o, i) => {
+                    const statusColor = 
+                      o.status === 'delivered' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                      o.status === 'shipped' || o.status === 'out_for_delivery' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
+                      o.status === 'confirmed' || o.status === 'packed' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                      o.status === 'placed' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                      'bg-rose-50 text-rose-700 border-rose-200';
+
+                    return (
+                      <tr
+                        key={i}
+                        className="hover:bg-gray-50/80 transition-colors cursor-pointer group"
+                        onClick={() => navigate(`?tab=orders&orderId=${o.order_number}`)}
+                      >
+                        <td className="py-3 font-mono font-bold text-gray-900 group-hover:text-fire transition-colors">
+                          #{o.order_number}
+                        </td>
+                        <td className="py-3">
+                          <div className="font-bold text-gray-900 truncate max-w-[120px]">{o.customer_name}</div>
+                          {o.customer_email && (
+                            <div className="text-[10px] text-gray-400 truncate max-w-[120px]">{o.customer_email}</div>
+                          )}
+                        </td>
+                        <td className="py-3">
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                            o.payment_method === 'COD' ? 'bg-orange-50 text-orange-700 border border-orange-200' : 'bg-blue-50 text-blue-700 border border-blue-200'
+                          }`}>
+                            {o.payment_method || 'COD'}
+                          </span>
+                        </td>
+                        <td className="py-3 font-mono font-bold text-gray-900">
+                          {fmt(o.total)}
+                        </td>
+                        <td className="py-3">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border capitalize ${statusColor}`}>
+                            {o.status.replace(/_/g, ' ')}
+                          </span>
+                        </td>
+                        <td className="py-3 text-right">
+                          <span className="text-xs font-bold text-gray-400 group-hover:text-fire transition-colors inline-flex items-center gap-1">
+                            Inspect →
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+            <span>Showing recent {recent_orders?.length || 0} orders</span>
+            <button
+              onClick={() => setTab("orders")}
+              className="text-xs font-bold text-gray-900 hover:text-fire transition-colors"
+            >
+              Open Full Orders Manager →
+            </button>
           </div>
         </div>
       </div>
