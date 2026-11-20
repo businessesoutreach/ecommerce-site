@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Home, Megaphone, Tag, Layers, Zap, FileText, Search, LayoutDashboard, Package, ShoppingCart, Ticket, Star, Users, LogOut, TrendingUp, AlertTriangle, Plus, Trash2, X, RotateCcw, DollarSign, Image as ImageIcon, Upload, MessageCircle, Search as SearchIcon, Filter, MoreVertical, Eye, Download, Printer, CheckCircle, Check, Truck, MapPin, Edit, Copy, Activity, Loader2, HelpCircle, ExternalLink, Clock, ArrowLeft, ArrowUpRight, ArrowDownRight, RefreshCw, ShoppingBag, Box, ChevronRight } from "lucide-react";
+import { Home, Megaphone, Tag, Layers, Zap, FileText, Search, LayoutDashboard, Package, ShoppingCart, Ticket, Star, Users, LogOut, TrendingUp, AlertTriangle, Plus, Trash2, X, RotateCcw, DollarSign, Image as ImageIcon, Upload, MessageCircle, Search as SearchIcon, Filter, MoreVertical, Eye, Download, Printer, CheckCircle, Check, Truck, MapPin, Edit, Copy, Activity, Loader2, HelpCircle, ExternalLink, Clock, ArrowLeft, ArrowUpRight, ArrowDownRight, RefreshCw, ShoppingBag, Box, ChevronRight, Sun, Moon, Bell } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell } from "recharts";
 import { http, fmt, imgUrl, waLink } from "../lib/api";
 import { useStore } from "../context/StoreContext";
@@ -25,6 +25,28 @@ export default function Admin() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get("tab") || "overview";
+
+  // Dark Mode State with LocalStorage Persistence
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("admin_theme");
+      if (stored) return stored === "dark";
+      return window.matchMedia("(prefers-color-scheme: dark)").matches;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      if (isDark) {
+        document.documentElement.classList.add("dark");
+        localStorage.setItem("admin_theme", "dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+        localStorage.setItem("admin_theme", "light");
+      }
+    }
+  }, [isDark]);
 
   const setTab = (newTab) => {
     const next = new URLSearchParams(searchParams);
@@ -88,26 +110,29 @@ export default function Admin() {
   })).filter(sec => sec.items.length > 0);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex" data-testid="admin-dashboard">
+    <div className={`min-h-screen flex ${isDark ? 'dark bg-zinc-950 text-zinc-100' : 'bg-gray-50 text-gray-900'} transition-colors duration-200`} data-testid="admin-dashboard">
       {tab !== "cms" && (
-        <aside className="w-16 lg:w-60 bg-gray-50/90 border-r border-gray-200 h-screen sticky top-0 flex flex-col shrink-0 z-20">
-          <div className="px-4 py-4 lg:px-6 border-b border-gray-200 shrink-0 flex items-center justify-between">
-            <span className="font-display font-black text-lg text-gray-900 tracking-tight hidden lg:block">
-              SOLEKICKS<span className="text-fire">.</span>
-            </span>
-            <span className="lg:hidden font-display font-black text-fire text-center block w-full text-base">S.</span>
-            <span className="hidden lg:inline text-[9px] font-mono font-bold bg-white text-gray-600 px-1.5 py-0.5 rounded border border-gray-200 shadow-xs">
-              ADMIN
-            </span>
+        <aside className="w-16 lg:w-60 bg-white/95 dark:bg-zinc-900/95 border-r border-gray-200 dark:border-zinc-800 h-screen sticky top-0 flex flex-col shrink-0 z-20 transition-colors">
+          {/* Streamlined compact sidebar header to avoid excessive vertical padding */}
+          <div className="h-14 px-3.5 lg:px-4 border-b border-gray-200 dark:border-zinc-800 shrink-0 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="font-display font-black text-base text-gray-900 dark:text-white tracking-tight hidden lg:block">
+                SOLEKICKS<span className="text-fire">.</span>
+              </span>
+              <span className="lg:hidden font-display font-black text-fire text-center block w-full text-base">S.</span>
+              <span className="hidden lg:inline text-[9px] font-mono font-bold bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 px-1.5 py-0.5 rounded border border-gray-200 dark:border-zinc-700 shadow-2xs">
+                ADMIN
+              </span>
+            </div>
           </div>
 
-          <nav className="flex-1 p-2 lg:p-3 space-y-4 overflow-y-auto custom-scrollbar">
+          <nav className="flex-1 p-2 lg:p-2.5 space-y-3 overflow-y-auto custom-scrollbar">
             {filteredSections.map(sec => (
-              <div key={sec.category} className="space-y-1">
-                <div className="hidden lg:block px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-gray-400">
+              <div key={sec.category} className="space-y-0.5">
+                <div className="hidden lg:block px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-gray-400 dark:text-zinc-500">
                   {sec.category}
                 </div>
-                <div className="lg:hidden h-px bg-gray-200 my-1"></div>
+                <div className="lg:hidden h-px bg-gray-200 dark:bg-zinc-800 my-1"></div>
                 {sec.items.map(([k, l, I]) => {
                   const isActive = tab === k;
                   return (
@@ -115,14 +140,14 @@ export default function Admin() {
                       key={k}
                       onClick={() => setTab(k)}
                       data-testid={`admin-nav-${k}`}
-                      className={`w-full flex items-center justify-center lg:justify-start gap-3 px-3 py-2.5 rounded-lg font-bold text-xs transition-all ${
+                      className={`w-full flex items-center justify-center lg:justify-start gap-2.5 px-3 py-2 rounded-lg font-bold text-xs transition-all ${
                         isActive
-                          ? "bg-white text-fire border border-gray-200 shadow-sm"
-                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-100/70 border border-transparent"
+                          ? "bg-fire/10 dark:bg-fire/20 text-fire border border-fire/20 shadow-2xs"
+                          : "text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 hover:bg-gray-100/70 dark:hover:bg-zinc-800/60 border border-transparent"
                       }`}
                       title={l}
                     >
-                      <I size={16} />
+                      <I size={15} />
                       <span className="hidden lg:block truncate">{l}</span>
                     </button>
                   );
@@ -131,40 +156,124 @@ export default function Admin() {
             ))}
           </nav>
 
-          <div className="p-3 border-t border-gray-200 shrink-0">
+          <div className="p-2.5 border-t border-gray-200 dark:border-zinc-800 shrink-0">
             <button
               onClick={() => { logout(); navigate("/"); }}
-              className="w-full flex items-center justify-center lg:justify-start gap-3 px-3 py-2 rounded-lg text-gray-500 hover:text-fire hover:bg-rose-50 font-bold text-xs transition-colors"
+              className="w-full flex items-center justify-center lg:justify-start gap-2.5 px-3 py-2 rounded-lg text-gray-500 dark:text-zinc-400 hover:text-fire hover:bg-rose-50 dark:hover:bg-rose-950/30 font-bold text-xs transition-colors"
             >
-              <LogOut size={16} />
+              <LogOut size={15} />
               <span className="hidden lg:block">Logout</span>
             </button>
           </div>
         </aside>
       )}
 
-      <main className={`flex-1 overflow-x-hidden ${tab === 'cms' ? 'h-screen' : 'p-5 lg:p-8 min-w-0'}`}>
-        {tab === "overview" && <Overview setTab={setTab} />}
-        {tab === "orders" && <Orders />}
-        {tab === "cod" && <CodTracking />}
-        {tab === "inventory" && <InventoryManagement />}
-        {tab === "products" && <Products />}
-        {tab === "pos" && <PosSystem />}
-        {tab === "returns" && <Returns />}
-        {tab === "refunds" && <Refunds />}
-        {tab === "coupons" && <Coupons />}
-        {tab === "reviews" && <Reviews />}
-        {tab === "customers" && <Customers />}
-        {tab === "bundles" && <BundlesManager />}
-        {tab === "cms" && <Cms setTab={setTab} />}
-        {tab === "profitability" && <ProfitabilityAnalytics />}
-        {tab === "audit_logs" && <AuditLogs />}
-      </main>
+      {/* Main Content Area with Enterprise Sticky Top Navigation Bar */}
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
+        {tab !== "cms" && (
+          <header className="h-14 bg-white/85 dark:bg-zinc-900/85 backdrop-blur-md border-b border-gray-200 dark:border-zinc-800 sticky top-0 z-30 px-4 lg:px-8 flex items-center justify-between shrink-0 transition-colors">
+            {/* Left: Breadcrumbs & Module Title */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-gray-400 dark:text-zinc-500">Admin</span>
+              <span className="text-xs text-gray-300 dark:text-zinc-700">/</span>
+              <span className="text-xs font-black text-gray-900 dark:text-zinc-100 uppercase tracking-wide">
+                {tab.replace(/_/g, " ")}
+              </span>
+            </div>
+
+            {/* Center: Global Quick Jump / Search Bar */}
+            <div className="hidden md:flex items-center relative max-w-sm w-full mx-4">
+              <Search size={14} className="absolute left-3 text-gray-400 dark:text-zinc-500" />
+              <input
+                type="text"
+                placeholder="Search orders, sneakers, customers..."
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && e.target.value) {
+                    const q = e.target.value.toLowerCase();
+                    if (q.includes("order") || q.startsWith("#") || q.startsWith("pk")) {
+                      navigate(`?tab=orders&search=${encodeURIComponent(e.target.value)}`);
+                    } else if (q.includes("customer") || q.includes("user")) {
+                      setTab("customers");
+                    } else {
+                      setTab("products");
+                    }
+                  }
+                }}
+                className="w-full bg-gray-100 dark:bg-zinc-800/80 border border-transparent dark:border-zinc-700/60 rounded-xl pl-8 pr-12 py-1.5 text-xs text-gray-900 dark:text-zinc-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-fire/50 focus:bg-white dark:focus:bg-zinc-900 transition-all"
+              />
+              <span className="absolute right-2 px-1.5 py-0.5 text-[9px] font-mono font-bold text-gray-400 dark:text-zinc-500 bg-white dark:bg-zinc-700 rounded border border-gray-200 dark:border-zinc-600 shadow-2xs">
+                ENTER
+              </span>
+            </div>
+
+            {/* Right: Storefront Link, Live Status Pill, Dark Mode Toggle & User Profile */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              <a
+                href="/"
+                target="_blank"
+                rel="noreferrer"
+                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-lg text-gray-600 dark:text-zinc-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+                title="Preview Live Store"
+              >
+                <ExternalLink size={13} />
+                <span>Store</span>
+              </a>
+
+              <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                Live
+              </span>
+
+              {/* Dark Mode Switcher Toggle Button */}
+              <button
+                onClick={() => setIsDark(!isDark)}
+                className="p-2 rounded-xl text-gray-600 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 border border-gray-200 dark:border-zinc-700 transition-colors"
+                title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              >
+                {isDark ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} className="text-gray-700 dark:text-zinc-300" />}
+              </button>
+
+              {/* User Profile Pill */}
+              <div className="flex items-center gap-2 pl-2 border-l border-gray-200 dark:border-zinc-800">
+                <div className="w-7 h-7 rounded-full bg-linear-to-br from-fire to-orange-500 text-white font-bold text-[11px] flex items-center justify-center shadow-xs">
+                  {user?.name?.[0]?.toUpperCase() || "A"}
+                </div>
+                <div className="hidden lg:block text-left">
+                  <div className="text-xs font-bold text-gray-900 dark:text-zinc-100 leading-none truncate max-w-[100px]">
+                    {user?.name || "Administrator"}
+                  </div>
+                  <div className="text-[10px] text-gray-400 dark:text-zinc-500 leading-none mt-0.5 capitalize">
+                    {user?.role || "Admin"}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </header>
+        )}
+
+        <main className={`flex-1 ${tab === 'cms' ? 'h-full' : 'p-4 lg:p-8 min-w-0'}`}>
+          {tab === "overview" && <Overview setTab={setTab} isDark={isDark} />}
+          {tab === "orders" && <Orders />}
+          {tab === "cod" && <CodTracking />}
+          {tab === "inventory" && <InventoryManagement />}
+          {tab === "products" && <Products />}
+          {tab === "pos" && <PosSystem />}
+          {tab === "returns" && <Returns />}
+          {tab === "refunds" && <Refunds />}
+          {tab === "coupons" && <Coupons />}
+          {tab === "reviews" && <Reviews />}
+          {tab === "customers" && <Customers />}
+          {tab === "bundles" && <BundlesManager />}
+          {tab === "cms" && <Cms setTab={setTab} />}
+          {tab === "profitability" && <ProfitabilityAnalytics />}
+          {tab === "audit_logs" && <AuditLogs />}
+        </main>
+      </div>
     </div>
   );
 }
 
-function Overview({ setTab }) {
+function Overview({ setTab, isDark }) {
   const [d, setD] = useState(null);
   const [range, setRange] = useState("30d");
   const [chartView, setChartView] = useState("revenue"); // "revenue" | "orders"
@@ -186,16 +295,16 @@ function Overview({ setTab }) {
   if (!d && isRefreshing) {
     return (
       <div className="space-y-6 animate-pulse">
-        <div className="h-20 bg-gray-200 rounded-xl" />
+        <div className="h-20 bg-gray-200 dark:bg-zinc-800 rounded-xl" />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-gray-200 rounded-xl" />)}
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-gray-200 dark:bg-zinc-800 rounded-xl" />)}
         </div>
-        <div className="h-80 bg-gray-200 rounded-xl" />
+        <div className="h-80 bg-gray-200 dark:bg-zinc-800 rounded-xl" />
       </div>
     );
   }
 
-  if (!d) return <div className="p-8 text-center text-gray-400">Loading overview...</div>;
+  if (!d) return <div className="p-8 text-center text-gray-400 dark:text-zinc-500">Loading overview...</div>;
 
   const { kpis, sales_chart, top_products, sales_by_category, recent_orders, customer_overview, needs_attention, inventory_by_category } = d;
 
@@ -206,9 +315,9 @@ function Overview({ setTab }) {
     const isNeg = val < 0;
     return (
       <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[11px] font-mono font-bold ${
-        isPos ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-        isNeg ? 'bg-rose-50 text-rose-700 border border-rose-200' :
-        'bg-gray-100 text-gray-600 border border-gray-200'
+        isPos ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60' :
+        isNeg ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800/60' :
+        'bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 border border-gray-200 dark:border-zinc-700'
       }`}>
         {isPos ? <ArrowUpRight size={13} className="stroke-[2.5]" /> : isNeg ? <ArrowDownRight size={13} className="stroke-[2.5]" /> : null}
         {isPos ? '+' : ''}{Number(val).toFixed(1)}%
@@ -221,23 +330,23 @@ function Overview({ setTab }) {
   return (
     <div className="space-y-6 pb-12 max-w-[1600px] mx-auto">
       {/* Top Header & Executive Controls */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-xs flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-xs flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 transition-colors">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="font-display tracking-tight text-2xl font-black text-gray-900">Executive Overview</h1>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <h1 className="font-display tracking-tight text-2xl font-black text-gray-900 dark:text-zinc-100">Executive Overview</h1>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
               Store Operational
             </span>
           </div>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-gray-500 dark:text-zinc-400 mt-1">
             Real-time financial telemetry, order fulfillment radar, and customer analytics.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Time Range Selector */}
-          <div className="flex items-center bg-gray-100 p-1 rounded-xl border border-gray-200">
+          <div className="flex items-center bg-gray-100 dark:bg-zinc-800 p-1 rounded-xl border border-gray-200 dark:border-zinc-700">
             {[
               { id: "7d", label: "7D" },
               { id: "30d", label: "30D" },
@@ -249,8 +358,8 @@ function Overview({ setTab }) {
                 onClick={() => setRange(r.id)}
                 className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
                   range === r.id
-                    ? "bg-white text-gray-900 shadow-xs border border-gray-200/80"
-                    : "text-gray-500 hover:text-gray-900"
+                    ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white shadow-xs border border-gray-200/80 dark:border-zinc-600"
+                    : "text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white"
                 }`}
               >
                 {r.label}
@@ -263,7 +372,7 @@ function Overview({ setTab }) {
             onClick={() => fetchOverview(range)}
             disabled={isRefreshing}
             title="Refresh Data"
-            className="p-2 bg-white hover:bg-gray-50 border border-gray-200 rounded-xl text-gray-600 transition-colors"
+            className="p-2 bg-white dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-700 border border-gray-200 dark:border-zinc-700 rounded-xl text-gray-600 dark:text-zinc-300 transition-colors"
           >
             <RefreshCw size={15} className={isRefreshing ? "animate-spin text-fire" : ""} />
           </button>
@@ -271,13 +380,13 @@ function Overview({ setTab }) {
           {/* Direct Action Shortcuts */}
           <button
             onClick={() => setTab("orders")}
-            className="px-3.5 py-1.5 text-xs font-bold rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-800 transition-colors shadow-xs"
+            className="px-3.5 py-1.5 text-xs font-bold rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-700 text-gray-800 dark:text-zinc-200 transition-colors shadow-xs"
           >
             Orders Feed
           </button>
           <button
             onClick={() => setTab("products")}
-            className="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-gray-900 hover:bg-fire text-white transition-colors shadow-xs flex items-center gap-1.5"
+            className="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-gray-900 dark:bg-zinc-100 hover:bg-fire dark:hover:bg-fire text-white dark:text-zinc-900 dark:hover:text-white transition-colors shadow-xs flex items-center gap-1.5"
           >
             <Plus size={14} /> Add Product
           </button>
@@ -287,96 +396,96 @@ function Overview({ setTab }) {
       {/* Tier 1: Core Financial KPI Grid (4 High-Contrast Cards) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Revenue */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-xs flex flex-col justify-between transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold tracking-wider text-gray-500 uppercase">Net Revenue</span>
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+            <span className="text-xs font-bold tracking-wider text-gray-500 dark:text-zinc-400 uppercase">Net Revenue</span>
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-100 dark:border-emerald-800/60">
               <DollarSign size={17} />
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-2xl font-black font-display text-gray-900 tracking-tight">
+            <div className="text-2xl font-black font-display text-gray-900 dark:text-zinc-100 tracking-tight">
               {fmt(kpis.revenue.value)}
             </div>
             <div className="flex items-center gap-2 mt-2">
               <TrendBadge val={kpis.revenue.trend} />
-              <span className="text-[11px] text-gray-400">vs prev {range}</span>
+              <span className="text-[11px] text-gray-400 dark:text-zinc-500">vs prev {range}</span>
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+          <div className="mt-4 pt-3 border-t border-gray-100 dark:border-zinc-800 flex items-center justify-between text-xs text-gray-500 dark:text-zinc-400">
             <span>Pending COD</span>
-            <span className="font-mono font-bold text-gray-900">{fmt(kpis.pending_cod?.value || 0)}</span>
+            <span className="font-mono font-bold text-gray-900 dark:text-zinc-100">{fmt(kpis.pending_cod?.value || 0)}</span>
           </div>
         </div>
 
         {/* Orders Volume */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-xs flex flex-col justify-between transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold tracking-wider text-gray-500 uppercase">Orders Volume</span>
-            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+            <span className="text-xs font-bold tracking-wider text-gray-500 dark:text-zinc-400 uppercase">Orders Volume</span>
+            <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-800/60">
               <ShoppingCart size={17} />
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-2xl font-black font-display text-gray-900 tracking-tight">
-              {kpis.orders.value} <span className="text-xs font-bold text-gray-400">orders</span>
+            <div className="text-2xl font-black font-display text-gray-900 dark:text-zinc-100 tracking-tight">
+              {kpis.orders.value} <span className="text-xs font-bold text-gray-400 dark:text-zinc-500">orders</span>
             </div>
             <div className="flex items-center gap-2 mt-2">
               <TrendBadge val={kpis.orders.trend} />
-              <span className="text-[11px] text-gray-400">vs prev {range}</span>
+              <span className="text-[11px] text-gray-400 dark:text-zinc-500">vs prev {range}</span>
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+          <div className="mt-4 pt-3 border-t border-gray-100 dark:border-zinc-800 flex items-center justify-between text-xs text-gray-500 dark:text-zinc-400">
             <span>Delivered / Confirmed</span>
-            <span className="font-mono font-bold text-emerald-600">
+            <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
               {kpis.delivered_orders?.value || 0} / {kpis.confirmed_orders?.value || 0}
             </span>
           </div>
         </div>
 
         {/* Average Order Value (AOV) */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-xs flex flex-col justify-between transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold tracking-wider text-gray-500 uppercase">Avg Order Value</span>
-            <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
+            <span className="text-xs font-bold tracking-wider text-gray-500 dark:text-zinc-400 uppercase">Avg Order Value</span>
+            <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-100 dark:border-amber-800/60">
               <ShoppingBag size={17} />
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-2xl font-black font-display text-gray-900 tracking-tight">
+            <div className="text-2xl font-black font-display text-gray-900 dark:text-zinc-100 tracking-tight">
               {fmt(kpis.aov.value)}
             </div>
             <div className="flex items-center gap-2 mt-2">
               <TrendBadge val={kpis.aov.trend} />
-              <span className="text-[11px] text-gray-400">basket health</span>
+              <span className="text-[11px] text-gray-400 dark:text-zinc-500">basket health</span>
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+          <div className="mt-4 pt-3 border-t border-gray-100 dark:border-zinc-800 flex items-center justify-between text-xs text-gray-500 dark:text-zinc-400">
             <span>Lifetime Orders</span>
-            <span className="font-mono font-bold text-gray-900">{kpis.total_orders?.value || 0}</span>
+            <span className="font-mono font-bold text-gray-900 dark:text-zinc-100">{kpis.total_orders?.value || 0}</span>
           </div>
         </div>
 
         {/* Customers Reach */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-xs flex flex-col justify-between transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold tracking-wider text-gray-500 uppercase">Active Accounts</span>
-            <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
+            <span className="text-xs font-bold tracking-wider text-gray-500 dark:text-zinc-400 uppercase">Active Accounts</span>
+            <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center border border-purple-100 dark:border-purple-800/60">
               <Users size={17} />
             </div>
           </div>
           <div className="mt-3">
-            <div className="text-2xl font-black font-display text-gray-900 tracking-tight">
+            <div className="text-2xl font-black font-display text-gray-900 dark:text-zinc-100 tracking-tight">
               {kpis.customers.value}
             </div>
             <div className="flex items-center gap-2 mt-2">
               <TrendBadge val={kpis.customers.trend} />
-              <span className="text-[11px] text-gray-400">new user signups</span>
+              <span className="text-[11px] text-gray-400 dark:text-zinc-500">new user signups</span>
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+          <div className="mt-4 pt-3 border-t border-gray-100 dark:border-zinc-800 flex items-center justify-between text-xs text-gray-500 dark:text-zinc-400">
             <span>Returning Cohort</span>
-            <span className="font-mono font-bold text-gray-900">{customer_overview?.returning || 0} active</span>
+            <span className="font-mono font-bold text-gray-900 dark:text-zinc-100">{customer_overview?.returning || 0} active</span>
           </div>
         </div>
       </div>
@@ -385,85 +494,85 @@ function Overview({ setTab }) {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <button
           onClick={() => setTab("orders")}
-          className="text-left bg-white hover:bg-gray-50/80 border border-gray-200 hover:border-gray-300 rounded-xl p-3.5 transition-all shadow-xs flex items-center justify-between group"
+          className="text-left bg-white dark:bg-zinc-900 hover:bg-gray-50/80 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700 rounded-xl p-3.5 transition-all shadow-xs flex items-center justify-between group"
         >
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-rose-50 text-fire flex items-center justify-center font-bold">
+            <div className="w-9 h-9 rounded-lg bg-rose-50 dark:bg-rose-950/50 text-fire flex items-center justify-center font-bold">
               {needs_attention.pending_orders}
             </div>
             <div>
-              <div className="text-xs font-bold text-gray-900">Unfulfilled Orders</div>
-              <div className="text-[11px] text-gray-500">Awaiting dispatch</div>
+              <div className="text-xs font-bold text-gray-900 dark:text-zinc-100">Unfulfilled Orders</div>
+              <div className="text-[11px] text-gray-500 dark:text-zinc-400">Awaiting dispatch</div>
             </div>
           </div>
-          <ChevronRight size={16} className="text-gray-400 group-hover:text-gray-900 transition-colors" />
+          <ChevronRight size={16} className="text-gray-400 dark:text-zinc-500 group-hover:text-gray-900 dark:group-hover:text-white transition-colors" />
         </button>
 
         <button
           onClick={() => setTab("cod")}
-          className="text-left bg-white hover:bg-gray-50/80 border border-gray-200 hover:border-gray-300 rounded-xl p-3.5 transition-all shadow-xs flex items-center justify-between group"
+          className="text-left bg-white dark:bg-zinc-900 hover:bg-gray-50/80 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700 rounded-xl p-3.5 transition-all shadow-xs flex items-center justify-between group"
         >
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center">
               <Truck size={17} />
             </div>
             <div>
-              <div className="text-xs font-bold text-gray-900">COD Remittance</div>
-              <div className="text-[11px] text-gray-500">{fmt(kpis.pending_cod?.value || 0)}</div>
+              <div className="text-xs font-bold text-gray-900 dark:text-zinc-100">COD Remittance</div>
+              <div className="text-[11px] text-gray-500 dark:text-zinc-400">{fmt(kpis.pending_cod?.value || 0)}</div>
             </div>
           </div>
-          <ChevronRight size={16} className="text-gray-400 group-hover:text-gray-900 transition-colors" />
+          <ChevronRight size={16} className="text-gray-400 dark:text-zinc-500 group-hover:text-gray-900 dark:group-hover:text-white transition-colors" />
         </button>
 
         <button
           onClick={() => setTab("inventory")}
-          className="text-left bg-white hover:bg-gray-50/80 border border-gray-200 hover:border-gray-300 rounded-xl p-3.5 transition-all shadow-xs flex items-center justify-between group"
+          className="text-left bg-white dark:bg-zinc-900 hover:bg-gray-50/80 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700 rounded-xl p-3.5 transition-all shadow-xs flex items-center justify-between group"
         >
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center font-bold">
+            <div className="w-9 h-9 rounded-lg bg-orange-50 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold">
               {needs_attention.low_stock}
             </div>
             <div>
-              <div className="text-xs font-bold text-gray-900">Low Stock SKUs</div>
-              <div className="text-[11px] text-gray-500">&lt; 5 units remaining</div>
+              <div className="text-xs font-bold text-gray-900 dark:text-zinc-100">Low Stock SKUs</div>
+              <div className="text-[11px] text-gray-500 dark:text-zinc-400">&lt; 5 units remaining</div>
             </div>
           </div>
-          <ChevronRight size={16} className="text-gray-400 group-hover:text-gray-900 transition-colors" />
+          <ChevronRight size={16} className="text-gray-400 dark:text-zinc-500 group-hover:text-gray-900 dark:group-hover:text-white transition-colors" />
         </button>
 
         <button
           onClick={() => setTab("returns")}
-          className="text-left bg-white hover:bg-gray-50/80 border border-gray-200 hover:border-gray-300 rounded-xl p-3.5 transition-all shadow-xs flex items-center justify-between group"
+          className="text-left bg-white dark:bg-zinc-900 hover:bg-gray-50/80 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700 rounded-xl p-3.5 transition-all shadow-xs flex items-center justify-between group"
         >
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+            <div className="w-9 h-9 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
               {needs_attention.refund_requests}
             </div>
             <div>
-              <div className="text-xs font-bold text-gray-900">Returns & Claims</div>
-              <div className="text-[11px] text-gray-500">Customer requests</div>
+              <div className="text-xs font-bold text-gray-900 dark:text-zinc-100">Returns & Claims</div>
+              <div className="text-[11px] text-gray-500 dark:text-zinc-400">Customer requests</div>
             </div>
           </div>
-          <ChevronRight size={16} className="text-gray-400 group-hover:text-gray-900 transition-colors" />
+          <ChevronRight size={16} className="text-gray-400 dark:text-zinc-500 group-hover:text-gray-900 dark:group-hover:text-white transition-colors" />
         </button>
       </div>
 
       {/* Main Charts Row: Revenue Velocity + Category Distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Interactive Main Chart (2 cols) */}
-        <div className="lg:col-span-2 bg-white border border-gray-200 rounded-2xl p-5 shadow-xs">
+        <div className="lg:col-span-2 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-xs transition-colors">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
             <div>
-              <h2 className="font-display text-base font-bold text-gray-900">Sales Velocity & Volume</h2>
-              <p className="text-xs text-gray-500">Day-by-day telemetry for the selected period</p>
+              <h2 className="font-display text-base font-bold text-gray-900 dark:text-zinc-100">Sales Velocity & Volume</h2>
+              <p className="text-xs text-gray-500 dark:text-zinc-400">Day-by-day telemetry for the selected period</p>
             </div>
 
             {/* Metric Switcher */}
-            <div className="flex items-center bg-gray-100 p-0.5 rounded-lg border border-gray-200 self-start">
+            <div className="flex items-center bg-gray-100 dark:bg-zinc-800 p-0.5 rounded-lg border border-gray-200 dark:border-zinc-700 self-start">
               <button
                 onClick={() => setChartView("revenue")}
                 className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
-                  chartView === "revenue" ? "bg-white text-gray-900 shadow-xs" : "text-gray-500 hover:text-gray-900"
+                  chartView === "revenue" ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white shadow-xs" : "text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white"
                 }`}
               >
                 Revenue (PKR)
@@ -471,7 +580,7 @@ function Overview({ setTab }) {
               <button
                 onClick={() => setChartView("orders")}
                 className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${
-                  chartView === "orders" ? "bg-white text-gray-900 shadow-xs" : "text-gray-500 hover:text-gray-900"
+                  chartView === "orders" ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white shadow-xs" : "text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white"
                 }`}
               >
                 Orders Volume
@@ -490,28 +599,30 @@ function Overview({ setTab }) {
                 </defs>
                 <XAxis
                   dataKey="date"
-                  tick={{ fontSize: 11, fill: '#9CA3AF' }}
+                  tick={{ fontSize: 11, fill: isDark ? '#71717a' : '#9CA3AF' }}
                   tickLine={false}
-                  axisLine={{ stroke: '#E5E7EB' }}
+                  axisLine={{ stroke: isDark ? '#27272a' : '#E5E7EB' }}
                   tickFormatter={(val) => {
                     const parts = val.split('-');
                     return parts.length === 3 ? `${parts[1]}/${parts[2]}` : val;
                   }}
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: '#9CA3AF' }}
+                  tick={{ fontSize: 11, fill: isDark ? '#71717a' : '#9CA3AF' }}
                   tickLine={false}
-                  axisLine={{ stroke: '#E5E7EB' }}
+                  axisLine={{ stroke: isDark ? '#27272a' : '#E5E7EB' }}
                   tickFormatter={(v) => chartView === "revenue" ? `${(v/1000).toFixed(0)}k` : v}
                 />
                 <Tooltip
                   contentStyle={{
                     borderRadius: '12px',
-                    border: '1px solid #E5E7EB',
-                    boxShadow: '0 10px 15px -3px rgba(0,0,0,0.07)',
-                    backgroundColor: '#FFFFFF',
+                    border: isDark ? '1px solid #27272a' : '1px solid #E5E7EB',
+                    boxShadow: '0 10px 15px -3px rgba(0,0,0,0.3)',
+                    backgroundColor: isDark ? '#18181b' : '#FFFFFF',
+                    color: isDark ? '#f4f4f5' : '#111827',
                     padding: '8px 12px'
                   }}
+                  itemStyle={{ color: isDark ? '#f4f4f5' : '#111827' }}
                   formatter={(value, name) => [
                     chartView === "revenue" ? fmt(value) : `${value} orders`,
                     chartView === "revenue" ? "Revenue" : "Volume"
@@ -532,13 +643,13 @@ function Overview({ setTab }) {
         </div>
 
         {/* Sales by Category (1 col) */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-xs flex flex-col justify-between transition-colors">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <h2 className="font-display text-base font-bold text-gray-900">Revenue by Category</h2>
-              <span className="text-[11px] font-mono text-gray-400">Total: {fmt(totalCategoryRev)}</span>
+              <h2 className="font-display text-base font-bold text-gray-900 dark:text-zinc-100">Revenue by Category</h2>
+              <span className="text-[11px] font-mono text-gray-400 dark:text-zinc-500">Total: {fmt(totalCategoryRev)}</span>
             </div>
-            <p className="text-xs text-gray-500 mb-4">Volume distribution across sneaker categories</p>
+            <p className="text-xs text-gray-500 dark:text-zinc-400 mb-4">Volume distribution across sneaker categories</p>
 
             {sales_by_category && sales_by_category.length > 0 ? (
               <>
@@ -557,7 +668,15 @@ function Overview({ setTab }) {
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value) => fmt(value)} />
+                      <Tooltip
+                        contentStyle={{
+                          borderRadius: '12px',
+                          border: isDark ? '1px solid #27272a' : '1px solid #E5E7EB',
+                          backgroundColor: isDark ? '#18181b' : '#FFFFFF',
+                          color: isDark ? '#f4f4f5' : '#111827'
+                        }}
+                        formatter={(value) => fmt(value)}
+                      />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -567,28 +686,28 @@ function Overview({ setTab }) {
                     const pct = totalCategoryRev > 0 ? Math.round((c.value / totalCategoryRev) * 100) : 0;
                     return (
                       <div key={i} className="flex justify-between items-center text-xs">
-                        <span className="flex items-center gap-2 text-gray-700 capitalize">
+                        <span className="flex items-center gap-2 text-gray-700 dark:text-zinc-300 capitalize">
                           <span
                             className="w-2.5 h-2.5 rounded-full shrink-0"
                             style={{ backgroundColor: COLORS[i % COLORS.length] }}
                           />
                           <span className="truncate max-w-[130px]">{c.name.replace(/-/g, ' ')}</span>
-                          <span className="text-gray-400 font-mono text-[10px]">({pct}%)</span>
+                          <span className="text-gray-400 dark:text-zinc-500 font-mono text-[10px]">({pct}%)</span>
                         </span>
-                        <span className="font-mono font-bold text-gray-900">{fmt(c.value)}</span>
+                        <span className="font-mono font-bold text-gray-900 dark:text-zinc-100">{fmt(c.value)}</span>
                       </div>
                     );
                   })}
                 </div>
               </>
             ) : (
-              <div className="py-12 text-center text-gray-400 text-xs">
+              <div className="py-12 text-center text-gray-400 dark:text-zinc-500 text-xs">
                 No categorical sales logged in this period.
               </div>
             )}
           </div>
 
-          <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+          <div className="mt-4 pt-3 border-t border-gray-100 dark:border-zinc-800 flex items-center justify-between text-xs text-gray-500 dark:text-zinc-400">
             <span>Catalog categories</span>
             <button onClick={() => setTab("products")} className="font-bold text-fire hover:underline">
               View Catalog →
@@ -600,49 +719,49 @@ function Overview({ setTab }) {
       {/* Row 3: Top Selling Sneakers & Live Orders Stream */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Top Selling Sneakers (2 cols) */}
-        <div className="lg:col-span-2 bg-white border border-gray-200 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-2 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-xs flex flex-col justify-between transition-colors">
           <div>
             <div className="flex items-center justify-between mb-1">
-              <h2 className="font-display text-base font-bold text-gray-900">Top Performing Sneakers</h2>
+              <h2 className="font-display text-base font-bold text-gray-900 dark:text-zinc-100">Top Performing Sneakers</h2>
               <button onClick={() => setTab("products")} className="text-xs font-bold text-fire hover:underline">
                 All Products
               </button>
             </div>
-            <p className="text-xs text-gray-500 mb-4">Highest volume and revenue drivers</p>
+            <p className="text-xs text-gray-500 dark:text-zinc-400 mb-4">Highest volume and revenue drivers</p>
 
             {top_products && top_products.length > 0 ? (
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-gray-100 dark:divide-zinc-800">
                 {top_products.map((p, i) => {
                   const maxSold = Math.max(...top_products.map(x => x.sold || 1));
                   const pct = Math.round(((p.sold || 0) / maxSold) * 100);
                   return (
                     <div key={i} className="py-3 flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3 min-w-0">
-                        <span className="text-xs font-mono font-bold text-gray-400 w-4 text-center shrink-0">
+                        <span className="text-xs font-mono font-bold text-gray-400 dark:text-zinc-500 w-4 text-center shrink-0">
                           #{i + 1}
                         </span>
-                        <div className="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 overflow-hidden shrink-0 flex items-center justify-center">
                           {p.image ? (
                             <img src={imgUrl(p.image)} alt={p.name} className="w-full h-full object-cover" />
                           ) : (
-                            <Package size={18} className="text-gray-400" />
+                            <Package size={18} className="text-gray-400 dark:text-zinc-500" />
                           )}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-xs font-bold text-gray-900 truncate hover:text-fire cursor-pointer" onClick={() => setTab("products")}>
+                          <p className="text-xs font-bold text-gray-900 dark:text-zinc-100 truncate hover:text-fire cursor-pointer" onClick={() => setTab("products")}>
                             {p.name}
                           </p>
                           <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-[10px] font-mono text-gray-400 uppercase">{p.category || 'Sneakers'}</span>
-                            <span className="text-[10px] text-gray-300">•</span>
-                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1 rounded">{p.sold} sold</span>
+                            <span className="text-[10px] font-mono text-gray-400 dark:text-zinc-500 uppercase">{p.category || 'Sneakers'}</span>
+                            <span className="text-[10px] text-gray-300 dark:text-zinc-600">•</span>
+                            <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1 rounded">{p.sold} sold</span>
                           </div>
                         </div>
                       </div>
 
                       <div className="text-right shrink-0">
-                        <div className="text-xs font-mono font-bold text-gray-900">{fmt(p.rev)}</div>
-                        <div className="w-16 bg-gray-100 rounded-full h-1.5 mt-1 ml-auto overflow-hidden">
+                        <div className="text-xs font-mono font-bold text-gray-900 dark:text-zinc-100">{fmt(p.rev)}</div>
+                        <div className="w-16 bg-gray-100 dark:bg-zinc-800 rounded-full h-1.5 mt-1 ml-auto overflow-hidden">
                           <div className="bg-fire h-1.5 rounded-full" style={{ width: `${pct}%` }} />
                         </div>
                       </div>
@@ -651,7 +770,7 @@ function Overview({ setTab }) {
                 })}
               </div>
             ) : (
-              <div className="py-12 text-center text-gray-400 text-xs">
+              <div className="py-12 text-center text-gray-400 dark:text-zinc-500 text-xs">
                 No delivered sneaker sales recorded in this period.
               </div>
             )}
@@ -659,19 +778,19 @@ function Overview({ setTab }) {
 
           <button
             onClick={() => setTab("products")}
-            className="w-full mt-4 py-2 text-center text-xs font-bold text-gray-600 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors border border-gray-200"
+            className="w-full mt-4 py-2 text-center text-xs font-bold text-gray-600 dark:text-zinc-300 hover:text-gray-900 dark:hover:text-white bg-gray-50 dark:bg-zinc-800/60 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-xl transition-colors border border-gray-200 dark:border-zinc-700"
           >
             Manage Product Catalog
           </button>
         </div>
 
         {/* Live Orders Stream (3 cols) */}
-        <div className="lg:col-span-3 bg-white border border-gray-200 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-3 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-xs flex flex-col justify-between transition-colors">
           <div>
             <div className="flex items-center justify-between mb-1">
               <div>
-                <h2 className="font-display text-base font-bold text-gray-900">Recent Customer Orders</h2>
-                <p className="text-xs text-gray-500">Live order queue with instant detail inspection</p>
+                <h2 className="font-display text-base font-bold text-gray-900 dark:text-zinc-100">Recent Customer Orders</h2>
+                <p className="text-xs text-gray-500 dark:text-zinc-400">Live order queue with instant detail inspection</p>
               </div>
               <button
                 onClick={() => setTab("orders")}
@@ -684,7 +803,7 @@ function Overview({ setTab }) {
             <div className="overflow-x-auto mt-4">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-gray-200 text-gray-400 font-mono text-[10px] uppercase">
+                  <tr className="border-b border-gray-200 dark:border-zinc-800 text-gray-400 dark:text-zinc-500 font-mono text-[10px] uppercase">
                     <th className="pb-2.5 font-bold">Order</th>
                     <th className="pb-2.5 font-bold">Customer</th>
                     <th className="pb-2.5 font-bold">Payment</th>
@@ -693,38 +812,38 @@ function Overview({ setTab }) {
                     <th className="pb-2.5 font-bold text-right">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-100 dark:divide-zinc-800/80">
                   {recent_orders && recent_orders.map((o, i) => {
                     const statusColor = 
-                      o.status === 'delivered' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                      o.status === 'shipped' || o.status === 'out_for_delivery' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
-                      o.status === 'confirmed' || o.status === 'packed' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                      o.status === 'placed' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                      'bg-rose-50 text-rose-700 border-rose-200';
+                      o.status === 'delivered' ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/60' :
+                      o.status === 'shipped' || o.status === 'out_for_delivery' ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800/60' :
+                      o.status === 'confirmed' || o.status === 'packed' ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800/60' :
+                      o.status === 'placed' ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800/60' :
+                      'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800/60';
 
                     return (
                       <tr
                         key={i}
-                        className="hover:bg-gray-50/80 transition-colors cursor-pointer group"
+                        className="hover:bg-gray-50/80 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer group"
                         onClick={() => navigate(`?tab=orders&orderId=${o.order_number}`)}
                       >
-                        <td className="py-3 font-mono font-bold text-gray-900 group-hover:text-fire transition-colors">
+                        <td className="py-3 font-mono font-bold text-gray-900 dark:text-zinc-100 group-hover:text-fire transition-colors">
                           #{o.order_number}
                         </td>
                         <td className="py-3">
-                          <div className="font-bold text-gray-900 truncate max-w-[120px]">{o.customer_name}</div>
+                          <div className="font-bold text-gray-900 dark:text-zinc-100 truncate max-w-[120px]">{o.customer_name}</div>
                           {o.customer_email && (
-                            <div className="text-[10px] text-gray-400 truncate max-w-[120px]">{o.customer_email}</div>
+                            <div className="text-[10px] text-gray-400 dark:text-zinc-500 truncate max-w-[120px]">{o.customer_email}</div>
                           )}
                         </td>
                         <td className="py-3">
                           <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                            o.payment_method === 'COD' ? 'bg-orange-50 text-orange-700 border border-orange-200' : 'bg-blue-50 text-blue-700 border border-blue-200'
+                            o.payment_method === 'COD' ? 'bg-orange-50 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800/60' : 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/60'
                           }`}>
                             {o.payment_method || 'COD'}
                           </span>
                         </td>
-                        <td className="py-3 font-mono font-bold text-gray-900">
+                        <td className="py-3 font-mono font-bold text-gray-900 dark:text-zinc-100">
                           {fmt(o.total)}
                         </td>
                         <td className="py-3">
@@ -733,7 +852,7 @@ function Overview({ setTab }) {
                           </span>
                         </td>
                         <td className="py-3 text-right">
-                          <span className="text-xs font-bold text-gray-400 group-hover:text-fire transition-colors inline-flex items-center gap-1">
+                          <span className="text-xs font-bold text-gray-400 dark:text-zinc-500 group-hover:text-fire transition-colors inline-flex items-center gap-1">
                             Inspect →
                           </span>
                         </td>
@@ -745,11 +864,11 @@ function Overview({ setTab }) {
             </div>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+          <div className="mt-4 pt-3 border-t border-gray-100 dark:border-zinc-800 flex items-center justify-between text-xs text-gray-500 dark:text-zinc-400">
             <span>Showing recent {recent_orders?.length || 0} orders</span>
             <button
               onClick={() => setTab("orders")}
-              className="text-xs font-bold text-gray-900 hover:text-fire transition-colors"
+              className="text-xs font-bold text-gray-900 dark:text-zinc-100 hover:text-fire transition-colors"
             >
               Open Full Orders Manager →
             </button>
