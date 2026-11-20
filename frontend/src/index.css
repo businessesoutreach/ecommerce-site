@@ -101,6 +101,258 @@ body {
   animation: float 4s ease-in-out infinite;
 }
 
+/* ==========================================================================
+   Admin Dashboard Enterprise Dark Mode System
+   ========================================================================== */
+
+.dark {
+  --canvas: #09090b;
+  --obsidian: #f4f4f5;
+  color-scheme: dark;
+}
+
+.dark [data-testid="admin-dashboard"] {
+  background-color: #09090b !important;
+  color: #f4f4f5 !important;
+}
+
+/* Surfaces & Containers */
+.dark [data-testid="admin-dashboard"] .bg-white {
+  background-color: #18181b !important;
+}
+
+.dark [data-testid="admin-dashboard"] .bg-gray-50,
+.dark [data-testid="admin-dashboard"] .bg-gray-50\/90,
+.dark [data-testid="admin-dashboard"] .bg-gray-100,
+.dark [data-testid="admin-dashboard"] .bg-ink-100 {
+  background-color: #27272a !important;
+}
+
+.dark [data-testid="admin-dashboard"] .bg-gray-200 {
+  background-color: #3f3f46 !important;
+}
+
+/* Borders & Separators */
+.dark [data-testid="admin-dashboard"] .border-gray-100,
+.dark [data-testid="admin-dashboard"] .border-gray-200,
+.dark [data-testid="admin-dashboard"] .border-gray-300,
+.dark [data-testid="admin-dashboard"] .border-ink-100,
+.dark [data-testid="admin-dashboard"] .border-ink-200,
+.dark [data-testid="admin-dashboard"] .border-ink-300 {
+  border-color: #27272a !important;
+}
+
+.dark [data-testid="admin-dashboard"] .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+.dark [data-testid="admin-dashboard"] .divide-gray-200 > :not([hidden]) ~ :not([hidden]),
+.dark [data-testid="admin-dashboard"] .divide-ink-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #27272a !important;
+}
+
+/* Typography */
+.dark [data-testid="admin-dashboard"] .text-gray-900,
+.dark [data-testid="admin-dashboard"] .text-gray-800,
+.dark [data-testid="admin-dashboard"] .text-obsidian {
+  color: #f4f4f5 !important;
+}
+
+.dark [data-testid="admin-dashboard"] .text-gray-700,
+.dark [data-testid="admin-dashboard"] .text-gray-600,
+.dark [data-testid="admin-dashboard"] .text-gray-500,
+.dark [data-testid="admin-dashboard"] .text-ink-500,
+.dark [data-testid="admin-dashboard"] .text-ink-400 {
+  color: #a1a1aa !important;
+}
+
+.dark [data-testid="admin-dashboard"] .text-gray-400 {
+  color: #71717a !important;
+}
+
+/* Tables in Dark Mode */
+.dark [data-testid="admin-dashboard"] table {
+  color: #e4e4e7 !important;
+}
+
+.dark [data-testid="admin-dashboard"] table thead,
+.dark [data-testid="admin-dashboard"] thead {
+  background-color: #202024 !important;
+}
+
+.dark [data-testid="admin-dashboard"] table th,
+.dark [data-testid="admin-dashboard"] thead th {
+  background-color: #202024 !important;
+  color: #a1a1aa !important;
+  border-color: #27272a !important;
+}
+
+.dark [data-testid="admin-dashboard"] table td {
+  border-color: #27272a !important;
+  color: #e4e4e7 !important;
+}
+
+.dark [data-testid="admin-dashboard"] table tbody tr {
+  border-color: #27272a !important;
+}
+
+.dark [data-testid="admin-dashboard"] table tbody tr:hover {
+  background-color: rgba(39, 39, 42, 0.6) !important;
+}
+
+/* Form Inputs, Dropdowns & Textareas */
+.dark [data-testid="admin-dashboard"] input,
+.dark [data-testid="admin-dashboard"] select,
+.dark [data-testid="admin-dashboard"] textarea {
+  background-color: #18181b !important;
+  border-color: #3f3f46 !important;
+  color: #f4f4f5 !important;
+}
+
+.dark [data-testid="admin-dashboard"] input::placeholder,
+.dark [data-testid="admin-dashboard"] textarea::placeholder {
+  color: #71717a !important;
+}
+
+.dark [data-testid="admin-dashboard"] select option {
+  background-color: #18181b !important;
+  color: #f4f4f5 !important;
+}
+
+/* Action Buttons */
+.dark [data-testid="admin-dashboard"] button.bg-white {
+  background-color: #18181b !important;
+  color: #f4f4f5 !important;
+  border-color: #3f3f46 !important;
+}
+
+.dark [data-testid="admin-dashboard"] button.bg-white:hover {
+  background-color: #27272a !important;
+}
+
+.dark [data-testid="admin-dashboard"] .hover\:bg-gray-50:hover,
+.dark [data-testid="admin-dashboard"] .hover\:bg-gray-100:hover {
+  background-color: #27272a !important;
+}
+
+.dark [data-testid="admin-dashboard"] button.bg-black,
+.dark [data-testid="admin-dashboard"] button.bg-obsidian {
+  background-color: #ff3b30 !important;
+  color: #ffffff !important;
+  border-color: #ff3b30 !important;
+}
+
+.dark [data-testid="admin-dashboard"] button.bg-black:hover,
+.dark [data-testid="admin-dashboard"] button.bg-obsidian:hover {
+  background-color: #e03126 !important;
+}
+
+/* Skeleton & Loading States in Dark Mode */
+.dark .skeleton {
+  background-color: #27272a !important;
+}
+
+.dark .skeleton::after {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent) !important;
+}
+
+/* Scrollbar in Dark Mode */
+.dark ::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #52525b;
+}
+
+/* Modals, Flyouts & Drawers */
+.dark [data-testid="admin-dashboard"] .fixed .bg-white,
+.dark [data-testid="admin-dashboard"] .absolute.bg-white,
+.dark [data-testid="admin-dashboard"] [role="dialog"] {
+  background-color: #18181b !important;
+  border-color: #27272a !important;
+  color: #f4f4f5 !important;
+}
+
+/* Status Badges in Dark Mode */
+.dark [data-testid="admin-dashboard"] .bg-emerald-50 {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+  color: #34d399 !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+.dark [data-testid="admin-dashboard"] .bg-blue-50 {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+  color: #60a5fa !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+.dark [data-testid="admin-dashboard"] .bg-rose-50 {
+  background-color: rgba(244, 63, 94, 0.15) !important;
+  color: #fb7185 !important;
+  border-color: rgba(244, 63, 94, 0.3) !important;
+}
+
+.dark [data-testid="admin-dashboard"] .bg-amber-50 {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+  color: #fbbf24 !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+
+.dark [data-testid="admin-dashboard"] .bg-orange-50 {
+  background-color: rgba(249, 115, 22, 0.15) !important;
+  color: #fb923c !important;
+  border-color: rgba(249, 115, 22, 0.3) !important;
+}
+
+.dark [data-testid="admin-dashboard"] .bg-indigo-50 {
+  background-color: rgba(99, 102, 241, 0.15) !important;
+  color: #818cf8 !important;
+  border-color: rgba(99, 102, 241, 0.3) !important;
+}
+
+.dark [data-testid="admin-dashboard"] .bg-purple-50 {
+  background-color: rgba(168, 85, 247, 0.15) !important;
+  color: #c084fc !important;
+  border-color: rgba(168, 85, 247, 0.3) !important;
+}
+
+.dark [data-testid="admin-dashboard"] .bg-sky-50 {
+  background-color: rgba(14, 165, 233, 0.15) !important;
+  color: #38bdf8 !important;
+  border-color: rgba(14, 165, 233, 0.3) !important;
+}
+
+/* Charts: Recharts Dark Mode Integration */
+.dark .recharts-default-tooltip {
+  background-color: #18181b !important;
+  border: 1px solid #27272a !important;
+  border-radius: 12px !important;
+  color: #f4f4f5 !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6) !important;
+}
+
+.dark .recharts-tooltip-item,
+.dark .recharts-tooltip-item-name,
+.dark .recharts-tooltip-item-value {
+  color: #f4f4f5 !important;
+}
+
+.dark .recharts-tooltip-label {
+  color: #a1a1aa !important;
+}
+
+.dark .recharts-cartesian-grid line {
+  stroke: #27272a !important;
+}
+
+.dark .recharts-cartesian-axis-line,
+.dark .recharts-cartesian-axis-tick-line {
+  stroke: #27272a !important;
+}
+
+.dark .recharts-text,
+.dark .recharts-cartesian-axis-tick-value {
+  fill: #a1a1aa !important;
+}
+
 @media print {
   body * {
     visibility: hidden;

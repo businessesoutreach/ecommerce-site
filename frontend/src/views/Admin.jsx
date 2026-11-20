@@ -40,9 +40,11 @@ export default function Admin() {
     if (typeof document !== "undefined") {
       if (isDark) {
         document.documentElement.classList.add("dark");
+        document.body.classList.add("dark");
         localStorage.setItem("admin_theme", "dark");
       } else {
         document.documentElement.classList.remove("dark");
+        document.body.classList.remove("dark");
         localStorage.setItem("admin_theme", "light");
       }
     }
