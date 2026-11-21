@@ -886,16 +886,16 @@ function Overview({ setTab, isDark }) {
         </button>
 
         <button
-          onClick={() => setTab("cod")}
+          onClick={() => setTab("reviews")}
           className="text-left bg-white dark:bg-zinc-900 hover:bg-gray-50/80 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700 rounded-xl p-3.5 transition-all shadow-xs flex items-center justify-between group"
         >
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-              <Truck size={17} />
+            <div className="w-9 h-9 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
+              {needs_attention.pending_reviews || 0}
             </div>
             <div>
-              <div className="text-xs font-bold text-gray-900 dark:text-zinc-100">COD Remittance</div>
-              <div className="text-[11px] text-gray-500 dark:text-zinc-400">{fmt(kpis.pending_cod?.value || 0)}</div>
+              <div className="text-xs font-bold text-gray-900 dark:text-zinc-100">Customer Reviews</div>
+              <div className="text-[11px] text-gray-500 dark:text-zinc-400">Pending moderation</div>
             </div>
           </div>
           <ChevronRight size={16} className="text-gray-400 dark:text-zinc-500 group-hover:text-gray-900 dark:group-hover:text-white transition-colors" />
@@ -1423,43 +1423,6 @@ function Orders({ initialCodStatus }) {
     }
   };
 
-  const toggleOrderCodRemittance = async (order) => {
-    const nextStatus = order.cod_remittance_status === 'remitted' ? 'pending' : 'remitted';
-    try {
-      await http.patch(`/admin/orders/${order.id}/cod-remittance`, { status: nextStatus });
-      toast.success(`Order #${order.order_number} COD remittance marked as ${nextStatus === 'remitted' ? 'Remitted' : 'Pending'}`);
-      load();
-    } catch (e) {
-      toast.error(e.response?.data?.detail || "Failed to update COD remittance status");
-    }
-  };
-
-  const bulkMarkCod = (remittanceStatus) => {
-    const codOrders = data.orders.filter(o => selected.includes(o.id) && o.payment_method === 'COD');
-    if (codOrders.length === 0) {
-      return toast.warning("None of the selected orders are Cash on Delivery (COD) orders");
-    }
-    const orderIds = codOrders.map(o => o.id);
-    setConfirmModal({
-      isOpen: true,
-      title: `Mark ${orderIds.length} orders as COD ${remittanceStatus === 'remitted' ? 'Remitted' : 'Pending'}?`,
-      message: `Are you sure you want to update the courier remittance status for ${orderIds.length} COD order${orderIds.length === 1 ? '' : 's'} to "${remittanceStatus === 'remitted' ? 'Remitted / Settled' : 'Pending Remittance'}"?`,
-      confirmText: `Confirm ${remittanceStatus === 'remitted' ? 'Remitted' : 'Pending'}`,
-      variant: "primary",
-      onConfirm: async () => {
-        setConfirmModal(prev => ({ ...prev, loading: true }));
-        try {
-          await http.patch(`/admin/cod-remittance/bulk`, { orderIds, status: remittanceStatus });
-          toast.success(`Marked ${orderIds.length} orders as COD ${remittanceStatus}`);
-          setConfirmModal({ isOpen: false });
-          load();
-        } catch (e) {
-          toast.error(e.response?.data?.detail || "Failed to update COD remittance status");
-          setConfirmModal(prev => ({ ...prev, loading: false }));
-        }
-      }
-    });
-  };
 
   const bulkUpdateStatus = (status) => {
     setConfirmModal({
@@ -1643,112 +1606,22 @@ function Orders({ initialCodStatus }) {
         </div>
       </div>
 
-      {/* Status Filter Tabs & COD Quick Filters */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between border-b border-gray-200 dark:border-zinc-800 mb-6 gap-3">
-        <div className="flex overflow-x-auto hide-scrollbar gap-1">
-          {TABS.map(t => (
-            <button key={t.id} onClick={() => setQuery({ ...query, status: t.id, page: 1 })}
-              className={`px-4 py-3 text-sm font-bold whitespace-nowrap border-b-2 flex items-center gap-2 transition-all ${query.status === t.id
-                ? 'border-fire text-fire dark:border-fire dark:text-fire font-black'
-                : 'border-transparent text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 hover:border-gray-300'
-                }`}>
-              {t.label}
-              <span className={`text-xs px-2.5 py-0.5 rounded-full font-mono font-bold ${query.status === t.id
-                ? 'bg-fire text-white'
-                : 'bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 border border-gray-200 dark:border-zinc-700'
-                }`}>{t.count}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Dedicated COD Quick Filter Segment */}
-        <div className="flex items-center gap-1 bg-gray-100 dark:bg-zinc-800/80 p-1 rounded-lg border border-gray-200 dark:border-zinc-700 shrink-0 self-start lg:self-auto mb-2 lg:mb-0">
-          <button
-            type="button"
-            onClick={() => setQuery({ ...query, cod_status: "all", page: 1 })}
-            className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all ${
-              query.cod_status === "all"
-                ? "bg-white dark:bg-zinc-900 text-gray-900 dark:text-zinc-100 shadow-xs"
-                : "text-gray-500 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-200"
-            }`}
-          >
-            All Orders
+      {/* Status Filter Tabs */}
+      <div className="flex overflow-x-auto hide-scrollbar border-b border-gray-200 dark:border-zinc-800 mb-6 gap-1">
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setQuery({ ...query, status: t.id, page: 1 })}
+            className={`px-4 py-3 text-sm font-bold whitespace-nowrap border-b-2 flex items-center gap-2 transition-all ${query.status === t.id
+              ? 'border-fire text-fire dark:border-fire dark:text-fire font-black'
+              : 'border-transparent text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 hover:border-gray-300'
+              }`}>
+            {t.label}
+            <span className={`text-xs px-2.5 py-0.5 rounded-full font-mono font-bold ${query.status === t.id
+              ? 'bg-fire text-white'
+              : 'bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 border border-gray-200 dark:border-zinc-700'
+              }`}>{t.count}</span>
           </button>
-          <button
-            type="button"
-            onClick={() => setQuery({ ...query, cod_status: "pending", page: 1 })}
-            className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all flex items-center gap-1.5 ${
-              query.cod_status === "pending"
-                ? "bg-amber-500 text-white shadow-xs"
-                : "text-amber-800 dark:text-amber-400 hover:bg-amber-100/60 dark:hover:bg-amber-950/40"
-            }`}
-          >
-            <span>⏳ COD Pending</span>
-            <span className={`font-mono text-[10px] px-1.5 py-0.2 rounded ${query.cod_status === "pending" ? "bg-black/20 text-white" : "bg-amber-200/60 dark:bg-amber-900/60 text-amber-900 dark:text-amber-300"}`}>
-              {data.cod_summary?.pending_count || data.status_counts?.cod_pending || 0}
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setQuery({ ...query, cod_status: "remitted", page: 1 })}
-            className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all flex items-center gap-1.5 ${
-              query.cod_status === "remitted"
-                ? "bg-emerald-600 text-white shadow-xs"
-                : "text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100/60 dark:hover:bg-emerald-950/40"
-            }`}
-          >
-            <span>✓ COD Remitted</span>
-            <span className={`font-mono text-[10px] px-1.5 py-0.2 rounded ${query.cod_status === "remitted" ? "bg-black/20 text-white" : "bg-emerald-200/60 dark:bg-emerald-900/60 text-emerald-900 dark:text-emerald-300"}`}>
-              {data.cod_summary?.remitted_count || data.status_counts?.cod_remitted || 0}
-            </span>
-          </button>
-        </div>
+        ))}
       </div>
-
-      {/* COD Remittance Financial Strip (When on COD filter or viewing COD) */}
-      {data.cod_summary && (query.cod_status !== "all" || query.payment === "pending") && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6 animate-in fade-in duration-150">
-          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4 shadow-sm">
-            <div className="flex justify-between items-center text-xs font-semibold text-gray-500 dark:text-zinc-400">
-              <span>Total COD Volume</span>
-              <span className="font-mono">{data.cod_summary.total_count} orders</span>
-            </div>
-            <p className="text-xl font-mono font-bold text-gray-900 dark:text-zinc-100 mt-1">
-              {fmt(data.cod_summary.total_amount)}
-            </p>
-          </div>
-
-          <div className="bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/80 rounded-xl p-4 shadow-sm">
-            <div className="flex justify-between items-center text-xs font-bold text-amber-800 dark:text-amber-400">
-              <span className="flex items-center gap-1.5">
-                <Truck size={14} /> Pending Courier Remittance
-              </span>
-              <span className="font-mono text-amber-700 dark:text-amber-400">{data.cod_summary.pending_count} pending</span>
-            </div>
-            <p className="text-xl font-mono font-bold text-amber-900 dark:text-amber-200 mt-1">
-              {fmt(data.cod_summary.pending_amount)}
-            </p>
-            <p className="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5">
-              Cash held by courier partners awaiting transfer to bank account.
-            </p>
-          </div>
-
-          <div className="bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/80 rounded-xl p-4 shadow-sm">
-            <div className="flex justify-between items-center text-xs font-bold text-emerald-800 dark:text-emerald-400">
-              <span className="flex items-center gap-1.5">
-                <CheckCircle size={14} /> Remitted to Bank Account
-              </span>
-              <span className="font-mono text-emerald-700 dark:text-emerald-400">{data.cod_summary.remitted_count} settled</span>
-            </div>
-            <p className="text-xl font-mono font-bold text-emerald-900 dark:text-emerald-200 mt-1">
-              {fmt(data.cod_summary.remitted_amount)}
-            </p>
-            <p className="text-[11px] text-emerald-700 dark:text-emerald-400 mt-0.5">
-              Cash received and verified in bank.
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* Search & Dynamic Filter Bar */}
       <div className="bg-white dark:bg-zinc-900 p-4 border border-gray-200 dark:border-zinc-800 mb-6 flex flex-col lg:flex-row gap-4 items-center shadow-sm rounded-xl">
@@ -1796,15 +1669,6 @@ function Orders({ initialCodStatus }) {
             <option value="refunded">Refunded</option>
           </select>
           <select
-            value={query.cod_status || "all"}
-            onChange={(e) => setQuery({ ...query, cod_status: e.target.value, page: 1 })}
-            className="border border-gray-300 dark:border-zinc-700 px-3 py-2 text-xs font-bold text-gray-800 dark:text-zinc-100 focus:outline-none rounded-lg bg-white dark:bg-zinc-800 shadow-sm"
-          >
-            <option value="all">COD Remittance: All</option>
-            <option value="pending">⏳ Pending Courier</option>
-            <option value="remitted">✓ Remitted to Bank</option>
-          </select>
-          <select
             value={query.date}
             onChange={(e) => setQuery({ ...query, date: e.target.value, page: 1 })}
             className="border border-gray-300 dark:border-zinc-700 px-3 py-2 text-xs font-bold text-gray-800 dark:text-zinc-100 focus:outline-none rounded-lg bg-white dark:bg-zinc-800 shadow-sm"
@@ -1821,7 +1685,7 @@ function Orders({ initialCodStatus }) {
         </div>
       </div>
 
-      {/* Bulk Actions Floating Bar with ALL Statuses + COD Remittance */}
+      {/* Bulk Actions Floating Bar with ALL Statuses */}
       {selected.length > 0 && (
         <div className="bg-black dark:bg-zinc-900 border border-zinc-800 text-white p-3.5 flex flex-wrap gap-3 justify-between items-center mb-4 sticky top-14 z-20 shadow-xl rounded-xl animate-in slide-in-from-top-2 duration-150">
           <div className="flex items-center gap-2.5">
@@ -1840,23 +1704,6 @@ function Orders({ initialCodStatus }) {
           <div className="flex flex-wrap items-center gap-2">
             <button onClick={printPackingSlips} className="px-3 py-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer">
               <Printer size={13} /> Print Slips
-            </button>
-
-            {/* COD Remittance Bulk Actions */}
-            <button
-              onClick={() => bulkMarkCod('remitted')}
-              className="px-3 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
-              title="Mark selected COD orders as remitted"
-            >
-              <CheckCircle size={13} /> Mark COD Remitted
-            </button>
-
-            <button
-              onClick={() => bulkMarkCod('pending')}
-              className="px-3 py-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 rounded-lg transition-colors cursor-pointer"
-              title="Mark selected COD orders as pending remittance"
-            >
-              Mark COD Pending
             </button>
 
             <button onClick={() => bulkUpdateStatus('packed')} className="px-3 py-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 rounded-lg transition-colors cursor-pointer">
@@ -1991,15 +1838,6 @@ function Orders({ initialCodStatus }) {
                       onClose={() => setActiveDropdown(null)}
                     >
                       <button onClick={() => { openOrder(o); setActiveDropdown(null); }} className="w-full px-4 py-2 text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center gap-2 font-bold transition-colors cursor-pointer"><Eye size={14} className="text-gray-400" /> View Full Order</button>
-                      {o.payment_method === 'COD' && (
-                        <button
-                          onClick={() => { toggleOrderCodRemittance(o); setActiveDropdown(null); }}
-                          className="w-full px-4 py-2 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 flex items-center gap-2 font-bold transition-colors cursor-pointer text-left"
-                        >
-                          <CheckCircle size={14} />
-                          {o.cod_remittance_status === 'remitted' ? 'Revert COD to Pending' : 'Mark COD as Remitted'}
-                        </button>
-                      )}
                       {(o.tracking_number || o.status === 'shipped') && (
                         <button onClick={() => { setTrackParcelOrder(o); setActiveDropdown(null); }} className="w-full px-4 py-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 flex items-center gap-2 font-bold transition-colors cursor-pointer"><Truck size={14} /> Track Parcel</button>
                       )}
@@ -3065,8 +2903,6 @@ function OrderDetailPage({ orderId, initialOrder, onBack, onUpdate }) {
   const [courierName, setCourierName] = useState(initialOrder?.courier_name || "");
   const [savingNote, setSavingNote] = useState(false);
   const [refundOrder, setRefundOrder] = useState(null);
-  const [codRemittanceStatus, setCodRemittanceStatus] = useState(initialOrder?.cod_remittance_status || "pending");
-  const [updatingCodRemittance, setUpdatingCodRemittance] = useState(false);
 
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [savingTracking, setSavingTracking] = useState(false);
@@ -3083,29 +2919,11 @@ function OrderDetailPage({ orderId, initialOrder, onBack, onUpdate }) {
         setNote(ord.customer_note || "");
         setTrackingNumber(ord.tracking_number || "");
         setCourierName(ord.courier_name || "");
-        setCodRemittanceStatus(ord.cod_remittance_status || "pending");
       }
     } catch (err) {
       toast.error(err.response?.data?.detail || "Order not found");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const toggleCodRemittanceInDetail = async () => {
-    if (!order) return;
-    const nextStatus = codRemittanceStatus === 'remitted' ? 'pending' : 'remitted';
-    setUpdatingCodRemittance(true);
-    try {
-      await http.patch(`/admin/orders/${order.id}/cod-remittance`, { status: nextStatus });
-      setCodRemittanceStatus(nextStatus);
-      setOrder(prev => ({ ...prev, cod_remittance_status: nextStatus }));
-      toast.success(`COD Remittance marked as ${nextStatus === 'remitted' ? 'Remitted / Settled' : 'Pending'}`);
-      if (onUpdate) onUpdate();
-    } catch (e) {
-      toast.error(e.response?.data?.detail || "Failed to update COD remittance status");
-    } finally {
-      setUpdatingCodRemittance(false);
     }
   };
 
@@ -3716,54 +3534,6 @@ function OrderDetailPage({ orderId, initialOrder, onBack, onUpdate }) {
                 )}
               </div>
             </div>
-
-            {/* COD Remittance Reconciliation Card */}
-            {order.payment_method === 'COD' && (
-              <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm space-y-3.5 text-xs">
-                <div className="flex justify-between items-center border-b border-gray-100 dark:border-zinc-800 pb-3">
-                  <h3 className="font-display font-bold uppercase tracking-wider text-gray-900 dark:text-zinc-100 flex items-center gap-1.5">
-                    <DollarSign size={15} className="text-amber-500" /> COD Remittance Status
-                  </h3>
-                  <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] flex items-center gap-1 ${
-                    codRemittanceStatus === 'remitted'
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800'
-                      : 'bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800'
-                  }`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${codRemittanceStatus === 'remitted' ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
-                    {codRemittanceStatus === 'remitted' ? 'Remitted to Bank' : 'Pending Remittance'}
-                  </span>
-                </div>
-
-                <div className="space-y-2 bg-gray-50 dark:bg-zinc-800/40 p-3 rounded-lg border border-gray-100 dark:border-zinc-800">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-500 dark:text-zinc-400">Cash Amount to Collect:</span>
-                    <span className="font-mono font-bold text-gray-900 dark:text-zinc-100 text-sm">{fmt(order.total)}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-500 dark:text-zinc-400">Assigned Courier:</span>
-                    <span className="font-semibold text-gray-900 dark:text-zinc-100">{order.courier_name || 'Unassigned'}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-500 dark:text-zinc-400">Consignment AWB:</span>
-                    <span className="font-mono text-gray-900 dark:text-zinc-100">{order.tracking_number || 'N/A'}</span>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={toggleCodRemittanceInDetail}
-                  disabled={updatingCodRemittance}
-                  className={`w-full py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer ${
-                    codRemittanceStatus === 'remitted'
-                      ? 'bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-700 border border-gray-300 dark:border-zinc-700'
-                      : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                  }`}
-                >
-                  {updatingCodRemittance ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle size={14} />}
-                  {codRemittanceStatus === 'remitted' ? 'Revert to Pending Remittance' : 'Mark Courier Cash as Remitted to Bank'}
-                </button>
-              </div>
-            )}
 
             {/* Internal Staff Warehouse Note */}
             <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm space-y-3 text-xs">

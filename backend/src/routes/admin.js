@@ -1300,9 +1300,14 @@ router.patch('/orders/bulk-status', async (req, res) => {
             return res.status(400).json({ detail: "Missing orderIds or status" });
         }
         
+        const updateData = { status };
+        if (['confirmed', 'delivered'].includes(status)) {
+            updateData.cod_remittance_status = 'remitted';
+        }
+
         await prisma.order.updateMany({
             where: { id: { in: orderIds } },
-            data: { status }
+            data: updateData
         });
 
         // Add history for all
@@ -1340,6 +1345,9 @@ router.patch('/orders/:id/status', async (req, res) => {
         const { status, tracking_number, courier_name, note } = req.body;
         
         const updateData = { status };
+        if (['confirmed', 'delivered'].includes(status)) {
+            updateData.cod_remittance_status = 'remitted';
+        }
         if (tracking_number) updateData.tracking_number = tracking_number;
         if (courier_name) updateData.courier_name = courier_name;
         
