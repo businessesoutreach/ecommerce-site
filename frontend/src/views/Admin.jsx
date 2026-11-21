@@ -10548,7 +10548,7 @@ function BundleDetailPage({ bundle, allProducts, isDark, onBack, onSaved }) {
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Top Bar / Navigation Header */}
-      <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 sticky top-4 z-20">
+      <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4 shadow-sm flex items-center justify-between gap-4 sticky top-4 z-20">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -10569,26 +10569,6 @@ function BundleDetailPage({ bundle, allProducts, isDark, onBack, onSaved }) {
               {isEdit ? f.name || 'Edit Bundle' : 'Create New Bundle'}
             </h1>
           </div>
-        </div>
-
-        <div className="flex items-center gap-2 self-end sm:self-auto">
-          <button
-            type="button"
-            onClick={onBack}
-            className="px-4 py-2 text-xs font-bold border border-gray-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
-          >
-            Cancel
-          </button>
-
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="px-5 py-2 text-xs font-bold bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white rounded-lg transition-colors flex items-center gap-2 shadow-sm disabled:opacity-60"
-          >
-            {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
-            {isEdit ? 'Save Changes' : 'Publish Bundle'}
-          </button>
         </div>
       </div>
 
@@ -10674,121 +10654,7 @@ function BundleDetailPage({ bundle, allProducts, isDark, onBack, onSaved }) {
             </div>
           </div>
 
-          {/* Card 2: Selected Products In This Bundle */}
-          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-zinc-800">
-              <div>
-                <h2 className="font-display font-bold text-base text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                  <Box size={18} className="text-zinc-500" /> Products in Bundle ({items.length})
-                </h2>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                  Set quantities and inspect combined individual retail prices.
-                </p>
-              </div>
-
-              {items.length > 0 && (
-                <div className="text-right">
-                  <span className="text-xs text-zinc-400">Combined RRP</span>
-                  <p className="text-sm font-bold font-mono text-zinc-900 dark:text-zinc-100">{fmt(totalRRP)}</p>
-                </div>
-              )}
-            </div>
-
-            {items.length === 0 ? (
-              <div className="py-10 px-4 text-center border-2 border-dashed border-gray-200 dark:border-zinc-800 rounded-lg bg-zinc-50/50 dark:bg-zinc-800/20">
-                <Package size={32} className="mx-auto text-zinc-400 mb-2" />
-                <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200">No products added yet</p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-sm mx-auto">
-                  Browse the catalog below and click <span className="font-semibold text-zinc-800 dark:text-zinc-200">&ldquo;+ Add to Bundle&rdquo;</span> to include shoes in this package.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {items.map((it) => {
-                  const p = it.product || allProducts.find(prod => prod.id === it.product_id);
-                  const lineTotal = (p?.base_price || 0) * (it.quantity || 1);
-                  return (
-                    <div
-                      key={it.product_id}
-                      className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-800/40 border border-gray-200 dark:border-zinc-800 rounded-lg"
-                    >
-                      <img
-                        src={imgUrl(p?.images?.[0]) || 'https://via.placeholder.com/56'}
-                        alt=""
-                        className="w-12 h-12 object-cover rounded-md border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 shrink-0"
-                      />
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">
-                            {p?.name || 'Unknown Product'}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                          <span className="font-mono">{fmt(p?.base_price || 0)} each</span>
-                          {p?.category_slug && (
-                            <span className="px-1.5 py-0.2 rounded bg-zinc-200/60 dark:bg-zinc-700/60 text-[10px] font-semibold">
-                              {p.category_slug}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Quantity Stepper */}
-                      <div className="flex items-center border border-gray-200 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-900 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateQty(it.product_id, -1)}
-                          disabled={it.quantity <= 1}
-                          className="px-2 py-1 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 disabled:opacity-30 transition-colors"
-                        >
-                          -
-                        </button>
-                        <input
-                          type="number"
-                          min="1"
-                          value={it.quantity}
-                          onChange={(e) => handleSetQty(it.product_id, e.target.value)}
-                          className="w-10 text-center text-xs font-mono font-bold bg-transparent border-0 focus:outline-none text-zinc-900 dark:text-zinc-100"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateQty(it.product_id, 1)}
-                          className="px-2 py-1 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
-                        >
-                          +
-                        </button>
-                      </div>
-
-                      {/* Line subtotal */}
-                      <div className="text-right w-24 shrink-0 font-mono">
-                        <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">{fmt(lineTotal)}</span>
-                      </div>
-
-                      {/* Remove Button */}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveItem(it.product_id)}
-                        className="p-1.5 text-zinc-400 hover:text-red-600 dark:hover:text-red-400 rounded-md hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors shrink-0"
-                        title="Remove product"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  );
-                })}
-
-                {items.length < 2 && (
-                  <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg text-xs font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-2">
-                    <AlertTriangle size={15} className="shrink-0" />
-                    A valid bundle requires at least 2 products. Please add at least one more product.
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Card 3: Searchable Catalog Picker (Easy UX for large product lists) */}
+          {/* Card 2: Searchable Catalog Picker (Add Products Section ABOVE Added Products) */}
           <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-gray-100 dark:border-zinc-800">
               <div>
@@ -10942,6 +10808,120 @@ function BundleDetailPage({ bundle, allProducts, isDark, onBack, onSaved }) {
                 })
               )}
             </div>
+          </div>
+
+          {/* Card 3: Selected Products In This Bundle (Products Added Section) */}
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-zinc-800">
+              <div>
+                <h2 className="font-display font-bold text-base text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                  <Box size={18} className="text-zinc-500" /> Products in Bundle ({items.length})
+                </h2>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                  Set quantities and inspect combined individual retail prices.
+                </p>
+              </div>
+
+              {items.length > 0 && (
+                <div className="text-right">
+                  <span className="text-xs text-zinc-400">Combined RRP</span>
+                  <p className="text-sm font-bold font-mono text-zinc-900 dark:text-zinc-100">{fmt(totalRRP)}</p>
+                </div>
+              )}
+            </div>
+
+            {items.length === 0 ? (
+              <div className="py-10 px-4 text-center border-2 border-dashed border-gray-200 dark:border-zinc-800 rounded-lg bg-zinc-50/50 dark:bg-zinc-800/20">
+                <Package size={32} className="mx-auto text-zinc-400 mb-2" />
+                <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200">No products added yet</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-sm mx-auto">
+                  Browse the catalog above and click <span className="font-semibold text-zinc-800 dark:text-zinc-200">&ldquo;+ Add to Bundle&rdquo;</span> to include shoes in this package.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {items.map((it) => {
+                  const p = it.product || allProducts.find(prod => prod.id === it.product_id);
+                  const lineTotal = (p?.base_price || 0) * (it.quantity || 1);
+                  return (
+                    <div
+                      key={it.product_id}
+                      className="flex items-center gap-3 p-3 bg-zinc-50 dark:bg-zinc-800/40 border border-gray-200 dark:border-zinc-800 rounded-lg"
+                    >
+                      <img
+                        src={imgUrl(p?.images?.[0]) || 'https://via.placeholder.com/56'}
+                        alt=""
+                        className="w-12 h-12 object-cover rounded-md border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 shrink-0"
+                      />
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                            {p?.name || 'Unknown Product'}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                          <span className="font-mono">{fmt(p?.base_price || 0)} each</span>
+                          {p?.category_slug && (
+                            <span className="px-1.5 py-0.2 rounded bg-zinc-200/60 dark:bg-zinc-700/60 text-[10px] font-semibold">
+                              {p.category_slug}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Quantity Stepper */}
+                      <div className="flex items-center border border-gray-200 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-900 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateQty(it.product_id, -1)}
+                          disabled={it.quantity <= 1}
+                          className="px-2 py-1 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 disabled:opacity-30 transition-colors"
+                        >
+                          -
+                        </button>
+                        <input
+                          type="number"
+                          min="1"
+                          value={it.quantity}
+                          onChange={(e) => handleSetQty(it.product_id, e.target.value)}
+                          className="w-10 text-center text-xs font-mono font-bold bg-transparent border-0 focus:outline-none text-zinc-900 dark:text-zinc-100"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateQty(it.product_id, 1)}
+                          className="px-2 py-1 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                        >
+                          +
+                        </button>
+                      </div>
+
+                      {/* Line subtotal */}
+                      <div className="text-right w-24 shrink-0 font-mono">
+                        <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">{fmt(lineTotal)}</span>
+                      </div>
+
+                      {/* Remove Button */}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveItem(it.product_id)}
+                        className="p-1.5 text-zinc-400 hover:text-red-600 dark:hover:text-red-400 rounded-md hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors shrink-0"
+                        title="Remove product"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  );
+                })}
+
+                {items.length < 2 && (
+                  <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg text-xs font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-2">
+                    <AlertTriangle size={15} className="shrink-0" />
+                    A valid bundle requires at least 2 products. Please add at least one more product.
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
