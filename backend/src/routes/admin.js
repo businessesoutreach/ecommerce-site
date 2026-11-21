@@ -949,6 +949,51 @@ router.patch('/products/:id', async (req, res) => {
     }
 });
 
+router.patch('/products/:id/stock', async (req, res) => {
+    try {
+        const { sizes } = req.body;
+        if (!sizes || !Array.isArray(sizes)) {
+            return res.status(400).json({ detail: "Sizes array is required" });
+        }
+
+        const product = await prisma.product.findUnique({
+            where: { id: req.params.id },
+            include: { sizes: true }
+        });
+        if (!product) return res.status(404).json({ detail: "Product not found" });
+
+        const updatedSizes = [];
+        for (const s of sizes) {
+            const newStock = Math.max(0, parseInt(s.stock) || 0);
+            if (s.id) {
+                const updated = await prisma.productSize.update({
+                    where: { id: s.id },
+                    data: { stock: newStock }
+                });
+                updatedSizes.push(updated);
+            }
+        }
+
+        const totalStock = updatedSizes.reduce((sum, item) => sum + item.stock, 0);
+
+        await logAdminAction(req.user, 'UPDATE_STOCK', 'product', product.id, {
+            product_name: product.name,
+            total_stock: totalStock,
+            sizes_updated: updatedSizes.length
+        });
+
+        res.json({
+            success: true,
+            data: {
+                ...product,
+                sizes: updatedSizes
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ detail: err.message });
+    }
+});
+
 router.delete('/products/:id', async (req, res) => {
     try {
         await logAdminAction(req.user, 'DELETE_PRODUCT', 'product', req.params.id, {});
