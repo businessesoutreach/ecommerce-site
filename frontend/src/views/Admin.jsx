@@ -5307,6 +5307,7 @@ function Coupons({ isDark }) {
   const [activeMenuId, setActiveMenuId] = useState(null);
   const [viewCoupon, setViewCoupon] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
   const load = async () => {
     setLoading(true);
@@ -5340,12 +5341,102 @@ function Coupons({ isDark }) {
     else setSelected([...selected, id]);
   };
 
-  const toggleStatus = async (id, isActive) => {
-    try {
-      await http.patch(`/admin/coupons/${id}`, { is_active: isActive });
-      toast.success(isActive ? "Coupon enabled" : "Coupon disabled");
-      load();
-    } catch (e) { toast.error("Action failed"); }
+  const promptToggleStatus = (c) => {
+    const nextState = !c.is_active;
+    const actionLabel = nextState ? "Enable" : "Disable";
+    setConfirmModal({
+      isOpen: true,
+      title: `${actionLabel} Coupon "${c.code}"?`,
+      message: nextState
+        ? `Are you sure you want to activate coupon "${c.code}"? Customers will be able to apply it during checkout.`
+        : `Are you sure you want to deactivate coupon "${c.code}"? Customers will no longer be able to redeem it.`,
+      confirmText: `${actionLabel} Coupon`,
+      variant: nextState ? "primary" : "warning",
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, loading: true }));
+        try {
+          await http.patch(`/admin/coupons/${c.id}`, { is_active: nextState });
+          toast.success(`Coupon "${c.code}" ${nextState ? 'enabled' : 'disabled'}`);
+          setConfirmModal({ isOpen: false });
+          load();
+        } catch (e) {
+          toast.error(e.response?.data?.detail || "Action failed");
+          setConfirmModal(prev => ({ ...prev, loading: false }));
+        }
+      }
+    });
+  };
+
+  const promptDeleteCoupon = (c) => {
+    setConfirmModal({
+      isOpen: true,
+      title: `Delete Coupon "${c.code}"?`,
+      message: `Are you sure you want to permanently delete coupon "${c.code}"? This will remove the coupon code and cannot be undone.`,
+      confirmText: "Delete Coupon",
+      variant: "danger",
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, loading: true }));
+        try {
+          await http.delete(`/admin/coupons/${c.id}`);
+          toast.success(`Coupon "${c.code}" deleted permanently`);
+          setSelected(prev => prev.filter(x => x !== c.id));
+          setConfirmModal({ isOpen: false });
+          load();
+        } catch (e) {
+          toast.error(e.response?.data?.detail || "Failed to delete coupon");
+          setConfirmModal(prev => ({ ...prev, loading: false }));
+        }
+      }
+    });
+  };
+
+  const promptBulkAction = (action) => {
+    if (!selected.length) return;
+    const count = selected.length;
+    let title = "";
+    let message = "";
+    let confirmText = "";
+    let variant = "primary";
+
+    if (action === "delete") {
+      title = `Delete ${count} Coupon${count > 1 ? "s" : ""}?`;
+      message = `Are you sure you want to permanently delete ${count} selected coupon${count > 1 ? "s" : ""}? This action cannot be undone.`;
+      confirmText = `Delete ${count} Coupon${count > 1 ? "s" : ""}`;
+      variant = "danger";
+    } else if (action === "enable") {
+      title = `Enable ${count} Coupon${count > 1 ? "s" : ""}?`;
+      message = `Are you sure you want to activate ${count} selected coupon${count > 1 ? "s" : ""}? Customers will be able to apply them at checkout.`;
+      confirmText = `Enable ${count} Coupon${count > 1 ? "s" : ""}`;
+      variant = "primary";
+    } else if (action === "disable") {
+      title = `Disable ${count} Coupon${count > 1 ? "s" : ""}?`;
+      message = `Are you sure you want to deactivate ${count} selected coupon${count > 1 ? "s" : ""}? Customers will not be able to redeem them.`;
+      confirmText = `Disable ${count} Coupon${count > 1 ? "s" : ""}`;
+      variant = "warning";
+    }
+
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      confirmText,
+      variant,
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, loading: true }));
+        try {
+          const res = await http.post("/admin/coupons/bulk-action", { ids: selected, action });
+          toast.success(res.data.message || `Bulk ${action} succeeded`);
+          if (action === "delete") {
+            setSelected([]);
+          }
+          setConfirmModal({ isOpen: false });
+          load();
+        } catch (e) {
+          toast.error(e.response?.data?.detail || `Failed to ${action} selected coupons`);
+          setConfirmModal(prev => ({ ...prev, loading: false }));
+        }
+      }
+    });
   };
 
   const STATS = [
@@ -5409,6 +5500,44 @@ function Coupons({ isDark }) {
         </div>
       </div>
 
+      {/* Bulk Selection Actions Bar */}
+      {selected.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 bg-zinc-900 text-white dark:bg-zinc-800 border border-zinc-700 dark:border-zinc-700 rounded-xl shadow-lg animate-in fade-in slide-in-from-top-2 duration-150 text-xs">
+          <div className="flex items-center gap-2.5">
+            <span className="font-mono font-bold bg-white/20 dark:bg-black/30 px-2.5 py-1 rounded-md text-xs">
+              {selected.length} Selected
+            </span>
+            <span className="text-zinc-300 font-medium">Bulk coupon operations:</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => promptBulkAction('enable')}
+              className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              <CheckCircle size={14} /> Enable All
+            </button>
+            <button
+              onClick={() => promptBulkAction('disable')}
+              className="px-3 py-1.5 rounded-lg bg-zinc-700 hover:bg-zinc-600 text-white font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              <X size={14} /> Disable All
+            </button>
+            <button
+              onClick={() => promptBulkAction('delete')}
+              className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              <Trash2 size={14} /> Delete All
+            </button>
+            <button
+              onClick={() => setSelected([])}
+              className="px-2.5 py-1.5 rounded-lg text-zinc-400 hover:text-white transition-colors cursor-pointer"
+            >
+              Deselect
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl overflow-x-auto min-h-[400px] shadow-xs">
         {loading ? (
           <div className="p-10 flex justify-center"><div className="w-6 h-6 border-2 border-obsidian dark:border-white border-t-transparent rounded-full animate-spin"></div></div>
@@ -5470,7 +5599,7 @@ function Coupons({ isDark }) {
                       isOpen={activeMenuId === c.id}
                       onToggle={() => setActiveMenuId(activeMenuId === c.id ? null : c.id)}
                       onClose={() => setActiveMenuId(null)}
-                      menuWidth="w-40"
+                      menuWidth="w-44"
                     >
                       <button
                         onClick={() => { setActiveMenuId(null); setViewCoupon(c); }}
@@ -5479,10 +5608,17 @@ function Coupons({ isDark }) {
                         <Eye size={14} className="text-gray-400" /> View Details
                       </button>
                       <button
-                        onClick={() => { setActiveMenuId(null); toggleStatus(c.id, !c.is_active); }}
+                        onClick={() => { setActiveMenuId(null); promptToggleStatus(c); }}
                         className="w-full px-3.5 py-2 text-xs font-bold text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center gap-2 transition-colors cursor-pointer"
                       >
-                        <Trash2 size={14} className="text-gray-400" /> {c.is_active ? 'Disable' : 'Enable'}
+                        <RotateCcw size={14} className="text-gray-400" /> {c.is_active ? 'Disable Coupon' : 'Enable Coupon'}
+                      </button>
+                      <div className="my-1 border-t border-gray-100 dark:border-zinc-800"></div>
+                      <button
+                        onClick={() => { setActiveMenuId(null); promptDeleteCoupon(c); }}
+                        className="w-full px-3.5 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2 transition-colors cursor-pointer"
+                      >
+                        <Trash2 size={14} className="text-rose-500" /> Delete Coupon
                       </button>
                     </TableActionDropdown>
                   </td>
@@ -5505,6 +5641,17 @@ function Coupons({ isDark }) {
 
       {showCreate && <CreateCouponForm isDark={isDark} onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); load(); }} />}
       {viewCoupon && <CouponDetailsModal isDark={isDark} coupon={viewCoupon} onClose={() => setViewCoupon(null)} />}
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        variant={confirmModal.variant || "danger"}
+        loading={confirmModal.loading}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal({ isOpen: false })}
+      />
     </div>
   );
 }

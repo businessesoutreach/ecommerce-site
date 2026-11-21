@@ -1656,6 +1656,58 @@ router.patch('/coupons/:id', async (req, res) => {
     }
 });
 
+router.delete('/coupons/:id', async (req, res) => {
+    try {
+        const coupon = await prisma.coupon.findUnique({ where: { id: req.params.id } });
+        if (!coupon) return res.status(404).json({ detail: "Coupon not found" });
+
+        await prisma.coupon.delete({ where: { id: req.params.id } });
+        await logAdminAction(req.user, 'DELETE_COUPON', 'coupon', req.params.id, { code: coupon.code });
+        res.json({ success: true, message: "Coupon deleted successfully" });
+    } catch (err) {
+        res.status(500).json({ detail: err.message });
+    }
+});
+
+router.post('/coupons/bulk-action', async (req, res) => {
+    try {
+        const { ids, action } = req.body;
+        if (!Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ detail: "No coupon IDs provided" });
+        }
+
+        if (action === 'enable') {
+            await prisma.coupon.updateMany({
+                where: { id: { in: ids } },
+                data: { is_active: true }
+            });
+            await logAdminAction(req.user, 'BULK_ENABLE_COUPONS', 'coupon', null, { count: ids.length, ids });
+            return res.json({ success: true, message: `${ids.length} coupon(s) enabled successfully` });
+        }
+
+        if (action === 'disable') {
+            await prisma.coupon.updateMany({
+                where: { id: { in: ids } },
+                data: { is_active: false }
+            });
+            await logAdminAction(req.user, 'BULK_DISABLE_COUPONS', 'coupon', null, { count: ids.length, ids });
+            return res.json({ success: true, message: `${ids.length} coupon(s) disabled successfully` });
+        }
+
+        if (action === 'delete') {
+            await prisma.coupon.deleteMany({
+                where: { id: { in: ids } }
+            });
+            await logAdminAction(req.user, 'BULK_DELETE_COUPONS', 'coupon', null, { count: ids.length, ids });
+            return res.json({ success: true, message: `${ids.length} coupon(s) deleted permanently` });
+        }
+
+        return res.status(400).json({ detail: "Invalid action. Supported: enable, disable, delete" });
+    } catch (err) {
+        res.status(500).json({ detail: err.message });
+    }
+});
+
 router.get('/coupons/:id', async (req, res) => {
     try {
         const coupon = await prisma.coupon.findUnique({ where: { id: req.params.id } });
