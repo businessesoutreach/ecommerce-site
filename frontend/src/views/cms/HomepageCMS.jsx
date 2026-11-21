@@ -4,7 +4,7 @@ import { http } from '../../lib/api';
 import { toast } from "sonner";
 import { GripVertical, Eye, EyeOff, Settings } from 'lucide-react';
 
-export default function HomepageCMS({ setActiveTab }) {
+export default function HomepageCMS({ setActiveTab, setMainTab }) {
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -45,9 +45,16 @@ export default function HomepageCMS({ setActiveTab }) {
   };
 
   const openSettings = (section) => {
+    if (section.type === 'categories') {
+      if (setMainTab) {
+        setMainTab('categories');
+      } else {
+        toast.info('Manage categories from the main dashboard sidebar');
+      }
+      return;
+    }
     const map = {
       'hero': 'hero',
-      'categories': 'categories',
       'new_arrivals': 'product_sections',
       'best_sellers': 'product_sections',
       'trending': 'product_sections',

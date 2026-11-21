@@ -635,7 +635,7 @@ export default function Admin() {
           {tab === "bundles" && <BundlesManager isDark={isDark} />}
           {tab === "categories" && <CategoriesCMS />}
           {tab === "brands" && <BrandsCMS />}
-          {tab === "cms" && <Cms setTab={setTab} />}
+          {tab === "cms" && <Cms setTab={setTab} isDark={isDark} />}
           {tab === "profitability" && <ProfitabilityAnalytics />}
           {tab === "audit_logs" && <AuditLogs isDark={isDark} />}
         </main>
@@ -8031,69 +8031,74 @@ function RefundDetailsModal({ refundId, onClose, onUpdate }) {
 
 
 
-function Cms({ setTab }) {
+function Cms({ setTab, isDark }) {
   const [activeTab, setActiveTab] = useState('homepage');
 
   const CMS_TABS = [
-    { id: 'homepage', label: 'Homepage', icon: Home },
+    { id: 'homepage', label: 'Homepage Layout', icon: Home },
     { id: 'announcement', label: 'Announcement Bar', icon: Megaphone },
     { id: 'hero', label: 'Hero Slides', icon: ImageIcon },
-    { id: 'categories', label: 'Categories', icon: Tag },
-    { id: 'brands', label: 'Brands', icon: Box },
     { id: 'product_sections', label: 'Product Sections', icon: Layers },
     { id: 'promo', label: 'Promo Banners', icon: Ticket },
     { id: 'flash_sale', label: 'Flash Sale', icon: Zap },
     { id: 'testimonials', label: 'Testimonials', icon: Star },
     { id: 'pages', label: 'Pages', icon: FileText },
-    { id: 'seo', label: 'SEO', icon: SearchIcon },
+    { id: 'seo', label: 'SEO Settings', icon: SearchIcon },
   ];
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'homepage': return <HomepageCMS setActiveTab={setActiveTab} />;
-      case 'announcement': return <StoreSettings />; // We can reuse StoreSettings or create a new one later
+      case 'homepage': return <HomepageCMS setActiveTab={setActiveTab} setMainTab={setTab} />;
+      case 'announcement': return <StoreSettings />;
       case 'hero': return <HeroSlidesCMS />;
-      case 'categories': return <CategoriesCMS />;
-      case 'brands': return <BrandsCMS />;
       case 'product_sections': return <ProductSectionsCMS />;
       case 'promo': return <PromoBannersCMS />;
       case 'flash_sale': return <FlashSaleCMS />;
       case 'testimonials': return <TestimonialsCMS />;
       case 'pages': return <PagesCMS />;
       case 'seo': return <SeoCMS />;
-      default: return <HomepageCMS setActiveTab={setActiveTab} />;
+      default: return <HomepageCMS setActiveTab={setActiveTab} setMainTab={setTab} />;
     }
   };
 
   return (
-    <div className="flex h-screen w-full">
-      <div className="w-64 bg-ink-50 border-r border-ink-200 overflow-y-auto flex flex-col">
-        <div className="p-6 pb-2">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display font-bold text-obsidian tracking-tight">Storefront CMS</h2>
-          </div>
-          <button onClick={() => setTab("overview")} className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold  border border-ink-200 bg-white hover:bg-obsidian hover:text-white transition-colors mb-6">
-            &larr; Go to Dashboard
-          </button>
-          <nav className="space-y-1">
-            {CMS_TABS.map(tab => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${activeTab === tab.id ? 'bg-white text-fire border border-ink-200 shadow-sm' : 'text-ink-500 hover:text-obsidian hover:bg-ink-100/50 border border-transparent'
-                    }`}
-                >
-                  <Icon size={16} />
-                  {tab.label}
-                </button>
-              );
-            })}
-          </nav>
+    <div className="flex min-h-[calc(100vh-80px)] w-full rounded-2xl border border-gray-200 dark:border-zinc-800 overflow-hidden shadow-sm bg-white dark:bg-zinc-900">
+      {/* CMS Sidebar */}
+      <div className="w-64 bg-gray-50 dark:bg-zinc-900/80 border-r border-gray-200 dark:border-zinc-800 overflow-y-auto flex flex-col p-4 shrink-0">
+        <div className="mb-4">
+          <h2 className="font-display font-black text-sm text-gray-900 dark:text-zinc-100 tracking-tight">
+            Storefront CMS
+          </h2>
+          <p className="text-[11px] text-gray-500 dark:text-zinc-400 font-medium mt-0.5">
+            Configure visual storefront sections
+          </p>
         </div>
+
+        <nav className="space-y-1">
+          {CMS_TABS.map(tab => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer text-left ${
+                  isActive
+                    ? 'bg-black text-white dark:bg-fire dark:text-white shadow-2xs font-black'
+                    : 'text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 hover:bg-gray-100 dark:hover:bg-zinc-800'
+                }`}
+              >
+                <Icon size={15} className="shrink-0" />
+                <span className="truncate">{tab.label}</span>
+              </button>
+            );
+          })}
+        </nav>
       </div>
-      <div className="flex-1 p-8 overflow-y-auto bg-white">
+
+      {/* CMS Main Content Area */}
+      <div className="flex-1 p-6 md:p-8 overflow-y-auto bg-white dark:bg-zinc-900 custom-scrollbar">
         {renderContent()}
       </div>
     </div>
