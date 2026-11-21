@@ -35,9 +35,26 @@ router.use('/audit-logs', requireRole(['admin']));
 
 router.get('/audit-logs', async (req, res) => {
     try {
+        const { entity_type, action, search, limit } = req.query;
+        let where = {};
+        if (entity_type && entity_type !== 'all') {
+            where.entity_type = entity_type;
+        }
+        if (action && action !== 'all') {
+            where.action = action;
+        }
+        if (search) {
+            where.OR = [
+                { admin_name: { contains: search, mode: 'insensitive' } },
+                { action: { contains: search, mode: 'insensitive' } },
+                { entity_id: { contains: search, mode: 'insensitive' } }
+            ];
+        }
+        const take = parseInt(limit) || 200;
         const logs = await prisma.adminActionLog.findMany({
+            where,
             orderBy: { created_at: 'desc' },
-            take: 100
+            take
         });
         res.json({ success: true, data: logs });
     } catch (err) {
@@ -878,6 +895,7 @@ router.post('/products', async (req, res) => {
             },
             include: { sizes: true }
         });
+        await logAdminAction(req.user, 'CREATE_PRODUCT', 'product', p.id, { name: p.name, price: p.base_price, sku: p.sku });
         res.json({ success: true, data: p });
     } catch (err) {
         res.status(500).json({ detail: err.message });
@@ -924,6 +942,7 @@ router.patch('/products/:id', async (req, res) => {
             where: { id: req.params.id },
             include: { sizes: true }
         });
+        await logAdminAction(req.user, 'UPDATE_PRODUCT', 'product', req.params.id, { name: p?.name, price: p?.base_price });
         res.json({ success: true, data: p });
     } catch (err) {
         res.status(500).json({ detail: err.message });
@@ -932,6 +951,7 @@ router.patch('/products/:id', async (req, res) => {
 
 router.delete('/products/:id', async (req, res) => {
     try {
+        await logAdminAction(req.user, 'DELETE_PRODUCT', 'product', req.params.id, {});
         await prisma.product.delete({ where: { id: req.params.id } });
         res.json({ success: true });
     } catch (err) {
@@ -1216,6 +1236,7 @@ router.patch('/orders/bulk-status', async (req, res) => {
             note: 'Bulk status update'
         }));
         await prisma.orderStatusHistory.createMany({ data: histories });
+        await logAdminAction(req.user, 'BULK_UPDATE_ORDER_STATUS', 'order', (orderIds || []).join(','), { count: orderIds?.length, status });
 
         res.json({ success: true });
     } catch (err) {
@@ -1230,6 +1251,7 @@ router.patch('/orders/:id/note', async (req, res) => {
             where: { id: req.params.id },
             data: { customer_note: note } // using customer_note for internal notes as requested or if there's no internal note field
         });
+        await logAdminAction(req.user, 'UPDATE_ORDER_NOTE', 'order', req.params.id, { note, order_number: o.order_number });
         res.json({ success: true, data: o });
     } catch (err) {
         res.status(500).json({ detail: err.message });
@@ -1269,6 +1291,14 @@ router.patch('/orders/:id/status', async (req, res) => {
             const origin_url = process.env.FRONTEND_URL || 'http://localhost:5173';
             sendShippingUpdate(o.customer_email, o, origin_url).catch(e => console.error(e));
         }
+
+        await logAdminAction(req.user, 'UPDATE_ORDER_STATUS', 'order', req.params.id, {
+            status,
+            order_number: o.order_number,
+            courier_name: o.courier_name,
+            tracking_number: o.tracking_number,
+            note: note || undefined
+        });
         
         res.json({ success: true, data: o });
     } catch (err) {
@@ -1606,6 +1636,7 @@ router.post('/coupons', async (req, res) => {
         else doc.expires_at = null;
         
         const c = await prisma.coupon.create({ data: doc });
+        await logAdminAction(req.user, 'CREATE_COUPON', 'coupon', c.id, { code: c.code, discount_type: c.discount_type, discount_value: c.discount_value });
         res.json({ success: true, data: c });
     } catch (err) {
         res.status(500).json({ detail: err.message });
@@ -1618,6 +1649,7 @@ router.patch('/coupons/:id', async (req, res) => {
             where: { id: req.params.id },
             data: { is_active: req.body.is_active }
         });
+        await logAdminAction(req.user, 'UPDATE_COUPON', 'coupon', req.params.id, { code: c.code, is_active: c.is_active });
         res.json({ success: true, data: c });
     } catch (err) {
         res.status(500).json({ detail: err.message });
@@ -1707,6 +1739,7 @@ router.patch('/customers/:id/block', async (req, res) => {
             where: { id: req.params.id },
             data: { is_blocked: req.body.is_blocked !== false }
         });
+        await logAdminAction(req.user, req.body.is_blocked !== false ? 'BLOCK_CUSTOMER' : 'UNBLOCK_CUSTOMER', 'customer', req.params.id, {});
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ detail: err.message });
@@ -1755,6 +1788,7 @@ router.patch('/settings', async (req, res) => {
         });
         
         const s = await prisma.settings.findUnique({ where: { id: 'singleton' } });
+        await logAdminAction(req.user, 'UPDATE_SETTINGS', 'settings', 'singleton', { keys_updated: Object.keys(doc) });
         res.json({ success: true, data: s });
     } catch (err) {
         res.status(500).json({ detail: err.message });
@@ -2316,8 +2350,10 @@ router.patch('/users/bulk', async (req, res) => {
         
         if (action === 'block') {
             await prisma.user.updateMany({ where: { id: { in: userIds } }, data: { is_blocked: true } });
+            await logAdminAction(req.user, 'BULK_BLOCK_USERS', 'customer', (userIds || []).join(','), { count: userIds?.length });
         } else if (action === 'unblock') {
             await prisma.user.updateMany({ where: { id: { in: userIds } }, data: { is_blocked: false } });
+            await logAdminAction(req.user, 'BULK_UNBLOCK_USERS', 'customer', (userIds || []).join(','), { count: userIds?.length });
         }
         
         res.json({ success: true });
@@ -2715,6 +2751,12 @@ router.post('/orders/:id/book-courier', async (req, res) => {
                 status: 'packed',
                 note: `Automatically booked via ${booking.courier_name}. AWB: ${booking.awb}`
             }
+        });
+
+        await logAdminAction(req.user, 'BOOK_COURIER', 'order', order.id, {
+            order_number: order.order_number,
+            courier: booking.courier_name,
+            awb: booking.awb
         });
 
         res.json({ success: true, data: booking });

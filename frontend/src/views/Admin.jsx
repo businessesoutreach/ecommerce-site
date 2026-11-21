@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Calendar, CreditCard, Wallet, Home, Megaphone, Tag, Layers, Zap, FileText, Search, LayoutDashboard, Package, ShoppingCart, Ticket, Star, Users, LogOut, TrendingUp, AlertTriangle, Plus, Trash2, X, RotateCcw, DollarSign, Image as ImageIcon, Upload, MessageCircle, Search as SearchIcon, Filter, MoreVertical, Eye, Download, Printer, CheckCircle, Check, Truck, MapPin, Edit, Copy, Activity, Loader2, HelpCircle, ExternalLink, Clock, ArrowLeft, ArrowUpRight, ArrowDownRight, RefreshCw, ShoppingBag, Box, ChevronRight, ChevronDown, Sun, Moon, Bell } from "lucide-react";
+import { Calendar, CreditCard, Wallet, Home, Megaphone, Tag, Layers, Zap, FileText, Search, LayoutDashboard, Package, ShoppingCart, Ticket, Star, Users, LogOut, TrendingUp, AlertTriangle, Plus, Trash2, X, RotateCcw, DollarSign, Image as ImageIcon, Upload, MessageCircle, Search as SearchIcon, Filter, MoreVertical, Eye, Download, Printer, CheckCircle, Check, Truck, MapPin, Edit, Copy, Activity, Loader2, HelpCircle, ExternalLink, Clock, ArrowLeft, ArrowUpRight, ArrowDownRight, RefreshCw, ShoppingBag, Box, ChevronRight, ChevronDown, Sun, Moon, Bell, Shield } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell } from "recharts";
 import { http, fmt, imgUrl, waLink } from "../lib/api";
 import { PROVINCES, PROVINCE_CITIES } from "../components/LocationDropdowns";
@@ -7896,50 +7896,434 @@ function InventoryManagement() {
 function AuditLogs() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [search, setSearch] = useState("");
+  const [activeType, setActiveType] = useState("all");
+  const [selectedLog, setSelectedLog] = useState(null);
+  const [copiedId, setCopiedId] = useState(null);
+
+  const fetchLogs = async (silent = false) => {
+    if (!silent) setLoading(true);
+    else setRefreshing(true);
+    try {
+      const res = await http.get("/admin/audit-logs");
+      setLogs(res.data.data || []);
+    } catch {
+      toast.error("Failed to load audit logs");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    http.get("/admin/audit-logs").then((res) => {
-      setLogs(res.data.data);
-      setLoading(false);
-    }).catch(() => toast.error("Failed to load audit logs"));
+    fetchLogs();
   }, []);
 
+  const copyToClipboard = (text, id) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    toast.success("Copied to clipboard");
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const getActionBadgeClass = (action = "") => {
+    const act = action.toUpperCase();
+    if (act.startsWith("CREATE") || act.includes("ADD")) {
+      return "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/40";
+    }
+    if (act.startsWith("DELETE") || act.includes("BLOCK") || act.includes("CANCEL")) {
+      return "bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-400 border-rose-200 dark:border-rose-800/40";
+    }
+    if (act.includes("COURIER") || act.includes("BULK") || act.includes("REFUND")) {
+      return "bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400 border-amber-200 dark:border-amber-800/40";
+    }
+    return "bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400 border-blue-200 dark:border-blue-800/40";
+  };
+
+  const getEntityBadgeClass = (type = "") => {
+    switch (type.toLowerCase()) {
+      case "order": return "bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-400 border-purple-200 dark:border-purple-800/40";
+      case "product": return "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800/40";
+      case "customer": return "bg-teal-50 text-teal-700 dark:bg-teal-950/50 dark:text-teal-400 border-teal-200 dark:border-teal-800/40";
+      case "coupon": return "bg-orange-50 text-orange-700 dark:bg-orange-950/50 dark:text-orange-400 border-orange-200 dark:border-orange-800/40";
+      case "settings": return "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700";
+      default: return "bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-zinc-300 border-gray-200 dark:border-zinc-700";
+    }
+  };
+
+  const entityTypes = [
+    { id: "all", label: "All Activity" },
+    { id: "order", label: "Orders" },
+    { id: "product", label: "Products" },
+    { id: "coupon", label: "Coupons" },
+    { id: "customer", label: "Customers" },
+    { id: "settings", label: "Settings" },
+  ];
+
+  const filteredLogs = logs.filter((log) => {
+    if (activeType !== "all" && log.entity_type?.toLowerCase() !== activeType) {
+      return false;
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      const matchOperator = log.admin_name?.toLowerCase().includes(q);
+      const matchAction = log.action?.toLowerCase().includes(q);
+      const matchEntityId = log.entity_id?.toLowerCase().includes(q);
+      const matchEntityType = log.entity_type?.toLowerCase().includes(q);
+      const matchDetails = JSON.stringify(log.details || {}).toLowerCase().includes(q);
+      return matchOperator || matchAction || matchEntityId || matchEntityType || matchDetails;
+    }
+    return true;
+  });
+
+  const stats = {
+    total: logs.length,
+    orders: logs.filter(l => l.entity_type === 'order').length,
+    products: logs.filter(l => l.entity_type === 'product').length,
+    security: logs.filter(l => ['settings', 'customer'].includes(l.entity_type) || l.action?.includes('BLOCK')).length,
+  };
+
   return (
-    <div>
-      <div className="flex justify-between items-start mb-6">
-        <div>
-          <h1 className="font-display tracking-tight text-2xl font-semibold ">Audit Logs</h1>
-          <p className="text-sm text-ink-500">Track all actions performed by staff and admins.</p>
+    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+      {/* Header Banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 p-6 rounded-2xl shadow-sm">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-xl bg-obsidian text-white dark:bg-white dark:text-black flex items-center justify-center shrink-0 shadow-md">
+            <Shield size={24} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">Admin Audit Trail</h1>
+              <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800/60">
+                Live Ledger
+              </span>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-zinc-400 mt-1">
+              Tamper-evident operational log recording administrative changes, product mutations, and security updates.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <button
+            onClick={() => fetchLogs(true)}
+            disabled={refreshing}
+            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-750 text-gray-700 dark:text-zinc-300 border border-gray-200 dark:border-zinc-700 transition-colors shadow-sm"
+          >
+            <RefreshCw size={14} className={refreshing ? "animate-spin text-obsidian dark:text-white" : ""} />
+            {refreshing ? "Syncing..." : "Refresh"}
+          </button>
         </div>
       </div>
-      <div className="bg-white border border-ink-200 overflow-x-auto min-h-[400px]">
-        {loading ? <div className="p-10 flex justify-center"><Loader2 size={24} className="animate-spin text-obsidian" /></div> : (
-          <table className="w-full text-sm text-left">
-            <thead className="bg-ink-100 font-mono text-[10px] text-ink-500 uppercase tracking-wider">
-              <tr>
-                <th className="p-4">Timestamp</th>
-                <th className="p-4">Admin/Staff</th>
-                <th className="p-4">Action</th>
-                <th className="p-4">Entity Type</th>
-                <th className="p-4">Entity ID</th>
-                <th className="p-4">Details</th>
-              </tr>
-            </thead>
-            <tbody>
-              {logs.length === 0 ? <tr><td colSpan="6" className="p-10 text-center text-ink-400">No logs found.</td></tr> : logs.map(l => (
-                <tr key={l.id} className="border-b border-ink-100 last:border-0 hover:bg-ink-50">
-                  <td className="p-4 text-xs font-mono whitespace-nowrap">{new Date(l.created_at).toLocaleString()}</td>
-                  <td className="p-4 font-bold">{l.admin_name}</td>
-                  <td className="p-4"><span className="px-2 py-1 bg-ink-200 text-obsidian text-[10px] font-bold tracking-wider">{l.action}</span></td>
-                  <td className="p-4 text-ink-500 capitalize">{l.entity_type}</td>
-                  <td className="p-4 font-mono text-xs max-w-[120px] truncate" title={l.entity_id}>{l.entity_id}</td>
-                  <td className="p-4 text-xs font-mono max-w-[300px] truncate" title={JSON.stringify(l.details)}>{JSON.stringify(l.details)}</td>
+
+      {/* Metrics Stat Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 p-4 rounded-xl shadow-sm">
+          <p className="text-xs font-medium text-gray-500 dark:text-zinc-400">Total Recorded Events</p>
+          <p className="text-2xl font-bold font-mono text-gray-900 dark:text-white mt-1">{stats.total}</p>
+        </div>
+        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 p-4 rounded-xl shadow-sm">
+          <p className="text-xs font-medium text-gray-500 dark:text-zinc-400">Order Updates</p>
+          <p className="text-2xl font-bold font-mono text-purple-600 dark:text-purple-400 mt-1">{stats.orders}</p>
+        </div>
+        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 p-4 rounded-xl shadow-sm">
+          <p className="text-xs font-medium text-gray-500 dark:text-zinc-400">Product Mutations</p>
+          <p className="text-2xl font-bold font-mono text-indigo-600 dark:text-indigo-400 mt-1">{stats.products}</p>
+        </div>
+        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 p-4 rounded-xl shadow-sm">
+          <p className="text-xs font-medium text-gray-500 dark:text-zinc-400">Security & Settings</p>
+          <p className="text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-1">{stats.security}</p>
+        </div>
+      </div>
+
+      {/* Filters and Search Bar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 p-4 rounded-xl shadow-sm">
+        {/* Entity Filters */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
+          {entityTypes.map((tab) => {
+            const count = tab.id === "all" ? logs.length : logs.filter(l => l.entity_type?.toLowerCase() === tab.id).length;
+            const active = activeType === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveType(tab.id)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap transition-all ${
+                  active
+                    ? "bg-obsidian text-white dark:bg-white dark:text-black shadow-sm font-semibold"
+                    : "text-gray-600 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-zinc-100"
+                }`}
+              >
+                <span>{tab.label}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                  active ? "bg-white/20 text-white dark:bg-black/20 dark:text-black font-mono" : "bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 font-mono"
+                }`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Search input */}
+        <div className="relative min-w-[260px] md:w-72 shrink-0">
+          <SearchIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-500" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search action, admin, ID, details..."
+            className="w-full pl-9 pr-8 py-1.5 text-xs bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700/80 rounded-lg text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-obsidian dark:focus:ring-white"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-zinc-300"
+            >
+              <X size={12} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Audit Log Table */}
+      <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl shadow-sm overflow-hidden">
+        {loading ? (
+          <div className="p-16 flex flex-col items-center justify-center gap-3">
+            <Loader2 size={28} className="animate-spin text-obsidian dark:text-white" />
+            <p className="text-xs text-gray-500 dark:text-zinc-400">Loading audit ledger...</p>
+          </div>
+        ) : filteredLogs.length === 0 ? (
+          <div className="p-16 text-center">
+            <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center mx-auto mb-3 text-gray-400 dark:text-zinc-500">
+              <FileText size={22} />
+            </div>
+            <p className="text-sm font-semibold text-gray-900 dark:text-zinc-100">No matching audit events</p>
+            <p className="text-xs text-gray-500 dark:text-zinc-400 mt-1 max-w-sm mx-auto">
+              {search || activeType !== "all"
+                ? "Try clearing your search query or selecting a different activity filter."
+                : "No administrative actions have been recorded yet."}
+            </p>
+            {(search || activeType !== "all") && (
+              <button
+                onClick={() => { setSearch(""); setActiveType("all"); }}
+                className="mt-4 px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 transition-colors"
+              >
+                Clear Filters
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-gray-50/80 dark:bg-zinc-800/60 border-b border-gray-200 dark:border-zinc-800 text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-zinc-400">
+                <tr>
+                  <th className="py-3 px-4">Timestamp</th>
+                  <th className="py-3 px-4">Operator</th>
+                  <th className="py-3 px-4">Action</th>
+                  <th className="py-3 px-4">Target Entity</th>
+                  <th className="py-3 px-4">Entity ID</th>
+                  <th className="py-3 px-4">Details Summary</th>
+                  <th className="py-3 px-4 text-right">Inspect</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-zinc-800/60">
+                {filteredLogs.map((l) => {
+                  const created = new Date(l.created_at);
+                  const detailsKeys = Object.keys(l.details || {});
+                  return (
+                    <tr
+                      key={l.id}
+                      className="hover:bg-gray-50/70 dark:hover:bg-zinc-800/40 transition-colors group cursor-pointer"
+                      onClick={() => setSelectedLog(l)}
+                    >
+                      {/* Timestamp */}
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <div className="flex flex-col">
+                          <span className="font-mono text-xs text-gray-900 dark:text-zinc-200">
+                            {created.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                          </span>
+                          <span className="font-mono text-[11px] text-gray-400 dark:text-zinc-500">
+                            {created.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Operator */}
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center font-bold text-[11px] text-zinc-700 dark:text-zinc-300">
+                            {(l.admin_name || "A").substring(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <span className="font-semibold text-gray-900 dark:text-zinc-100 block">
+                              {l.admin_name || "System"}
+                            </span>
+                            <span className="text-[10px] text-gray-400 dark:text-zinc-500 font-mono">
+                              {l.admin_id ? `${l.admin_id.substring(0, 8)}...` : "system"}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Action */}
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-mono font-semibold border ${getActionBadgeClass(l.action)}`}>
+                          {l.action}
+                        </span>
+                      </td>
+
+                      {/* Entity Type */}
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border capitalize ${getEntityBadgeClass(l.entity_type)}`}>
+                          {l.entity_type}
+                        </span>
+                      </td>
+
+                      {/* Entity ID */}
+                      <td className="py-3.5 px-4 whitespace-nowrap font-mono text-xs text-gray-600 dark:text-zinc-400">
+                        <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                          <span className="truncate max-w-[130px]" title={l.entity_id}>
+                            {l.entity_id || "—"}
+                          </span>
+                          {l.entity_id && (
+                            <button
+                              onClick={() => copyToClipboard(l.entity_id, l.id)}
+                              className="p-1 rounded text-gray-400 hover:text-gray-700 dark:text-zinc-500 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+                              title="Copy ID"
+                            >
+                              {copiedId === l.id ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Details Summary Preview */}
+                      <td className="py-3.5 px-4 text-xs text-gray-600 dark:text-zinc-400 max-w-[260px]">
+                        <div className="truncate font-mono text-[11px]" title={JSON.stringify(l.details)}>
+                          {detailsKeys.length === 0 ? (
+                            <span className="text-gray-400 dark:text-zinc-600">No additional payload</span>
+                          ) : (
+                            detailsKeys.slice(0, 3).map(k => `${k}: ${typeof l.details[k] === 'object' ? '...' : l.details[k]}`).join(" | ")
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Inspect Button */}
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedLog(l);
+                          }}
+                          className="px-2.5 py-1 text-xs font-medium rounded-lg bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 transition-colors"
+                        >
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
+
+      {/* Detail Inspector Modal */}
+      {selectedLog && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150"
+          onClick={() => setSelectedLog(null)}
+        >
+          <div
+            className="w-full max-w-2xl bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="p-5 border-b border-gray-200 dark:border-zinc-800 flex items-center justify-between bg-gray-50/50 dark:bg-zinc-850">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-obsidian text-white dark:bg-white dark:text-black flex items-center justify-center font-bold">
+                  <Shield size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <span>Audit Record Inspector</span>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-mono border ${getActionBadgeClass(selectedLog.action)}`}>
+                      {selectedLog.action}
+                    </span>
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5 font-mono">
+                    Event ID: {selectedLog.id}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedLog(null)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto space-y-5 text-xs">
+              {/* Core Metadata Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-gray-50 dark:bg-zinc-800/50 p-3.5 rounded-xl border border-gray-100 dark:border-zinc-800">
+                <div>
+                  <span className="text-[10px] font-medium text-gray-400 dark:text-zinc-500 uppercase tracking-wider block">Operator</span>
+                  <span className="font-semibold text-gray-900 dark:text-zinc-100 mt-0.5 block">{selectedLog.admin_name}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-medium text-gray-400 dark:text-zinc-500 uppercase tracking-wider block">Entity Type</span>
+                  <span className="font-semibold text-gray-900 dark:text-zinc-100 mt-0.5 block capitalize">{selectedLog.entity_type}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-medium text-gray-400 dark:text-zinc-500 uppercase tracking-wider block">Entity ID</span>
+                  <span className="font-mono text-gray-900 dark:text-zinc-100 mt-0.5 block truncate" title={selectedLog.entity_id}>
+                    {selectedLog.entity_id || "—"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-medium text-gray-400 dark:text-zinc-500 uppercase tracking-wider block">Date & Time</span>
+                  <span className="font-mono text-gray-900 dark:text-zinc-100 mt-0.5 block">
+                    {new Date(selectedLog.created_at).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
+              {/* JSON Payload Viewer */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-gray-700 dark:text-zinc-300">Detailed Action Payload</span>
+                  <button
+                    onClick={() => copyToClipboard(JSON.stringify(selectedLog.details, null, 2), "payload")}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 transition-colors"
+                  >
+                    {copiedId === "payload" ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
+                    <span>{copiedId === "payload" ? "Copied" : "Copy JSON"}</span>
+                  </button>
+                </div>
+                <div className="relative rounded-xl overflow-hidden border border-gray-200 dark:border-zinc-800 bg-zinc-950 text-zinc-100 p-4 font-mono text-[11px] leading-relaxed max-h-64 overflow-y-auto">
+                  <pre className="whitespace-pre-wrap break-all">
+                    {JSON.stringify(selectedLog.details, null, 2)}
+                  </pre>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-gray-200 dark:border-zinc-800 flex justify-end bg-gray-50/50 dark:bg-zinc-850">
+              <button
+                onClick={() => setSelectedLog(null)}
+                className="px-4 py-2 text-xs font-medium rounded-lg bg-gray-200 dark:bg-zinc-800 text-gray-800 dark:text-zinc-200 hover:bg-gray-300 dark:hover:bg-zinc-700 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
