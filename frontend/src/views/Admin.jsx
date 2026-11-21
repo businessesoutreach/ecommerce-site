@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Calendar, CreditCard, Wallet, Home, Megaphone, Tag, Layers, Zap, FileText, Search, LayoutDashboard, Package, ShoppingCart, Ticket, Star, Users, LogOut, TrendingUp, AlertTriangle, Plus, Trash2, X, RotateCcw, DollarSign, Image as ImageIcon, Upload, MessageCircle, Search as SearchIcon, Filter, MoreVertical, Eye, Download, Printer, CheckCircle, Check, Truck, MapPin, Edit, Copy, Activity, Loader2, HelpCircle, ExternalLink, Clock, ArrowLeft, ArrowUpRight, ArrowDownRight, RefreshCw, ShoppingBag, Box, ChevronRight, ChevronDown, Sun, Moon, Bell, Shield, Percent } from "lucide-react";
+import { Calendar, CreditCard, Wallet, Home, Megaphone, Tag, Layers, Zap, FileText, Search, LayoutDashboard, Package, ShoppingCart, Ticket, Star, Users, LogOut, TrendingUp, AlertTriangle, Plus, Trash2, X, RotateCcw, DollarSign, Image as ImageIcon, Upload, MessageCircle, Search as SearchIcon, Filter, MoreVertical, Eye, Download, Printer, CheckCircle, Check, Truck, MapPin, Edit, Copy, Activity, Loader2, HelpCircle, ExternalLink, Clock, ArrowLeft, ArrowUpRight, ArrowDownRight, RefreshCw, ShoppingBag, Box, ChevronRight, ChevronDown, Sun, Moon, Bell, Shield, Percent, Flame } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell } from "recharts";
 import { http, fmt, imgUrl, waLink } from "../lib/api";
 import { PROVINCES, PROVINCE_CITIES } from "../components/LocationDropdowns";
@@ -15,6 +15,7 @@ import CategoriesCMS from './cms/CategoriesCMS';
 import BrandsCMS from './cms/BrandsCMS';
 import ProductSectionsCMS from './cms/ProductSectionsCMS';
 import TestimonialsCMS from './cms/TestimonialsCMS';
+import FlashSaleManager from './FlashSaleManager';
 import ConfirmModal from '../components/ConfirmModal';
 
 function TableActionDropdown({ isOpen, onToggle, onClose, children, menuWidth = "w-48" }) {
@@ -494,6 +495,7 @@ export default function Admin() {
         ["overview", "Overview", LayoutDashboard],
         ["orders", "Orders", ShoppingCart],
         ["products", "Products", Package],
+        ["flash_sale", "Flash Sale", Flame],
         ["categories", "Categories", Tag],
         ["brands", "Brands", Box],
         ["customers", "Customers", Users],
@@ -696,6 +698,7 @@ export default function Admin() {
           {tab === "cod" && <Orders initialCodStatus="pending" />}
           {tab === "inventory" && <Products initialStockFilter="low_stock" isDark={isDark} />}
           {tab === "products" && <Products isDark={isDark} />}
+          {tab === "flash_sale" && <FlashSaleManager isDark={isDark} />}
           {tab === "returns" && <ReturnsAndRefunds isDark={isDark} />}
           {tab === "refunds" && <ReturnsAndRefunds isDark={isDark} initialSubTab="refunds" />}
           {tab === "coupons" && <Coupons isDark={isDark} />}
@@ -4829,7 +4832,7 @@ function ProductDetailPage({ productId, initialProduct, isNew = false, onBack, o
       base_price: Number(form.base_price),
       cost_price: form.cost_price ? Number(form.cost_price) : 0,
       compare_at_price: form.compare_at_price ? Number(form.compare_at_price) : null,
-      flash_sale_price: form.flash_sale_price ? Number(form.flash_sale_price) : null,
+      flash_sale_price: initialProduct?.flash_sale_price ? Number(initialProduct.flash_sale_price) : null,
       description: form.description || form.name,
       images: images,
       hover_image: images[1] || images[0],
@@ -4840,7 +4843,7 @@ function ProductDetailPage({ productId, initialProduct, isNew = false, onBack, o
       })),
       is_new_arrival: !!form.is_new_arrival,
       is_best_seller: !!form.is_best_seller,
-      is_flash_sale: !!form.is_flash_sale,
+      is_flash_sale: initialProduct ? !!initialProduct.is_flash_sale : false,
       is_featured: !!form.is_featured,
       status: finalStatus,
     };
@@ -5412,24 +5415,6 @@ function ProductDetailPage({ productId, initialProduct, isNew = false, onBack, o
                 </div>
               </div>
 
-              <div>
-                <label className="block text-[11px] font-bold text-gray-600 dark:text-zinc-400 mb-1">
-                  Flash Sale Price (Optional)
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 font-mono text-xs">$</span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="185"
-                    value={form.flash_sale_price}
-                    onChange={(e) => setForm({ ...form, flash_sale_price: e.target.value })}
-                    className="w-full pl-8 pr-4 py-2 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl font-mono text-xs text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-fire"
-                  />
-                </div>
-              </div>
-
               {/* Profit & Margin Calculator */}
               <div className="bg-gray-50 dark:bg-zinc-800/60 p-3 rounded-xl border border-gray-200 dark:border-zinc-700/60 text-xs space-y-1.5">
                 <div className="flex justify-between">
@@ -5584,7 +5569,6 @@ function ProductDetailPage({ productId, initialProduct, isNew = false, onBack, o
               {[
                 { key: "is_new_arrival", label: "New Arrival Drop", desc: "Highlights sneaker in New Releases feed", badge: "NEW", color: "text-fire bg-fire/10" },
                 { key: "is_best_seller", label: "Best Seller", desc: "Appears in Trending and Top-Seller filters", badge: "HOT", color: "text-amber-600 bg-amber-500/10" },
-                { key: "is_flash_sale", label: "Flash Sale Drop", desc: "Activates flash countdown timer banner", badge: "SALE", color: "text-purple-600 bg-purple-500/10" },
                 { key: "is_featured", label: "Featured Showcase", desc: "Pinned in hero collections and landing page", badge: "FEATURED", color: "text-blue-600 bg-blue-500/10" }
               ].map(item => (
                 <label

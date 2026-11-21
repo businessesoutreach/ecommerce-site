@@ -2405,7 +2405,93 @@ router.patch('/settings', async (req, res) => {
             update: doc,
             create: { id: 'singleton', ...doc }
         });
+        memoryCache.flush();
         res.json({ success: true, data: s });
+    } catch (err) {
+        res.status(500).json({ detail: err.message });
+    }
+});
+
+// ==========================================
+// FLASH SALE MANAGER ENDPOINTS
+// ==========================================
+router.get('/flash-sale', async (req, res) => {
+    try {
+        const settings = await prisma.settings.findUnique({ where: { id: 'singleton' } });
+        const products = await prisma.product.findMany({
+            where: { is_flash_sale: true },
+            orderBy: { sort_order: 'asc' },
+            select: {
+                id: true,
+                name: true,
+                slug: true,
+                base_price: true,
+                compare_at_price: true,
+                flash_sale_price: true,
+                images: true,
+                category_slug: true,
+                brand_slug: true,
+                status: true
+            }
+        });
+        res.json({
+            success: true,
+            data: {
+                settings: settings || { flash_sale_active: false, flash_sale_end_time: null },
+                products
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ detail: err.message });
+    }
+});
+
+router.post('/flash-sale/products', async (req, res) => {
+    try {
+        const { product_id, flash_sale_price } = req.body;
+        if (!product_id) return res.status(400).json({ detail: "Product ID is required" });
+        
+        const updated = await prisma.product.update({
+            where: { id: product_id },
+            data: {
+                is_flash_sale: true,
+                flash_sale_price: flash_sale_price ? Number(flash_sale_price) : null
+            }
+        });
+        memoryCache.flush();
+        res.json({ success: true, data: updated });
+    } catch (err) {
+        res.status(500).json({ detail: err.message });
+    }
+});
+
+router.patch('/flash-sale/products/:id', async (req, res) => {
+    try {
+        const { flash_sale_price } = req.body;
+        const updated = await prisma.product.update({
+            where: { id: req.params.id },
+            data: {
+                flash_sale_price: flash_sale_price ? Number(flash_sale_price) : null
+            }
+        });
+        memoryCache.flush();
+        res.json({ success: true, data: updated });
+    } catch (err) {
+        res.status(500).json({ detail: err.message });
+    }
+});
+
+router.delete('/flash-sale/products/:id', async (req, res) => {
+    try {
+        const updated = await prisma.product.update({
+            where: { id: req.params.id },
+            data: {
+                is_flash_sale: false,
+                flash_sale_price: null
+            }
+        });
+        memoryCache.flush();
+        res.json({ success: true, data: updated });
     } catch (err) {
         res.status(500).json({ detail: err.message });
     }
