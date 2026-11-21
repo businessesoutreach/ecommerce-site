@@ -5349,58 +5349,74 @@ function Coupons({ isDark }) {
   };
 
   const STATS = [
-    { label: "Total", count: data.stats?.total || 0, color: "text-obsidian" },
-    { label: "Active", count: data.stats?.active || 0, color: "text-green-600" },
-    { label: "Redemptions", count: data.stats?.redemptions || 0, color: "text-obsidian" },
+    { label: "Total", count: data.stats?.total || 0, color: "text-obsidian dark:text-zinc-100" },
+    { label: "Active", count: data.stats?.active || 0, color: "text-emerald-600 dark:text-emerald-400" },
+    { label: "Redemptions", count: data.stats?.redemptions || 0, color: "text-obsidian dark:text-zinc-100" },
     { label: "Discount Given", count: fmt(data.stats?.discount || 0), color: "text-fire" }
   ];
 
   return (
-    <div>
-      <div className="flex justify-between items-start mb-6">
+    <div className="space-y-6">
+      <div className="flex justify-between items-start">
         <div>
-          <h1 className="font-display tracking-tight text-2xl font-semibold ">Coupons</h1>
-          <p className="text-sm text-ink-500">Create and manage discount codes</p>
+          <h1 className="font-display tracking-tight text-2xl font-semibold text-gray-900 dark:text-zinc-100">Coupons</h1>
+          <p className="text-sm text-gray-500 dark:text-zinc-400">Create and manage discount codes</p>
         </div>
-        <button onClick={() => setShowCreate(true)} className="bg-obsidian text-white font-bold  px-4 py-2 hover:bg-fire transition-colors flex items-center gap-2"><Plus size={16} /> Create Coupon</button>
+        <button onClick={() => setShowCreate(true)} className="bg-obsidian dark:bg-zinc-800 text-white font-bold px-4 py-2 hover:bg-fire dark:hover:bg-fire transition-colors flex items-center gap-2 rounded-lg cursor-pointer shadow-xs"><Plus size={16} /> Create Coupon</button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {STATS.map(s => (
-          <div key={s.label} className="bg-white p-4 border border-ink-200 flex flex-col justify-between">
-            <span className="text-xs font-bold text-ink-400  tracking-wider">{s.label}</span>
+          <div key={s.label} className="bg-white dark:bg-zinc-900 p-4 border border-gray-200 dark:border-zinc-800 rounded-xl flex flex-col justify-between shadow-xs">
+            <span className="text-xs font-bold text-gray-400 dark:text-zinc-500 tracking-wider uppercase">{s.label}</span>
             <span className={`text-2xl font-mono font-black mt-2 ${s.color}`}>{s.count}</span>
           </div>
         ))}
       </div>
 
-      <div className="bg-white p-4 border border-ink-200 mb-6 flex flex-col lg:flex-row gap-4 items-center">
+      <div className="bg-white dark:bg-zinc-900 p-4 border border-gray-200 dark:border-zinc-800 rounded-xl flex flex-col lg:flex-row gap-4 items-center shadow-xs">
         <form onSubmit={handleSearch} className="flex-1 relative w-full">
-          <SearchIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
-          <input type="text" placeholder="Search coupon code..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className="w-full pl-9 pr-4 py-2 border border-ink-200 text-sm focus:border-obsidian focus:outline-none rounded-none  font-mono" />
+          <SearchIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-500" />
+          <input
+            type="text"
+            placeholder="Search coupon code..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-500 text-sm focus:border-obsidian dark:focus:border-zinc-500 focus:outline-none rounded-lg font-mono"
+          />
         </form>
         <div className="flex flex-wrap gap-2 w-full lg:w-auto">
-          <select value={query.status} onChange={(e) => setQuery({ ...query, status: e.target.value, page: 1 })} className="border border-ink-200 px-3 py-2 text-sm focus:outline-none rounded-none bg-white">
+          <select
+            value={query.status}
+            onChange={(e) => setQuery({ ...query, status: e.target.value, page: 1 })}
+            className="border border-gray-200 dark:border-zinc-700 px-3 py-2 text-sm focus:outline-none rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100"
+          >
             <option value="all">Status: All</option>
             <option value="active">Active</option>
             <option value="disabled">Disabled</option>
             <option value="expired">Expired</option>
           </select>
-          <select value={query.type} onChange={(e) => setQuery({ ...query, type: e.target.value, page: 1 })} className="border border-ink-200 px-3 py-2 text-sm focus:outline-none rounded-none bg-white">
+          <select
+            value={query.type}
+            onChange={(e) => setQuery({ ...query, type: e.target.value, page: 1 })}
+            className="border border-gray-200 dark:border-zinc-700 px-3 py-2 text-sm focus:outline-none rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100"
+          >
             <option value="all">Type: All</option>
             <option value="percentage">Percentage</option>
             <option value="flat">Flat Amount</option>
           </select>
-          <button onClick={resetFilters} className="text-sm font-bold text-ink-500 hover:text-fire  px-3 py-2">Reset</button>
+          <button onClick={resetFilters} className="text-sm font-bold text-gray-500 dark:text-zinc-400 hover:text-fire px-3 py-2 cursor-pointer">Reset</button>
         </div>
       </div>
 
-      <div className="bg-white border border-ink-200 overflow-x-auto min-h-[400px]">
-        {loading ? <div className="p-10 flex justify-center"><div className="w-6 h-6 border-2 border-obsidian border-t-transparent rounded-full animate-spin"></div></div> : (
+      <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl overflow-x-auto min-h-[400px] shadow-xs">
+        {loading ? (
+          <div className="p-10 flex justify-center"><div className="w-6 h-6 border-2 border-obsidian dark:border-white border-t-transparent rounded-full animate-spin"></div></div>
+        ) : (
           <table className="w-full text-sm text-left">
-            <thead className="bg-ink-100 font-mono text-[10px]  text-ink-500">
+            <thead className="bg-gray-50 dark:bg-zinc-800/60 font-mono text-[10px] text-gray-500 dark:text-zinc-400 border-b border-gray-200 dark:border-zinc-800 uppercase tracking-wider">
               <tr>
-                <th className="p-3 w-10"><input type="checkbox" checked={data.coupons?.length > 0 && selected.length === data.coupons?.length} onChange={selectAll} className="accent-obsidian" /></th>
+                <th className="p-3 w-10"><input type="checkbox" checked={data.coupons?.length > 0 && selected.length === data.coupons?.length} onChange={selectAll} className="accent-obsidian dark:accent-fire" /></th>
                 <th className="p-3">Coupon Code</th>
                 <th className="p-3 text-center">Discount</th>
                 <th className="p-3 text-center">Usage</th>
@@ -5410,25 +5426,45 @@ function Coupons({ isDark }) {
                 <th className="p-3 text-center">⋮</th>
               </tr>
             </thead>
-            <tbody>
-              {!data.coupons || data.coupons.length === 0 ? <tr><td colSpan="8" className="p-10 text-center text-ink-400">No coupons found.</td></tr> : data.coupons.map(c => (
-                <tr key={c.id} className="border-b border-ink-100 last:border-0 hover:bg-ink-50 cursor-pointer" onClick={() => setViewCoupon(c)}>
-                  <td className="p-3" onClick={e => e.stopPropagation()}><input type="checkbox" checked={selected.includes(c.id)} onChange={() => toggleSelect(c.id)} className="accent-obsidian" /></td>
-                  <td className="p-3 font-mono font-bold text-obsidian">{c.code}</td>
+            <tbody className="divide-y divide-gray-100 dark:divide-zinc-800/60 text-xs">
+              {!data.coupons || data.coupons.length === 0 ? (
+                <tr><td colSpan="8" className="p-10 text-center text-gray-400 dark:text-zinc-500">No coupons found.</td></tr>
+              ) : data.coupons.map(c => (
+                <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-zinc-800/40 cursor-pointer transition-colors" onClick={() => setViewCoupon(c)}>
+                  <td className="p-3" onClick={e => e.stopPropagation()}><input type="checkbox" checked={selected.includes(c.id)} onChange={() => toggleSelect(c.id)} className="accent-obsidian dark:accent-fire" /></td>
+                  <td className="p-3 font-mono font-bold text-gray-900 dark:text-zinc-100">{c.code}</td>
                   <td className="p-3 text-center">
-                    <span className="font-bold bg-ink-100 px-2 py-1 rounded-sm">{c.type === 'percentage' ? `${c.value}%` : fmt(c.value)}</span>
+                    <span className="font-bold font-mono bg-gray-100 dark:bg-zinc-800 text-gray-800 dark:text-zinc-200 px-2 py-1 rounded-md border border-gray-200 dark:border-zinc-700">
+                      {c.type === 'percentage' ? `${c.value}%` : fmt(c.value)}
+                    </span>
                   </td>
-                  <td className="p-3 text-center font-mono">
+                  <td className="p-3 text-center font-mono text-gray-700 dark:text-zinc-300">
                     {c.used_count} {c.max_uses ? `/ ${c.max_uses}` : '/ ∞'}
                   </td>
-                  <td className="p-3 text-ink-500">{c.expires_at ? new Date(c.expires_at).toLocaleDateString() : '—'}</td>
+                  <td className="p-3 text-gray-500 dark:text-zinc-400 font-mono text-xs">{c.expires_at ? new Date(c.expires_at).toLocaleDateString() : '—'}</td>
                   <td className="p-3">
-                    {c.status === 'active' && <span className="text-[10px] font-bold  px-2 py-0.5 bg-green-100 text-green-700 flex items-center w-fit gap-1"><div className="w-1.5 h-1.5 rounded-full bg-green-600"></div> Active</span>}
-                    {c.status === 'disabled' && <span className="text-[10px] font-bold  px-2 py-0.5 bg-ink-200 text-ink-600 flex items-center w-fit gap-1"><div className="w-1.5 h-1.5 rounded-full bg-ink-500"></div> Disabled</span>}
-                    {c.status === 'expired' && <span className="text-[10px] font-bold  px-2 py-0.5 bg-red-100 text-red-700 flex items-center w-fit gap-1"><div className="w-1.5 h-1.5 rounded-full bg-red-600"></div> Expired</span>}
-                    {c.status === 'scheduled' && <span className="text-[10px] font-bold  px-2 py-0.5 bg-yellow-100 text-yellow-700 flex items-center w-fit gap-1"><div className="w-1.5 h-1.5 rounded-full bg-yellow-600"></div> Scheduled</span>}
+                    {c.status === 'active' && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 flex items-center w-fit gap-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400"></div> Active
+                      </span>
+                    )}
+                    {c.status === 'disabled' && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 flex items-center w-fit gap-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-zinc-400"></div> Disabled
+                      </span>
+                    )}
+                    {c.status === 'expired' && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200 dark:border-rose-800 flex items-center w-fit gap-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-rose-600 dark:bg-rose-400"></div> Expired
+                      </span>
+                    )}
+                    {c.status === 'scheduled' && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200 dark:border-amber-800 flex items-center w-fit gap-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-amber-600 dark:bg-amber-400"></div> Scheduled
+                      </span>
+                    )}
                   </td>
-                  <td className="p-3 text-right font-mono font-bold text-green-700">{fmt(c.revenue_generated)}</td>
+                  <td className="p-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">{fmt(c.revenue_generated)}</td>
                   <td className="p-3 text-center relative" onClick={e => e.stopPropagation()}>
                     <TableActionDropdown
                       isOpen={activeMenuId === c.id}
@@ -5459,16 +5495,16 @@ function Coupons({ isDark }) {
 
       {data.pagination?.totalPages > 1 && (
         <div className="flex justify-between items-center mt-6">
-          <div className="text-sm text-ink-500">Showing page {data.pagination.page} of {data.pagination.totalPages}</div>
+          <div className="text-sm text-gray-500 dark:text-zinc-400">Showing page {data.pagination.page} of {data.pagination.totalPages}</div>
           <div className="flex gap-1">
-            <button disabled={query.page === 1} onClick={() => setQuery({ ...query, page: query.page - 1 })} className="px-3 py-1.5 border border-ink-200 bg-white hover:bg-ink-50 disabled:opacity-50 text-sm font-bold">Prev</button>
-            <button disabled={query.page === data.pagination.totalPages} onClick={() => setQuery({ ...query, page: query.page + 1 })} className="px-3 py-1.5 border border-ink-200 bg-white hover:bg-ink-50 disabled:opacity-50 text-sm font-bold">Next</button>
+            <button disabled={query.page === 1} onClick={() => setQuery({ ...query, page: query.page - 1 })} className="px-3 py-1.5 border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-700 dark:text-zinc-200 hover:bg-gray-50 dark:hover:bg-zinc-700 disabled:opacity-50 text-sm font-bold rounded-lg cursor-pointer">Prev</button>
+            <button disabled={query.page === data.pagination.totalPages} onClick={() => setQuery({ ...query, page: query.page + 1 })} className="px-3 py-1.5 border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-700 dark:text-zinc-200 hover:bg-gray-50 dark:hover:bg-zinc-700 disabled:opacity-50 text-sm font-bold rounded-lg cursor-pointer">Next</button>
           </div>
         </div>
       )}
 
       {showCreate && <CreateCouponForm isDark={isDark} onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); load(); }} />}
-      {viewCoupon && <CouponDetailsDrawer isDark={isDark} coupon={viewCoupon} onClose={() => setViewCoupon(null)} />}
+      {viewCoupon && <CouponDetailsModal isDark={isDark} coupon={viewCoupon} onClose={() => setViewCoupon(null)} />}
     </div>
   );
 }
@@ -5678,7 +5714,7 @@ function CreateCouponForm({ onClose, onCreated, isDark }) {
   );
 }
 
-function CouponDetailsDrawer({ coupon, onClose, isDark }) {
+function CouponDetailsModal({ coupon, onClose, isDark }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -5697,74 +5733,88 @@ function CouponDetailsDrawer({ coupon, onClose, isDark }) {
   if (!data) return null;
 
   return (
-    <div className={`${isDark ? 'dark' : ''} fixed inset-0 z-50 flex justify-end bg-black/60 animate-in fade-in duration-150`} onClick={onClose}>
-      <motion.div
-        initial={{ x: "100%" }}
-        animate={{ x: 0 }}
-        exit={{ x: "100%" }}
-        transition={{ type: "tween", duration: 0.2 }}
-        className="w-full max-w-2xl bg-white dark:bg-zinc-900 h-full overflow-y-auto flex flex-col shadow-2xl border-l border-gray-200 dark:border-zinc-800 text-gray-900 dark:text-zinc-100"
+    <div className={`${isDark ? 'dark' : ''} fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 animate-in fade-in duration-150`} onClick={onClose}>
+      <div
+        className="w-full max-w-2xl bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-150 text-gray-900 dark:text-zinc-100"
         onClick={e => e.stopPropagation()}
       >
-        <div className="bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 p-6 flex justify-between items-start sticky top-0 z-10">
+        <div className="bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 p-5 sm:p-6 flex justify-between items-center shrink-0">
           <div>
-            <h2 className="font-mono font-bold text-2xl text-gray-900 dark:text-white flex items-center gap-3">
-              {data.code}
-              {data.status === 'active' && <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">Active</span>}
-              {data.status === 'disabled' && <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">Disabled</span>}
-              {data.status === 'expired' && <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-400 border border-rose-200 dark:border-rose-800">Expired</span>}
-            </h2>
-            <p className="text-xs text-gray-500 dark:text-zinc-400 font-semibold mt-1 bg-gray-100 dark:bg-zinc-800 w-fit px-2 py-0.5 rounded">
+            <div className="flex items-center gap-3">
+              <h2 className="font-mono font-bold text-2xl text-gray-900 dark:text-white flex items-center gap-2.5">
+                {data.code}
+              </h2>
+              {data.status === 'active' && <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">Active</span>}
+              {data.status === 'disabled' && <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">Disabled</span>}
+              {data.status === 'expired' && <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200 dark:border-rose-800">Expired</span>}
+              {data.status === 'scheduled' && <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200 dark:border-amber-800">Scheduled</span>}
+            </div>
+            <p className="text-xs font-mono font-bold mt-1.5 text-fire bg-fire/10 w-fit px-2 py-0.5 rounded border border-fire/20">
               {data.type === 'percentage' ? `${data.value}% OFF` : `${fmt(data.value)} OFF`}
             </p>
           </div>
-          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors">
+          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 cursor-pointer">
             <X size={20} />
           </button>
         </div>
 
-        <div className="p-6 space-y-6 flex-1 text-xs">
+        <div className="p-6 space-y-6 flex-1 overflow-y-auto text-xs">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-gray-50 dark:bg-zinc-950/60 border border-gray-200 dark:border-zinc-800 p-4 rounded-xl text-center">
-              <span className="block text-[10px] font-semibold text-gray-400 dark:text-zinc-500 uppercase mb-1">Redemptions</span>
+            <div className="bg-gray-50 dark:bg-zinc-800/50 border border-gray-200 dark:border-zinc-700/60 p-4 rounded-xl text-center">
+              <span className="block text-[10px] font-semibold text-gray-400 dark:text-zinc-400 uppercase tracking-wider mb-1">Redemptions</span>
               <span className="font-mono text-xl font-bold text-gray-900 dark:text-white">{data.used_count}</span>
             </div>
-            <div className="bg-gray-50 dark:bg-zinc-950/60 border border-gray-200 dark:border-zinc-800 p-4 rounded-xl text-center">
-              <span className="block text-[10px] font-semibold text-gray-400 dark:text-zinc-500 uppercase mb-1">Usage Limit</span>
+            <div className="bg-gray-50 dark:bg-zinc-800/50 border border-gray-200 dark:border-zinc-700/60 p-4 rounded-xl text-center">
+              <span className="block text-[10px] font-semibold text-gray-400 dark:text-zinc-400 uppercase tracking-wider mb-1">Usage Limit</span>
               <span className="font-mono text-xl font-bold text-gray-900 dark:text-white">{data.max_uses || '∞'}</span>
             </div>
-            <div className="bg-gray-50 dark:bg-zinc-950/60 border border-gray-200 dark:border-zinc-800 p-4 rounded-xl text-center">
-              <span className="block text-[10px] font-semibold text-gray-400 dark:text-zinc-500 uppercase mb-1">Discount Given</span>
+            <div className="bg-gray-50 dark:bg-zinc-800/50 border border-gray-200 dark:border-zinc-700/60 p-4 rounded-xl text-center">
+              <span className="block text-[10px] font-semibold text-gray-400 dark:text-zinc-400 uppercase tracking-wider mb-1">Discount Given</span>
               <span className="font-mono text-xl font-bold text-fire">{fmt(data.total_discount)}</span>
             </div>
-            <div className="bg-gray-50 dark:bg-zinc-950/60 border border-gray-200 dark:border-zinc-800 p-4 rounded-xl text-center">
-              <span className="block text-[10px] font-semibold text-gray-400 dark:text-zinc-500 uppercase mb-1">Revenue Generated</span>
+            <div className="bg-gray-50 dark:bg-zinc-800/50 border border-gray-200 dark:border-zinc-700/60 p-4 rounded-xl text-center">
+              <span className="block text-[10px] font-semibold text-gray-400 dark:text-zinc-400 uppercase tracking-wider mb-1">Revenue Generated</span>
               <span className="font-mono text-xl font-bold text-emerald-600 dark:text-emerald-400">{fmt(data.revenue_generated)}</span>
             </div>
           </div>
 
           <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-5 space-y-4">
-            <h3 className="font-semibold text-xs tracking-wider uppercase text-gray-500 dark:text-zinc-400 border-b border-gray-100 dark:border-zinc-800 pb-2">Recent Usage</h3>
+            <h3 className="font-semibold text-xs tracking-wider uppercase text-gray-500 dark:text-zinc-400 border-b border-gray-100 dark:border-zinc-800 pb-2 flex items-center justify-between">
+              <span>Recent Usage</span>
+              <span className="font-mono text-[10px] text-gray-400">{data.recent_usage?.length || 0} orders</span>
+            </h3>
             {data.recent_usage?.length > 0 ? (
-              <table className="w-full text-xs text-left">
-                <thead className="bg-gray-50 dark:bg-zinc-800/50 text-[10px] uppercase text-gray-500 dark:text-zinc-400">
-                  <tr><th className="p-2">Customer</th><th className="p-2">Order</th><th className="p-2 text-right">Discount</th><th className="p-2">Date</th></tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-zinc-800/60">
-                  {data.recent_usage.map(o => (
-                    <tr key={o.id} className="hover:bg-gray-50/50 dark:hover:bg-zinc-800/40">
-                      <td className="p-2 font-semibold text-gray-900 dark:text-white">{o.customer_name}</td>
-                      <td className="p-2 font-mono text-gray-700 dark:text-zinc-300">{o.order_number}</td>
-                      <td className="p-2 text-right font-mono font-bold text-fire">-{fmt(o.discount_amount)}</td>
-                      <td className="p-2 text-gray-500 dark:text-zinc-400 text-[11px] font-mono">{new Date(o.created_at).toLocaleDateString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : <p className="text-xs text-gray-400 dark:text-zinc-500">No usage recorded yet.</p>}
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-gray-50 dark:bg-zinc-800/50 text-[10px] uppercase text-gray-500 dark:text-zinc-400 border-b border-gray-200 dark:border-zinc-800">
+                    <tr><th className="p-2">Customer</th><th className="p-2">Order</th><th className="p-2 text-right">Discount</th><th className="p-2">Date</th></tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-zinc-800/60 font-mono">
+                    {data.recent_usage.map(o => (
+                      <tr key={o.id} className="hover:bg-gray-50/50 dark:hover:bg-zinc-800/40">
+                        <td className="p-2 font-sans font-semibold text-gray-900 dark:text-white">{o.customer_name}</td>
+                        <td className="p-2 text-gray-700 dark:text-zinc-300">{o.order_number}</td>
+                        <td className="p-2 text-right font-bold text-fire">-{fmt(o.discount_amount)}</td>
+                        <td className="p-2 text-gray-500 dark:text-zinc-400 text-[11px]">{new Date(o.created_at).toLocaleDateString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : <p className="text-xs text-gray-400 dark:text-zinc-500 py-3 text-center">No usage recorded yet.</p>}
           </div>
         </div>
-      </motion.div>
+
+        {/* Modal Footer */}
+        <div className="p-4 border-t border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-950 flex justify-end shrink-0">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-xs font-bold rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
+          >
+            Close
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
