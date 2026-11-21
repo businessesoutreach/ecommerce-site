@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { CreditCard, Wallet, Home, Megaphone, Tag, Layers, Zap, FileText, Search, LayoutDashboard, Package, ShoppingCart, Ticket, Star, Users, LogOut, TrendingUp, AlertTriangle, Plus, Trash2, X, RotateCcw, DollarSign, Image as ImageIcon, Upload, MessageCircle, Search as SearchIcon, Filter, MoreVertical, Eye, Download, Printer, CheckCircle, Check, Truck, MapPin, Edit, Copy, Activity, Loader2, HelpCircle, ExternalLink, Clock, ArrowLeft, ArrowUpRight, ArrowDownRight, RefreshCw, ShoppingBag, Box, ChevronRight, ChevronDown, Sun, Moon, Bell } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell } from "recharts";
 import { http, fmt, imgUrl, waLink } from "../lib/api";
+import { PROVINCES, PROVINCE_CITIES } from "../components/LocationDropdowns";
 import { useStore } from "../context/StoreContext";
 import { toast } from "sonner";
 
@@ -1585,12 +1586,17 @@ function CreateOrderPage({ onBack, onCreated }) {
   const [customerEmail, setCustomerEmail] = useState("");
   const [addressL1, setAddressL1] = useState("");
   const [addressL2, setAddressL2] = useState("");
-  const [city, setCity] = useState("Karachi");
   const [province, setProvince] = useState("Sindh");
+  const [city, setCity] = useState("Karachi");
   const [paymentMethod, setPaymentMethod] = useState("COD");
   const [shippingFee, setShippingFee] = useState(250);
-  const [discountAmount, setDiscountAmount] = useState(0);
   const [customerNote, setCustomerNote] = useState("");
+
+  // Coupon state
+  const [couponCode, setCouponCode] = useState("");
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
+  const [couponMsg, setCouponMsg] = useState("");
+  const [discountAmount, setDiscountAmount] = useState(0);
 
   // Items added to the order basket
   const [items, setItems] = useState([]);
@@ -1599,18 +1605,6 @@ function CreateOrderPage({ onBack, onCreated }) {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedQty, setSelectedQty] = useState(1);
-
-  const CITIES = [
-    { name: "Karachi", prov: "Sindh" },
-    { name: "Lahore", prov: "Punjab" },
-    { name: "Islamabad", prov: "Islamabad Capital" },
-    { name: "Rawalpindi", prov: "Punjab" },
-    { name: "Faisalabad", prov: "Punjab" },
-    { name: "Multan", prov: "Punjab" },
-    { name: "Peshawar", prov: "KPK" },
-    { name: "Quetta", prov: "Balochistan" },
-    { name: "Sialkot", prov: "Punjab" },
-  ];
 
   useEffect(() => {
     http.get('/products?limit=100')
@@ -1728,11 +1722,50 @@ function CreateOrderPage({ onBack, onCreated }) {
     }
   }, [subtotal]);
 
+  // Handle Province change: updates Province and automatically sets City to first city in that province
+  const handleProvinceChange = (newProvince) => {
+    setProvince(newProvince);
+    const availableCities = PROVINCE_CITIES[newProvince] || [];
+    setCity(availableCities[0] || "");
+  };
+
+  // Coupon Application Handler (mirrors public checkout)
+  const applyCoupon = async () => {
+    if (!couponCode.trim()) return toast.error("Please enter a coupon code");
+    if (subtotal <= 0) return toast.error("Add at least one sneaker before applying coupon");
+    
+    setApplyingCoupon(true);
+    try {
+      const { data } = await http.post("/checkout/apply-coupon", {
+        code: couponCode.trim(),
+        subtotal
+      });
+      const disc = Number(data.data.discount) || 0;
+      setDiscountAmount(disc);
+      setCouponMsg(`✓ ${data.data.code} applied — you save Rs. ${disc.toLocaleString()}`);
+      toast.success(`Coupon ${data.data.code} applied successfully!`);
+    } catch (e) {
+      setDiscountAmount(0);
+      setCouponMsg(e.response?.data?.detail || "Invalid or expired coupon code");
+      toast.error(e.response?.data?.detail || "Invalid coupon code");
+    } finally {
+      setApplyingCoupon(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setCouponCode("");
+    setDiscountAmount(0);
+    setCouponMsg("");
+    toast.success("Coupon removed");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!customerName.trim()) return toast.error("Customer name is required");
     if (!customerPhone.trim()) return toast.error("Customer phone is required");
     if (!addressL1.trim()) return toast.error("Delivery address is required");
+    if (!city.trim()) return toast.error("City is required");
     if (items.length === 0) return toast.error("Please add at least one sneaker to the order");
 
     setLoading(true);
@@ -1756,6 +1789,7 @@ function CreateOrderPage({ onBack, onCreated }) {
         payment_method: paymentMethod,
         shipping_fee: Number(shippingFee) || 0,
         discount_amount: Number(discountAmount) || 0,
+        coupon_code: discountAmount > 0 && couponCode.trim() ? couponCode.trim() : undefined,
         customer_note: customerNote.trim() || undefined
       };
 
@@ -1777,6 +1811,9 @@ function CreateOrderPage({ onBack, onCreated }) {
       : selectedProduct.base_price
   ) : 0;
 
+  // Cities belonging to the currently selected province
+  const currentProvinceCities = PROVINCE_CITIES[province] || [];
+
   return (
     <div className="pb-16 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-150">
       {/* Top Navigation & Breadcrumbs */}
@@ -1784,7 +1821,7 @@ function CreateOrderPage({ onBack, onCreated }) {
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
-            className="inline-flex items-center gap-2 px-3.5 py-2 bg-white dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-900 dark:text-zinc-100 font-bold text-xs rounded-lg border border-gray-300 dark:border-zinc-700 shadow-sm transition-all hover:-translate-x-0.5"
+            className="inline-flex items-center gap-2 px-3.5 py-2 bg-white dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-900 dark:text-zinc-100 font-bold text-xs rounded-lg border border-gray-300 dark:border-zinc-700 shadow-sm transition-all hover:-translate-x-0.5 cursor-pointer"
           >
             <ArrowLeft size={16} /> Back to Orders
           </button>
@@ -1806,7 +1843,7 @@ function CreateOrderPage({ onBack, onCreated }) {
           Manual Order Placement Desk
         </h1>
         <p className="text-sm text-gray-600 dark:text-zinc-400 font-medium">
-          Visual sneaker catalog selection, real-time EU warehouse sizing, and streamlined checkout for phone, WhatsApp & in-store orders.
+          Visual sneaker catalog selection, real-time EU warehouse sizing, province-based destination routing, and coupon discounts.
         </p>
       </div>
 
@@ -1853,7 +1890,7 @@ function CreateOrderPage({ onBack, onCreated }) {
                   <button
                     type="button"
                     onClick={() => setCatalogSearch("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-fire"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-fire cursor-pointer"
                   >
                     <X size={14} />
                   </button>
@@ -1867,7 +1904,7 @@ function CreateOrderPage({ onBack, onCreated }) {
                     key={c}
                     type="button"
                     onClick={() => setSelectedCategory(c)}
-                    className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
+                    className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
                       selectedCategory === c
                         ? "bg-black dark:bg-fire text-white shadow-sm"
                         : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-700"
@@ -1993,7 +2030,7 @@ function CreateOrderPage({ onBack, onCreated }) {
                             setSelectedSize(s.size);
                             setSelectedQty(1);
                           }}
-                          className={`py-2 rounded-lg border text-xs font-mono transition-all text-center flex flex-col items-center justify-center ${
+                          className={`py-2 rounded-lg border text-xs font-mono transition-all text-center flex flex-col items-center justify-center cursor-pointer ${
                             isSelected
                               ? "bg-black dark:bg-fire text-white border-black dark:border-fire shadow-sm font-bold scale-[1.02]"
                               : inStock
@@ -2017,7 +2054,7 @@ function CreateOrderPage({ onBack, onCreated }) {
                       <button
                         type="button"
                         onClick={() => setSelectedQty(Math.max(1, selectedQty - 1))}
-                        className="px-2.5 py-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-600 dark:text-zinc-300 font-bold"
+                        className="px-2.5 py-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-600 dark:text-zinc-300 font-bold cursor-pointer"
                       >
                         -
                       </button>
@@ -2027,7 +2064,7 @@ function CreateOrderPage({ onBack, onCreated }) {
                       <button
                         type="button"
                         onClick={() => setSelectedQty(Math.min(activeStock || 10, selectedQty + 1))}
-                        className="px-2.5 py-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-600 dark:text-zinc-300 font-bold"
+                        className="px-2.5 py-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-600 dark:text-zinc-300 font-bold cursor-pointer"
                       >
                         +
                       </button>
@@ -2039,7 +2076,7 @@ function CreateOrderPage({ onBack, onCreated }) {
                       type="button"
                       disabled={!activeStock || activeStock <= 0}
                       onClick={addItem}
-                      className="w-full bg-black dark:bg-fire hover:bg-fire dark:hover:bg-fire/90 text-white font-bold py-2.5 rounded-lg text-xs transition-colors flex items-center justify-center gap-2 shadow-sm uppercase tracking-wider disabled:opacity-40"
+                      className="w-full bg-black dark:bg-fire hover:bg-fire dark:hover:bg-fire/90 text-white font-bold py-2.5 rounded-lg text-xs transition-colors flex items-center justify-center gap-2 shadow-sm uppercase tracking-wider disabled:opacity-40 cursor-pointer"
                     >
                       <Plus size={15} /> Add EU {selectedSize || '--'} to Order Bag
                     </button>
@@ -2049,7 +2086,7 @@ function CreateOrderPage({ onBack, onCreated }) {
             )}
           </div>
 
-          {/* Card 2: Customer Contact & Delivery Address (Public Checkout Style) */}
+          {/* Card 2: Customer Contact & Delivery Address (Province-Driven City Selection) */}
           <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-4">
             <h2 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-2 border-b border-gray-100 dark:border-zinc-800 pb-3">
               <Users size={16} className="text-fire" /> 2. Customer & Delivery Destination
@@ -2091,57 +2128,33 @@ function CreateOrderPage({ onBack, onCreated }) {
               />
             </div>
 
-            {/* Quick Pakistani City Selector */}
-            <div>
-              <label className="font-bold text-[11px] uppercase tracking-wider text-gray-500 dark:text-zinc-400 block mb-2">
-                Quick Pakistan City Selection
-              </label>
-              <div className="flex flex-wrap gap-1.5">
-                {CITIES.map(c => (
-                  <button
-                    key={c.name}
-                    type="button"
-                    onClick={() => {
-                      setCity(c.name);
-                      setProvince(c.prov);
-                    }}
-                    className={`px-2.5 py-1 text-xs font-bold rounded-lg border transition-all ${
-                      city.toLowerCase() === c.name.toLowerCase()
-                        ? "bg-black dark:bg-fire text-white border-black dark:border-fire shadow-sm"
-                        : "bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 border-gray-200 dark:border-zinc-700 hover:border-black dark:hover:border-white"
-                    }`}
-                  >
-                    {c.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
+            {/* Dynamic Province & City Selection (Exactly like Public Checkout) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="font-bold text-xs text-gray-700 dark:text-zinc-300 block mb-1">City *</label>
-                <input
-                  required
-                  type="text"
-                  placeholder="e.g. Karachi"
-                  value={city}
-                  onChange={e => setCity(e.target.value)}
-                  className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg px-3.5 py-2 text-xs font-medium text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-fire"
-                />
-              </div>
               <div>
                 <label className="font-bold text-xs text-gray-700 dark:text-zinc-300 block mb-1">Province *</label>
                 <select
                   value={province}
-                  onChange={e => setProvince(e.target.value)}
-                  className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg px-3.5 py-2 text-xs font-semibold text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-fire"
+                  onChange={e => handleProvinceChange(e.target.value)}
+                  className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg px-3.5 py-2 text-xs font-semibold text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-fire cursor-pointer"
                 >
-                  <option value="Sindh">Sindh</option>
-                  <option value="Punjab">Punjab</option>
-                  <option value="Islamabad Capital">Islamabad Capital</option>
-                  <option value="KPK">Khyber Pakhtunkhwa (KPK)</option>
-                  <option value="Balochistan">Balochistan</option>
-                  <option value="Azad Kashmir">Azad Kashmir</option>
+                  {PROVINCES.map(prov => (
+                    <option key={prov} value={prov}>{prov}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="font-bold text-xs text-gray-700 dark:text-zinc-300 block mb-1">
+                  City ({currentProvinceCities.length} in {province}) *
+                </label>
+                <select
+                  value={city}
+                  onChange={e => setCity(e.target.value)}
+                  className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg px-3.5 py-2 text-xs font-semibold text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-fire cursor-pointer"
+                >
+                  {currentProvinceCities.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -2182,7 +2195,7 @@ function CreateOrderPage({ onBack, onCreated }) {
           </div>
         </div>
 
-        {/* Right Column (5 cols): Order Basket + Payment Cards + Total Checkout Receipt */}
+        {/* Right Column (5 cols): Order Basket + Payment Cards + Total Checkout Receipt with Coupons */}
         <div className="lg:col-span-5 space-y-6">
           
           {/* Card 3: Order Basket Table (Public Cart Style) */}
@@ -2195,7 +2208,7 @@ function CreateOrderPage({ onBack, onCreated }) {
                 <button
                   type="button"
                   onClick={() => setItems([])}
-                  className="text-[11px] text-gray-400 hover:text-fire transition-colors"
+                  className="text-[11px] text-gray-400 hover:text-fire transition-colors cursor-pointer"
                 >
                   Clear Bag
                 </button>
@@ -2239,7 +2252,7 @@ function CreateOrderPage({ onBack, onCreated }) {
                         <button
                           type="button"
                           onClick={() => updateItemQty(idx, -1)}
-                          className="px-2 py-0.5 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 font-bold"
+                          className="px-2 py-0.5 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 font-bold cursor-pointer"
                         >
                           -
                         </button>
@@ -2249,7 +2262,7 @@ function CreateOrderPage({ onBack, onCreated }) {
                         <button
                           type="button"
                           onClick={() => updateItemQty(idx, 1)}
-                          className="px-2 py-0.5 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 font-bold"
+                          className="px-2 py-0.5 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 font-bold cursor-pointer"
                         >
                           +
                         </button>
@@ -2262,7 +2275,7 @@ function CreateOrderPage({ onBack, onCreated }) {
                       <button
                         type="button"
                         onClick={() => removeItem(idx)}
-                        className="text-gray-400 hover:text-fire p-1"
+                        className="text-gray-400 hover:text-fire p-1 cursor-pointer"
                         title="Remove pair"
                       >
                         <Trash2 size={14} />
@@ -2358,13 +2371,56 @@ function CreateOrderPage({ onBack, onCreated }) {
             </div>
           </div>
 
-          {/* Card 5: Checkout Receipt & Order Issuance */}
+          {/* Card 5: Checkout Receipt & Order Issuance with Coupons */}
           <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-4">
             <h2 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-2 border-b border-gray-100 dark:border-zinc-800 pb-3">
-              <FileText size={16} className="text-fire" /> 4. Financial Calculations
+              <FileText size={16} className="text-fire" /> 4. Coupon & Financial Calculations
             </h2>
 
-            <div className="grid grid-cols-2 gap-3">
+            {/* Coupon Application Box (mirrors public checkout page) */}
+            <div className="space-y-1.5">
+              <label className="font-bold text-xs text-gray-700 dark:text-zinc-300 block">Apply Coupon / Promo Code</label>
+              <div className="flex gap-2">
+                <div className="flex-1 flex items-center border border-gray-300 dark:border-zinc-700 rounded-lg px-3 bg-white dark:bg-zinc-800">
+                  <Tag size={15} className="text-gray-400 dark:text-zinc-500 mr-2 shrink-0" />
+                  <input
+                    type="text"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                    placeholder="Enter coupon code (e.g. WELCOME10)"
+                    className="flex-1 py-2 text-xs font-mono font-bold bg-transparent outline-none text-gray-900 dark:text-zinc-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500"
+                  />
+                </div>
+                <button
+                  type="button"
+                  disabled={applyingCoupon || !couponCode.trim()}
+                  onClick={applyCoupon}
+                  className="bg-black dark:bg-fire text-white font-bold text-xs px-4 rounded-lg hover:bg-fire transition-colors disabled:opacity-50 min-w-[75px] flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                >
+                  {applyingCoupon ? <Loader2 size={13} className="animate-spin" /> : "Apply"}
+                </button>
+              </div>
+
+              {couponMsg && (
+                <div className={`text-xs flex items-center justify-between font-medium pt-1 ${
+                  discountAmount > 0 ? "text-emerald-600 dark:text-emerald-400 font-semibold" : "text-rose-500"
+                }`}>
+                  <span>{couponMsg}</span>
+                  {discountAmount > 0 && (
+                    <button
+                      type="button"
+                      onClick={removeCoupon}
+                      className="text-xs text-rose-500 hover:underline ml-2 cursor-pointer font-bold"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Shipping Fee and Manual Discount Adjustment */}
+            <div className="grid grid-cols-2 gap-3 pt-2">
               <div>
                 <label className="font-bold text-xs text-gray-700 dark:text-zinc-300 block mb-1">Shipping Fee (Rs.)</label>
                 <input
@@ -2381,7 +2437,10 @@ function CreateOrderPage({ onBack, onCreated }) {
                   type="number"
                   min={0}
                   value={discountAmount}
-                  onChange={e => setDiscountAmount(Number(e.target.value) || 0)}
+                  onChange={e => {
+                    setDiscountAmount(Number(e.target.value) || 0);
+                    if (Number(e.target.value) === 0) setCouponMsg("");
+                  }}
                   className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs font-mono font-bold text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-fire"
                 />
               </div>
@@ -2400,8 +2459,8 @@ function CreateOrderPage({ onBack, onCreated }) {
                 </span>
               </div>
               {discountAmount > 0 && (
-                <div className="flex justify-between text-fire font-bold">
-                  <span>Discount</span>
+                <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-bold">
+                  <span>Discount Applied</span>
                   <span className="font-mono">-Rs. {Number(discountAmount).toLocaleString()}</span>
                 </div>
               )}
@@ -2419,7 +2478,7 @@ function CreateOrderPage({ onBack, onCreated }) {
             <button
               type="submit"
               disabled={loading || items.length === 0}
-              className="w-full bg-black dark:bg-fire hover:bg-fire dark:hover:bg-fire/90 text-white font-bold py-3.5 rounded-xl transition-all shadow-md text-xs uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50 mt-2"
+              className="w-full bg-black dark:bg-fire hover:bg-fire dark:hover:bg-fire/90 text-white font-bold py-3.5 rounded-xl transition-all shadow-md text-xs uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50 mt-2 cursor-pointer"
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
               <span>Place Order & Issue Invoice</span>
