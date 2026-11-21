@@ -1952,9 +1952,12 @@ router.get('/returns', async (req, res) => {
                 orderBy: { created_at: 'desc' },
                 include: { order: true }
             }),
-            prisma.returnRequest.findMany()
+            prisma.returnRequest.findMany({
+                include: { order: true }
+            })
         ]);
 
+        const nonCodRefunded = allReturns.filter(r => r.status === 'refunded' && r.order?.payment_method?.toUpperCase() !== 'COD');
         const stats = {
             total: allReturns.length,
             pending: allReturns.filter(r => r.status === 'pending').length,
@@ -1962,7 +1965,7 @@ router.get('/returns', async (req, res) => {
             processing: allReturns.filter(r => r.status === 'processing').length,
             refunded: allReturns.filter(r => r.status === 'refunded').length,
             rejected: allReturns.filter(r => r.status === 'rejected').length,
-            refund_amount: allReturns.filter(r => r.status === 'refunded').reduce((acc, r) => acc + (r.refund_amount || 0), 0)
+            refund_amount: nonCodRefunded.reduce((acc, r) => acc + (r.refund_amount || 0), 0)
         };
 
         res.json({
@@ -1998,8 +2001,19 @@ router.patch('/returns/:id', async (req, res) => {
             return res.status(400).json({ detail: 'Invalid status' });
         }
         
+        // Check order payment method
+        const existing = await prisma.returnRequest.findUnique({
+            where: { id: req.params.id },
+            include: { order: true }
+        });
+        const isCod = existing?.order?.payment_method?.toUpperCase() === 'COD';
+
         const updateData = { status };
-        if (refund_amount !== undefined) updateData.refund_amount = Number(refund_amount) || 0;
+        if (isCod) {
+            updateData.refund_amount = 0; // COD has zero gateway refund
+        } else if (refund_amount !== undefined) {
+            updateData.refund_amount = Number(refund_amount) || 0;
+        }
 
         const updated = await prisma.returnRequest.update({
             where: { id: req.params.id },
@@ -2007,8 +2021,8 @@ router.patch('/returns/:id', async (req, res) => {
             include: { order: true }
         });
 
-        // If marked refunded, also log a completed Refund record automatically
-        if (status === 'refunded' && updated.order) {
+        // Only log a monetary refund in the refund ledger if payment was NOT COD (e.g. Card / Prepaid)
+        if (status === 'refunded' && updated.order && !isCod) {
             await prisma.refund.create({
                 data: {
                     id: uuidv4(),
@@ -2017,7 +2031,7 @@ router.patch('/returns/:id', async (req, res) => {
                     return_request_id: updated.id,
                     amount: updated.refund_amount > 0 ? updated.refund_amount : updated.order.total,
                     reason: updated.reason || 'Customer Return Refund',
-                    method: updated.order.payment_method === 'COD' ? 'cod' : 'card',
+                    method: 'card',
                     status: 'completed',
                     processed_at: new Date()
                 }

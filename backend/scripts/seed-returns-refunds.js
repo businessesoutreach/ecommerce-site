@@ -91,7 +91,8 @@ async function seedReturnsAndRefunds() {
     const order = orders[i % orders.length];
     const item = order.items?.[0];
     const createdAt = new Date(Date.now() - spec.daysAgo * 24 * 60 * 60 * 1000);
-    const refundAmount = Math.round(order.total * spec.refund_multiplier);
+    const isCod = order.payment_method?.toUpperCase() === 'COD';
+    const refundAmount = isCod ? 0 : Math.round(order.total * spec.refund_multiplier);
 
     const ret = await prisma.returnRequest.create({
       data: {
@@ -111,10 +112,10 @@ async function seedReturnsAndRefunds() {
     });
 
     createdReturns.push(ret);
-    console.log(`Created return #${ret.id.split('-')[0]} for Order ${order.order_number} [${ret.status}]`);
+    console.log(`Created return #${ret.id.split('-')[0]} for Order ${order.order_number} [${ret.status}] (${isCod ? 'COD: Restock Only' : 'Card: Has Refund'})`);
   }
 
-  // 3. Create Sample Refund Ledger Records
+  // 3. Create Sample Refund Ledger Records (Only for Online/Card/Bank payments, NO COD)
   const sampleRefunds = [
     {
       orderIndex: 0,
@@ -137,20 +138,10 @@ async function seedReturnsAndRefunds() {
       daysAgo: 11
     },
     {
-      orderIndex: 2,
-      returnIndex: null,
-      amount: 12000,
-      reason: "Customer cancelled COD drop before courier dispatch",
-      method: "cod",
-      status: "completed",
-      external_ref: "CASH_REVERT_39102",
-      daysAgo: 3
-    },
-    {
       orderIndex: 3,
       returnIndex: null,
       amount: 9800,
-      reason: "Partial refund for late courier delivery compensation",
+      reason: "Compensation for late courier delivery / defective laces",
       method: "card",
       status: "pending",
       external_ref: null,

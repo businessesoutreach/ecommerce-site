@@ -7238,71 +7238,88 @@ function ReturnsAndRefunds({ isDark, initialSubTab = "returns" }) {
                         </td>
                       </tr>
                     ) : (
-                      returnsData.returns.map(r => (
-                        <tr
-                          key={r.id}
-                          onClick={() => setViewReturn(r)}
-                          className="hover:bg-gray-50/80 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer group"
-                        >
-                          <td className="p-3.5 font-mono font-bold text-gray-900 dark:text-zinc-100 group-hover:text-fire transition-colors">
-                            #{r.id.split('-')[0]}
-                          </td>
-                          <td className="p-3.5 font-mono text-gray-800 dark:text-zinc-200 font-semibold">
-                            {r.order_number}
-                          </td>
-                          <td className="p-3.5 font-semibold text-gray-900 dark:text-zinc-100">
-                            {r.customer_name}
-                          </td>
-                          <td className="p-3.5 text-xs text-gray-600 dark:text-zinc-300 truncate max-w-[180px]">
-                            {r.product_name ? `${r.product_name} (x${r.quantity || 1})` : "Entire Order"}
-                          </td>
-                          <td className="p-3.5 text-xs text-gray-600 dark:text-zinc-400">
-                            {r.reason}
-                          </td>
-                          <td className="p-3.5 text-right font-mono font-bold text-gray-900 dark:text-zinc-100">
-                            {fmt(r.refund_amount > 0 ? r.refund_amount : r.total_amount || 0)}
-                          </td>
-                          <td className="p-3.5">
-                            {r.status === 'pending' && (
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800 flex items-center gap-1 w-fit">
-                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Pending
+                      returnsData.returns.map(r => {
+                        const isCod = r.order?.payment_method?.toUpperCase() === 'COD';
+                        return (
+                          <tr
+                            key={r.id}
+                            onClick={() => setViewReturn(r)}
+                            className="hover:bg-gray-50/80 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer group"
+                          >
+                            <td className="p-3.5 font-mono font-bold text-gray-900 dark:text-zinc-100 group-hover:text-fire transition-colors">
+                              #{r.id.split('-')[0]}
+                            </td>
+                            <td className="p-3.5 font-mono text-gray-800 dark:text-zinc-200">
+                              <div className="font-semibold">{r.order_number}</div>
+                              <span className={`inline-block mt-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded font-mono uppercase ${
+                                isCod
+                                  ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-800"
+                                  : "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-300 dark:border-blue-800"
+                              }`}>
+                                {r.order?.payment_method || 'Card'}
                               </span>
-                            )}
-                            {r.status === 'approved' && (
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800 flex items-center gap-1 w-fit">
-                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Approved
-                              </span>
-                            )}
-                            {r.status === 'rejected' && (
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-gray-100 text-gray-600 border-gray-300 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700 flex items-center gap-1 w-fit">
-                                Rejected
-                              </span>
-                            )}
-                            {r.status === 'processing' && (
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-purple-50 text-purple-700 border-purple-300 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800 flex items-center gap-1 w-fit">
-                                Processing
-                              </span>
-                            )}
-                            {r.status === 'refunded' && (
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800 flex items-center gap-1 w-fit">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Refunded
-                              </span>
-                            )}
-                          </td>
-                          <td className="p-3.5 text-gray-500 dark:text-zinc-400 font-mono text-xs">
-                            {new Date(r.created_at).toLocaleDateString()}
-                          </td>
-                          <td className="p-3.5 text-center" onClick={e => e.stopPropagation()}>
-                            <button
-                              type="button"
-                              onClick={() => setViewReturn(r)}
-                              className="px-2.5 py-1 text-xs font-bold bg-gray-100 dark:bg-zinc-800 hover:bg-black hover:text-white dark:hover:bg-fire rounded transition-colors cursor-pointer text-gray-700 dark:text-zinc-300"
-                            >
-                              Review
-                            </button>
-                          </td>
-                        </tr>
-                      ))
+                            </td>
+                            <td className="p-3.5 font-semibold text-gray-900 dark:text-zinc-100">
+                              {r.customer_name}
+                            </td>
+                            <td className="p-3.5 text-xs text-gray-600 dark:text-zinc-300 truncate max-w-[180px]">
+                              {r.product_name ? `${r.product_name} (x${r.quantity || 1})` : "Entire Order"}
+                            </td>
+                            <td className="p-3.5 text-xs text-gray-600 dark:text-zinc-400">
+                              {r.reason}
+                            </td>
+                            <td className="p-3.5 text-right font-mono font-bold text-gray-900 dark:text-zinc-100">
+                              {isCod ? (
+                                <span className="text-[11px] font-semibold text-gray-400 dark:text-zinc-500 font-mono">
+                                  — No Refund (COD)
+                                </span>
+                              ) : (
+                                fmt(r.refund_amount > 0 ? r.refund_amount : r.total_amount || 0)
+                              )}
+                            </td>
+                            <td className="p-3.5">
+                              {r.status === 'pending' && (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800 flex items-center gap-1 w-fit">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Pending
+                                </span>
+                              )}
+                              {r.status === 'approved' && (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800 flex items-center gap-1 w-fit">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Approved
+                                </span>
+                              )}
+                              {r.status === 'rejected' && (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-gray-100 text-gray-600 border-gray-300 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700 flex items-center gap-1 w-fit">
+                                  Rejected
+                                </span>
+                              )}
+                              {r.status === 'processing' && (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-purple-50 text-purple-700 border-purple-300 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800 flex items-center gap-1 w-fit">
+                                  Processing
+                                </span>
+                              )}
+                              {r.status === 'refunded' && (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800 flex items-center gap-1 w-fit">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                  {isCod ? "Returned (Restocked)" : "Refunded"}
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-3.5 text-gray-500 dark:text-zinc-400 font-mono text-xs">
+                              {new Date(r.created_at).toLocaleDateString()}
+                            </td>
+                            <td className="p-3.5 text-center" onClick={e => e.stopPropagation()}>
+                              <button
+                                type="button"
+                                onClick={() => setViewReturn(r)}
+                                className="px-2.5 py-1 text-xs font-bold bg-gray-100 dark:bg-zinc-800 hover:bg-black hover:text-white dark:hover:bg-fire rounded transition-colors cursor-pointer text-gray-700 dark:text-zinc-300"
+                              >
+                                Review
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>
@@ -7561,6 +7578,8 @@ function ReturnDetailsModal({ returnId, onClose, onUpdate }) {
 
   if (!data) return null;
 
+  const isCod = data.order?.payment_method?.toUpperCase() === 'COD';
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75" onClick={onClose}>
       <div
@@ -7594,6 +7613,18 @@ function ReturnDetailsModal({ returnId, onClose, onUpdate }) {
 
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto space-y-4 custom-scrollbar text-xs">
+          {/* COD Notice Banner */}
+          {isCod && (
+            <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 flex items-center gap-2.5 text-xs text-amber-900 dark:text-amber-200">
+              <span className="font-bold text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-amber-200/80 dark:bg-amber-900 text-amber-900 dark:text-amber-100 font-mono shrink-0">
+                COD Order
+              </span>
+              <span className="text-xs font-medium">
+                Cash on Delivery order — <strong>Return & Restock Only</strong>. No monetary refund is required.
+              </span>
+            </div>
+          )}
+
           {/* Status Row */}
           <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-zinc-800/50 border border-gray-200 dark:border-zinc-700">
             <span className="font-bold text-gray-600 dark:text-zinc-400 uppercase tracking-wider text-[10px]">
@@ -7616,7 +7647,7 @@ function ReturnDetailsModal({ returnId, onClose, onUpdate }) {
             )}
             {data.status === 'refunded' && (
               <span className="text-[10px] font-bold px-2.5 py-1 rounded border bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800 flex items-center gap-1.5 font-mono">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Refund Completed
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> {isCod ? "Returned & Restocked" : "Refund Completed"}
               </span>
             )}
             {data.status === 'rejected' && (
@@ -7634,6 +7665,9 @@ function ReturnDetailsModal({ returnId, onClose, onUpdate }) {
               </span>
               <p className="font-bold text-gray-900 dark:text-zinc-100 text-sm">{data.customer_name}</p>
               <p className="font-mono text-gray-500 dark:text-zinc-400 text-xs">{data.customer_phone || data.order?.email || "N/A"}</p>
+              <p className="font-mono text-xs pt-1 text-gray-600 dark:text-zinc-300">
+                Payment: <span className="font-bold uppercase">{data.order?.payment_method || 'Card'}</span>
+              </p>
             </div>
 
             <div className="bg-gray-50 dark:bg-zinc-800/40 p-3.5 rounded-xl border border-gray-200 dark:border-zinc-700/80 space-y-1">
@@ -7642,6 +7676,9 @@ function ReturnDetailsModal({ returnId, onClose, onUpdate }) {
               </span>
               <p className="font-bold text-gray-900 dark:text-zinc-100 text-sm line-clamp-1">{data.product_name || "Entire Order"}</p>
               <p className="font-mono text-gray-500 dark:text-zinc-400 text-xs">Qty: {data.quantity || 1} pair</p>
+              <p className="font-mono text-xs pt-1 text-gray-600 dark:text-zinc-300">
+                Order Total: <span className="font-bold">{fmt(data.order?.total || 0)}</span>
+              </p>
             </div>
           </div>
 
@@ -7659,20 +7696,22 @@ function ReturnDetailsModal({ returnId, onClose, onUpdate }) {
           {data.status === 'pending' && (
             <div className="p-4 rounded-xl border border-gray-200 dark:border-zinc-700 space-y-3 bg-white dark:bg-zinc-850">
               <h4 className="font-bold text-gray-900 dark:text-zinc-100 uppercase tracking-wider text-[11px]">
-                Admin Decision & Refund Amount
+                {isCod ? "Admin Return Decision" : "Admin Decision & Refund Amount"}
               </h4>
 
-              <div>
-                <label className="text-[10px] font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-1 block">
-                  Refund Payout Amount (Rs)
-                </label>
-                <input
-                  type="number"
-                  value={refundAmount}
-                  onChange={e => setRefundAmount(e.target.value)}
-                  className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs font-mono font-bold bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-fire"
-                />
-              </div>
+              {!isCod && (
+                <div>
+                  <label className="text-[10px] font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-1 block">
+                    Refund Payout Amount (Rs)
+                  </label>
+                  <input
+                    type="number"
+                    value={refundAmount}
+                    onChange={e => setRefundAmount(e.target.value)}
+                    className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs font-mono font-bold bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-fire"
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="text-[10px] font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-1 block">
@@ -7681,7 +7720,7 @@ function ReturnDetailsModal({ returnId, onClose, onUpdate }) {
                 <textarea
                   value={adminNote}
                   onChange={e => setAdminNote(e.target.value)}
-                  placeholder="e.g. Approved for exchange / defective shoe refund..."
+                  placeholder={isCod ? "e.g. Approved return for shoe exchange / restock..." : "e.g. Approved for exchange / defective shoe refund..."}
                   className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg p-2.5 text-xs bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-fire min-h-[60px] resize-none"
                 />
               </div>
@@ -7709,7 +7748,7 @@ function ReturnDetailsModal({ returnId, onClose, onUpdate }) {
                   onClick={() => processUpdate('refunded')}
                   className="flex-1 py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
                 >
-                  Approve & Settle Refund
+                  {isCod ? "Complete Return & Restock" : "Approve & Settle Refund"}
                 </button>
               </div>
             </div>
@@ -7733,17 +7772,23 @@ function ReturnDetailsModal({ returnId, onClose, onUpdate }) {
 
           {data.status === 'processing' && (
             <div className="p-4 rounded-xl border border-purple-200 dark:border-purple-900/60 bg-purple-50/50 dark:bg-purple-950/20 space-y-3">
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-purple-900 dark:text-purple-300 font-bold">Settlement Amount:</span>
-                <span className="font-mono font-black text-sm text-purple-950 dark:text-purple-200">{fmt(refundAmount)}</span>
-              </div>
+              {!isCod ? (
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-purple-900 dark:text-purple-300 font-bold">Settlement Amount:</span>
+                  <span className="font-mono font-black text-sm text-purple-950 dark:text-purple-200">{fmt(refundAmount)}</span>
+                </div>
+              ) : (
+                <p className="text-xs text-purple-900 dark:text-purple-300 font-medium">
+                  Sneaker parcel received at warehouse. Inspect shoe condition and complete return to restock inventory.
+                </p>
+              )}
               <button
                 type="button"
                 disabled={saving}
                 onClick={() => processUpdate('refunded')}
                 className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
               >
-                <CheckCircle size={15} /> Complete & Issue Refund to Customer
+                <CheckCircle size={15} /> {isCod ? "Complete Return & Restock Inventory" : "Complete & Issue Refund to Customer"}
               </button>
             </div>
           )}
@@ -7753,10 +7798,12 @@ function ReturnDetailsModal({ returnId, onClose, onUpdate }) {
               <CheckCircle size={22} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
               <div>
                 <h5 className="font-bold text-emerald-900 dark:text-emerald-200 text-xs">
-                  Refund Successfully Settled
+                  {isCod ? "Return Closed & Restocked" : "Refund Successfully Settled"}
                 </h5>
                 <p className="text-[11px] text-emerald-700 dark:text-emerald-300 font-mono mt-0.5">
-                  Amount: {fmt(data.refund_amount > 0 ? data.refund_amount : data.order?.total || 0)} has been logged into the refund ledger.
+                  {isCod
+                    ? "Sneaker return completed for COD order. Restocked to inventory (no digital refund processed)."
+                    : `Amount: ${fmt(data.refund_amount > 0 ? data.refund_amount : data.order?.total || 0)} has been logged into the refund ledger.`}
                 </p>
               </div>
             </div>
