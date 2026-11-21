@@ -135,14 +135,14 @@ export default function BrandsCMS() {
     });
   };
 
-  const filteredBrands = brands.filter(b => 
-    b.name.toLowerCase().includes(search.toLowerCase()) || 
+  const filteredBrands = brands.filter(b =>
+    b.name.toLowerCase().includes(search.toLowerCase()) ||
     b.slug.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-150">
-      
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -197,7 +197,7 @@ export default function BrandsCMS() {
 
             <form onSubmit={handleSave} className="space-y-5">
               <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                
+
                 {/* Logo Upload */}
                 <div className="md:col-span-4 space-y-2">
                   <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300">
