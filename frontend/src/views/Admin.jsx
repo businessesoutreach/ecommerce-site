@@ -488,8 +488,7 @@ export default function Admin() {
         ["brands", "Brands", Box],
         ["customers", "Customers", Users],
         ["profitability", "Analytics", TrendingUp],
-        ["returns", "Returns", RotateCcw],
-        ["refunds", "Refunds", DollarSign],
+        ["returns", "Returns & Refunds", RotateCcw],
       ]
     },
     {
@@ -628,8 +627,8 @@ export default function Admin() {
           {tab === "cod" && <Orders initialCodStatus="pending" />}
           {tab === "inventory" && <Products initialStockFilter="low_stock" isDark={isDark} />}
           {tab === "products" && <Products isDark={isDark} />}
-          {tab === "returns" && <Returns />}
-          {tab === "refunds" && <Refunds />}
+          {tab === "returns" && <ReturnsAndRefunds isDark={isDark} />}
+          {tab === "refunds" && <ReturnsAndRefunds isDark={isDark} initialSubTab="refunds" />}
           {tab === "coupons" && <Coupons isDark={isDark} />}
           {tab === "reviews" && <Reviews isDark={isDark} />}
           {tab === "customers" && <Customers />}
@@ -6958,139 +6957,560 @@ function RefundModal({ order, onClose, onDone }) {
 }
 
 
-function Returns() {
-  const [data, setData] = useState({ returns: [], pagination: {}, stats: {} });
-  const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState({ page: 1, limit: 25, search: "", status: "all", reason: "all" });
-  const [searchInput, setSearchInput] = useState("");
+function ReturnsAndRefunds({ isDark, initialSubTab = "returns" }) {
+  const [activeSubTab, setActiveSubTab] = useState(initialSubTab);
+
+  // Return Claims state
+  const [returnsData, setReturnsData] = useState({ returns: [], pagination: {}, stats: {} });
+  const [returnsLoading, setReturnsLoading] = useState(true);
+  const [returnQuery, setReturnQuery] = useState({ page: 1, limit: 25, search: "", status: "all", reason: "all" });
+  const [returnSearchInput, setReturnSearchInput] = useState("");
   const [viewReturn, setViewReturn] = useState(null);
 
-  const load = async () => {
-    setLoading(true);
+  // Refund Ledger state
+  const [refundsData, setRefundsData] = useState({ refunds: [], pagination: {}, stats: {} });
+  const [refundsLoading, setRefundsLoading] = useState(true);
+  const [refundQuery, setRefundQuery] = useState({ page: 1, limit: 25, search: "", status: "all", method: "all" });
+  const [refundSearchInput, setRefundSearchInput] = useState("");
+  const [viewRefund, setViewRefund] = useState(null);
+
+  const loadReturns = async () => {
+    setReturnsLoading(true);
     try {
-      const q = new URLSearchParams(query).toString();
+      const q = new URLSearchParams(returnQuery).toString();
       const res = await http.get(`/admin/returns?${q}`);
-      setData(res.data.data);
-    } catch (e) { toast.error("Failed to load returns"); }
-    setLoading(false);
+      setReturnsData(res.data?.data || { returns: [], pagination: {}, stats: {} });
+    } catch (e) {
+      toast.error("Failed to load return requests");
+    } finally {
+      setReturnsLoading(false);
+    }
   };
 
-  useEffect(() => { load(); }, [query]);
+  const loadRefunds = async () => {
+    setRefundsLoading(true);
+    try {
+      const q = new URLSearchParams(refundQuery).toString();
+      const res = await http.get(`/admin/refunds?${q}`);
+      setRefundsData(res.data?.data || { refunds: [], pagination: {}, stats: {} });
+    } catch (e) {
+      toast.error("Failed to load refund transactions");
+    } finally {
+      setRefundsLoading(false);
+    }
+  };
 
-  const handleSearch = (e) => {
+  useEffect(() => {
+    loadReturns();
+  }, [returnQuery]);
+
+  useEffect(() => {
+    loadRefunds();
+  }, [refundQuery]);
+
+  const handleReturnSearch = (e) => {
     e.preventDefault();
-    setQuery({ ...query, search: searchInput, page: 1 });
+    setReturnQuery({ ...returnQuery, search: returnSearchInput, page: 1 });
   };
 
-  const STATS = [
-    { label: "Total Returns", count: data.stats?.total || 0, color: "text-obsidian" },
-    { label: "Pending", count: data.stats?.pending || 0, color: "text-fire" },
-    { label: "Approved", count: data.stats?.approved || 0, color: "text-blue-600" },
-    { label: "Rejected", count: data.stats?.rejected || 0, color: "text-ink-500" },
-    { label: "Refunded", count: data.stats?.refunded || 0, color: "text-green-600" },
-    { label: "Refund Amount", count: fmt(data.stats?.refund_amount || 0), color: "text-green-700" }
+  const handleRefundSearch = (e) => {
+    e.preventDefault();
+    setRefundQuery({ ...refundQuery, search: refundSearchInput, page: 1 });
+  };
+
+  // 4 Simple Metrics (No charts)
+  const pendingCount = returnsData.stats?.pending || 0;
+  const approvedCount = returnsData.stats?.approved || 0;
+  const refundedCount = returnsData.stats?.refunded || refundsData.stats?.completedCount || 0;
+  const totalRefundAmount = returnsData.stats?.refund_amount || refundsData.stats?.totalRefunded || 0;
+
+  const STATS_CARDS = [
+    {
+      label: "Pending Returns",
+      value: pendingCount,
+      sub: "Needs admin review",
+      color: "text-amber-600 dark:text-amber-400",
+      bg: "bg-amber-50/60 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/60"
+    },
+    {
+      label: "Approved / In Transit",
+      value: approvedCount,
+      sub: "Awaiting sneaker package",
+      color: "text-blue-600 dark:text-blue-400",
+      bg: "bg-blue-50/60 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800/60"
+    },
+    {
+      label: "Settled Returns",
+      value: refundedCount,
+      sub: "Completed refunds",
+      color: "text-emerald-600 dark:text-emerald-400",
+      bg: "bg-emerald-50/60 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/60"
+    },
+    {
+      label: "Total Refunded Value",
+      value: fmt(totalRefundAmount),
+      sub: "Reversed customer funds",
+      color: "text-gray-900 dark:text-zinc-100",
+      bg: "bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800"
+    }
   ];
 
   return (
-    <div>
-      <div className="flex justify-between items-start mb-6">
+    <div className="pb-10">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="font-display tracking-tight text-2xl font-semibold ">Returns & Refunds</h1>
-          <p className="text-sm text-ink-500">Manage customer return requests and refunds</p>
+          <h1 className="font-display tracking-tight text-2xl font-black text-gray-900 dark:text-zinc-100">
+            Returns & Refunds
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-zinc-400 font-medium">
+            Review customer sneaker return claims, inspect conditions, and track monetary refund payouts
+          </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
-        {STATS.map(s => (
-          <div key={s.label} className="bg-white p-4 border border-ink-200 flex flex-col justify-between">
-            <span className="text-[10px] font-bold text-ink-500  tracking-wider">{s.label}</span>
-            <span className={`text-xl font-mono font-black mt-2 ${s.color}`}>{s.count}</span>
+      {/* Metric Strip (4 Cards, No Heavy Charts) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6">
+        {STATS_CARDS.map(s => (
+          <div key={s.label} className={`p-4 rounded-xl border ${s.bg} flex flex-col justify-between shadow-xs transition-colors`}>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-zinc-400">
+              {s.label}
+            </span>
+            <span className={`text-xl font-mono font-black mt-2 ${s.color}`}>
+              {s.value}
+            </span>
+            <span className="text-[11px] text-gray-400 dark:text-zinc-500 mt-0.5">
+              {s.sub}
+            </span>
           </div>
         ))}
       </div>
 
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-        {['all', 'pending', 'approved', 'processing', 'refunded'].map(tab => (
-          <button key={tab} onClick={() => setQuery({ ...query, status: tab, page: 1 })}
-            className={`px-4 py-2 text-sm font-bold  transition-colors whitespace-nowrap ${query.status === tab ? 'bg-obsidian text-white' : 'bg-white text-ink-500 border border-ink-200 hover:bg-ink-50'}`}>
-            {tab}
-          </button>
-        ))}
+      {/* Sub-Tab Navigation Bar */}
+      <div className="flex border-b border-gray-200 dark:border-zinc-800 mb-6 gap-2">
+        <button
+          type="button"
+          onClick={() => setActiveSubTab("returns")}
+          className={`px-4 py-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2 cursor-pointer ${
+            activeSubTab === "returns"
+              ? "border-fire text-fire dark:border-fire dark:text-fire font-black"
+              : "border-transparent text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100"
+          }`}
+        >
+          <RotateCcw size={15} /> Return Requests
+          <span className={`text-xs px-2 py-0.5 rounded-full font-mono font-bold ${
+            activeSubTab === "returns"
+              ? "bg-fire text-white"
+              : "bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300"
+          }`}>
+            {returnsData.stats?.total || returnsData.returns?.length || 0}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSubTab("refunds")}
+          className={`px-4 py-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2 cursor-pointer ${
+            activeSubTab === "refunds"
+              ? "border-fire text-fire dark:border-fire dark:text-fire font-black"
+              : "border-transparent text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100"
+          }`}
+        >
+          <DollarSign size={15} /> Refund Ledger
+          <span className={`text-xs px-2 py-0.5 rounded-full font-mono font-bold ${
+            activeSubTab === "refunds"
+              ? "bg-fire text-white"
+              : "bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300"
+          }`}>
+            {refundsData.refunds?.length || 0}
+          </span>
+        </button>
       </div>
 
-      <div className="bg-white p-4 border border-ink-200 mb-6 flex flex-col lg:flex-row gap-4 items-center">
-        <form onSubmit={handleSearch} className="flex-1 relative w-full">
-          <SearchIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
-          <input type="text" placeholder="Search return ID, order ID, customer..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className="w-full pl-9 pr-4 py-2 border border-ink-200 text-sm focus:border-obsidian focus:outline-none rounded-none font-mono" />
-        </form>
-        <div className="flex gap-2 w-full lg:w-auto">
-          <select value={query.reason} onChange={(e) => setQuery({ ...query, reason: e.target.value, page: 1 })} className="border border-ink-200 px-3 py-2 text-sm focus:outline-none rounded-none bg-white">
-            <option value="all">Reason: All</option>
-            <option value="Wrong size">Wrong size</option>
-            <option value="Damaged product">Damaged product</option>
-            <option value="Defective">Defective</option>
-            <option value="Wrong product">Wrong product</option>
-            <option value="Changed mind">Changed mind</option>
-            <option value="Other">Other</option>
-          </select>
-          <button onClick={() => { setSearchInput(""); setQuery({ page: 1, limit: 25, search: "", status: "all", reason: "all" }); }} className="text-sm font-bold text-ink-500 hover:text-fire  px-3 py-2">Reset</button>
-        </div>
-      </div>
+      {/* TAB 1: RETURN REQUESTS */}
+      {activeSubTab === "returns" && (
+        <div className="space-y-4">
+          {/* Status Quick Filters */}
+          <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
+            {[
+              { id: "all", label: "All Returns" },
+              { id: "pending", label: "Pending Review" },
+              { id: "approved", label: "Approved" },
+              { id: "processing", label: "Processing" },
+              { id: "refunded", label: "Refunded" },
+              { id: "rejected", label: "Rejected" }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setReturnQuery({ ...returnQuery, status: tab.id, page: 1 })}
+                className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors whitespace-nowrap cursor-pointer ${
+                  returnQuery.status === tab.id
+                    ? "bg-black dark:bg-fire text-white shadow-2xs"
+                    : "bg-white dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 border border-gray-200 dark:border-zinc-700 hover:bg-gray-100 dark:hover:bg-zinc-700"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
 
-      <div className="bg-white border border-ink-200 overflow-x-auto min-h-[400px]">
-        {loading ? <div className="p-10 flex justify-center"><div className="w-6 h-6 border-2 border-obsidian border-t-transparent rounded-full animate-spin"></div></div> : (
-          <table className="w-full text-sm text-left">
-            <thead className="bg-ink-100 font-mono text-[10px]  text-ink-500">
-              <tr>
-                <th className="p-3">Return</th>
-                <th className="p-3">Order</th>
-                <th className="p-3">Customer</th>
-                <th className="p-3">Product</th>
-                <th className="p-3">Reason</th>
-                <th className="p-3 text-right">Amount</th>
-                <th className="p-3">Status</th>
-                <th className="p-3">Date</th>
-                <th className="p-3 text-center">⋮</th>
-              </tr>
-            </thead>
-            <tbody>
-              {!data.returns || data.returns.length === 0 ? <tr><td colSpan="9" className="p-10 text-center text-ink-400">No returns found.</td></tr> : data.returns.map(r => (
-                <tr key={r.id} className="border-b border-ink-100 last:border-0 hover:bg-ink-50 cursor-pointer" onClick={() => setViewReturn(r)}>
-                  <td className="p-3 font-mono font-bold text-obsidian">{r.id.split('-')[0]}..</td>
-                  <td className="p-3 font-mono">{r.order_number}</td>
-                  <td className="p-3 font-bold">{r.customer_name}</td>
-                  <td className="p-3 text-xs text-ink-500 truncate max-w-[150px]">{r.product_name ? `${r.product_name} (x${r.quantity})` : 'Entire Order'}</td>
-                  <td className="p-3 text-xs">{r.reason}</td>
-                  <td className="p-3 text-right font-mono font-bold">{fmt(r.refund_amount > 0 ? r.refund_amount : r.total_amount)}</td>
-                  <td className="p-3">
-                    {r.status === 'pending' && <span className="text-[10px] font-bold  px-2 py-0.5 bg-yellow-100 text-yellow-700">Pending</span>}
-                    {r.status === 'approved' && <span className="text-[10px] font-bold  px-2 py-0.5 bg-blue-100 text-blue-700">Approved</span>}
-                    {r.status === 'rejected' && <span className="text-[10px] font-bold  px-2 py-0.5 bg-ink-200 text-ink-600">Rejected</span>}
-                    {r.status === 'processing' && <span className="text-[10px] font-bold  px-2 py-0.5 bg-purple-100 text-purple-700">Processing</span>}
-                    {r.status === 'refunded' && <span className="text-[10px] font-bold  px-2 py-0.5 bg-green-100 text-green-700">Refunded</span>}
-                  </td>
-                  <td className="p-3 text-ink-500 text-xs">{new Date(r.created_at).toLocaleDateString()}</td>
-                  <td className="p-3 text-center">
-                    <button className="p-1 text-ink-400 hover:text-obsidian"><MoreVertical size={16} /></button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+          {/* Search & Reason Filter Bar */}
+          <div className="bg-white dark:bg-zinc-900 p-4 border border-gray-200 dark:border-zinc-800 rounded-xl flex flex-col lg:flex-row gap-3 items-center shadow-sm">
+            <form onSubmit={handleReturnSearch} className="flex-1 relative w-full">
+              <SearchIcon size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-500" />
+              <input
+                type="text"
+                placeholder="Search by return ID, order #, or customer name..."
+                value={returnSearchInput}
+                onChange={(e) => setReturnSearchInput(e.target.value)}
+                className="w-full pl-10 pr-9 py-2 border border-gray-300 dark:border-zinc-700 text-xs font-semibold rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-fire focus:border-fire shadow-2xs"
+              />
+              {returnSearchInput && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReturnSearchInput("");
+                    setReturnQuery(prev => ({ ...prev, search: "", page: 1 }));
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-fire"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </form>
 
-      {data.pagination?.totalPages > 1 && (
-        <div className="flex justify-between items-center mt-6">
-          <div className="text-sm text-ink-500">Showing page {data.pagination.page} of {data.pagination.totalPages}</div>
-          <div className="flex gap-1">
-            <button disabled={query.page === 1} onClick={() => setQuery({ ...query, page: query.page - 1 })} className="px-3 py-1.5 border border-ink-200 bg-white hover:bg-ink-50 disabled:opacity-50 text-sm font-bold">Prev</button>
-            <button disabled={query.page === data.pagination.totalPages} onClick={() => setQuery({ ...query, page: query.page + 1 })} className="px-3 py-1.5 border border-ink-200 bg-white hover:bg-ink-50 disabled:opacity-50 text-sm font-bold">Next</button>
+            <div className="flex gap-2 w-full lg:w-auto">
+              <select
+                value={returnQuery.reason}
+                onChange={(e) => setReturnQuery({ ...returnQuery, reason: e.target.value, page: 1 })}
+                className="border border-gray-300 dark:border-zinc-700 px-3 py-2 text-xs font-bold text-gray-800 dark:text-zinc-200 rounded-lg bg-white dark:bg-zinc-800 focus:outline-none shadow-2xs"
+              >
+                <option value="all">Reason: All</option>
+                <option value="Wrong size">Wrong size</option>
+                <option value="Damaged product">Damaged product</option>
+                <option value="Defective">Defective</option>
+                <option value="Wrong product">Wrong product</option>
+                <option value="Changed mind">Changed mind</option>
+                <option value="Other">Other</option>
+              </select>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setReturnSearchInput("");
+                  setReturnQuery({ page: 1, limit: 25, search: "", status: "all", reason: "all" });
+                }}
+                className="text-xs font-bold text-gray-600 dark:text-zinc-400 hover:text-fire px-3 py-2 border border-gray-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 cursor-pointer shadow-2xs"
+              >
+                Reset
+              </button>
+            </div>
+          </div>
+
+          {/* Returns Data Table */}
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm">
+            {returnsLoading ? (
+              <div className="p-12 text-center text-gray-400 dark:text-zinc-500 font-mono text-xs flex items-center justify-center gap-2">
+                <Loader2 size={18} className="animate-spin text-fire" /> Loading return requests...
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="bg-gray-50 dark:bg-zinc-800/80 border-b border-gray-200 dark:border-zinc-800 text-gray-600 dark:text-zinc-300 font-bold uppercase tracking-wider text-[11px]">
+                    <tr>
+                      <th className="p-3.5">Return ID</th>
+                      <th className="p-3.5">Order #</th>
+                      <th className="p-3.5">Customer</th>
+                      <th className="p-3.5">Sneaker / Item</th>
+                      <th className="p-3.5">Return Reason</th>
+                      <th className="p-3.5 text-right">Refund Amount</th>
+                      <th className="p-3.5">Status</th>
+                      <th className="p-3.5">Date</th>
+                      <th className="p-3.5 text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
+                    {!returnsData.returns || returnsData.returns.length === 0 ? (
+                      <tr>
+                        <td colSpan="9" className="p-12 text-center text-gray-400 dark:text-zinc-500 font-medium">
+                          No customer return requests found.
+                        </td>
+                      </tr>
+                    ) : (
+                      returnsData.returns.map(r => (
+                        <tr
+                          key={r.id}
+                          onClick={() => setViewReturn(r)}
+                          className="hover:bg-gray-50/80 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer group"
+                        >
+                          <td className="p-3.5 font-mono font-bold text-gray-900 dark:text-zinc-100 group-hover:text-fire transition-colors">
+                            #{r.id.split('-')[0]}
+                          </td>
+                          <td className="p-3.5 font-mono text-gray-800 dark:text-zinc-200 font-semibold">
+                            {r.order_number}
+                          </td>
+                          <td className="p-3.5 font-semibold text-gray-900 dark:text-zinc-100">
+                            {r.customer_name}
+                          </td>
+                          <td className="p-3.5 text-xs text-gray-600 dark:text-zinc-300 truncate max-w-[180px]">
+                            {r.product_name ? `${r.product_name} (x${r.quantity || 1})` : "Entire Order"}
+                          </td>
+                          <td className="p-3.5 text-xs text-gray-600 dark:text-zinc-400">
+                            {r.reason}
+                          </td>
+                          <td className="p-3.5 text-right font-mono font-bold text-gray-900 dark:text-zinc-100">
+                            {fmt(r.refund_amount > 0 ? r.refund_amount : r.total_amount || 0)}
+                          </td>
+                          <td className="p-3.5">
+                            {r.status === 'pending' && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800 flex items-center gap-1 w-fit">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Pending
+                              </span>
+                            )}
+                            {r.status === 'approved' && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800 flex items-center gap-1 w-fit">
+                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Approved
+                              </span>
+                            )}
+                            {r.status === 'rejected' && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-gray-100 text-gray-600 border-gray-300 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700 flex items-center gap-1 w-fit">
+                                Rejected
+                              </span>
+                            )}
+                            {r.status === 'processing' && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-purple-50 text-purple-700 border-purple-300 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800 flex items-center gap-1 w-fit">
+                                Processing
+                              </span>
+                            )}
+                            {r.status === 'refunded' && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800 flex items-center gap-1 w-fit">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Refunded
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-3.5 text-gray-500 dark:text-zinc-400 font-mono text-xs">
+                            {new Date(r.created_at).toLocaleDateString()}
+                          </td>
+                          <td className="p-3.5 text-center" onClick={e => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              onClick={() => setViewReturn(r)}
+                              className="px-2.5 py-1 text-xs font-bold bg-gray-100 dark:bg-zinc-800 hover:bg-black hover:text-white dark:hover:bg-fire rounded transition-colors cursor-pointer text-gray-700 dark:text-zinc-300"
+                            >
+                              Review
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {viewReturn && <ReturnDetailsDrawer returnId={viewReturn.id} onClose={() => setViewReturn(null)} onUpdate={() => { load(); }} />}
+      {/* TAB 2: REFUND LEDGER */}
+      {activeSubTab === "refunds" && (
+        <div className="space-y-4">
+          {/* Status Quick Filters */}
+          <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
+            {[
+              { id: "all", label: "All Refunds" },
+              { id: "completed", label: "Completed" },
+              { id: "pending", label: "Pending" },
+              { id: "processing", label: "Processing" },
+              { id: "failed", label: "Failed" }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setRefundQuery({ ...refundQuery, status: tab.id, page: 1 })}
+                className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors whitespace-nowrap cursor-pointer ${
+                  refundQuery.status === tab.id
+                    ? "bg-black dark:bg-fire text-white shadow-2xs"
+                    : "bg-white dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 border border-gray-200 dark:border-zinc-700 hover:bg-gray-100 dark:hover:bg-zinc-700"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Search & Method Filter Bar */}
+          <div className="bg-white dark:bg-zinc-900 p-4 border border-gray-200 dark:border-zinc-800 rounded-xl flex flex-col lg:flex-row gap-3 items-center shadow-sm">
+            <form onSubmit={handleRefundSearch} className="flex-1 relative w-full">
+              <SearchIcon size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-500" />
+              <input
+                type="text"
+                placeholder="Search by refund ID, order #, or customer name..."
+                value={refundSearchInput}
+                onChange={(e) => setRefundSearchInput(e.target.value)}
+                className="w-full pl-10 pr-9 py-2 border border-gray-300 dark:border-zinc-700 text-xs font-semibold rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-fire focus:border-fire shadow-2xs"
+              />
+              {refundSearchInput && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRefundSearchInput("");
+                    setRefundQuery(prev => ({ ...prev, search: "", page: 1 }));
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-fire"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </form>
+
+            <div className="flex gap-2 w-full lg:w-auto">
+              <select
+                value={refundQuery.method}
+                onChange={(e) => setRefundQuery({ ...refundQuery, method: e.target.value, page: 1 })}
+                className="border border-gray-300 dark:border-zinc-700 px-3 py-2 text-xs font-bold text-gray-800 dark:text-zinc-200 rounded-lg bg-white dark:bg-zinc-800 focus:outline-none shadow-2xs"
+              >
+                <option value="all">Method: All</option>
+                <option value="card">Card Terminal / Stripe</option>
+                <option value="cod">Cash on Delivery (COD)</option>
+                <option value="wallet">Store Wallet / Bank</option>
+              </select>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setRefundSearchInput("");
+                  setRefundQuery({ page: 1, limit: 25, search: "", status: "all", method: "all" });
+                }}
+                className="text-xs font-bold text-gray-600 dark:text-zinc-400 hover:text-fire px-3 py-2 border border-gray-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 cursor-pointer shadow-2xs"
+              >
+                Reset
+              </button>
+            </div>
+          </div>
+
+          {/* Refunds Ledger Data Table */}
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm">
+            {refundsLoading ? (
+              <div className="p-12 text-center text-gray-400 dark:text-zinc-500 font-mono text-xs flex items-center justify-center gap-2">
+                <Loader2 size={18} className="animate-spin text-fire" /> Loading refund transactions...
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="bg-gray-50 dark:bg-zinc-800/80 border-b border-gray-200 dark:border-zinc-800 text-gray-600 dark:text-zinc-300 font-bold uppercase tracking-wider text-[11px]">
+                    <tr>
+                      <th className="p-3.5">Refund ID</th>
+                      <th className="p-3.5">Order #</th>
+                      <th className="p-3.5">Customer</th>
+                      <th className="p-3.5 text-right">Amount</th>
+                      <th className="p-3.5">Payout Method</th>
+                      <th className="p-3.5">Status</th>
+                      <th className="p-3.5">Date</th>
+                      <th className="p-3.5 text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
+                    {!refundsData.refunds || refundsData.refunds.length === 0 ? (
+                      <tr>
+                        <td colSpan="8" className="p-12 text-center text-gray-400 dark:text-zinc-500 font-medium">
+                          No financial refund records found.
+                        </td>
+                      </tr>
+                    ) : (
+                      refundsData.refunds.map(r => (
+                        <tr
+                          key={r.id}
+                          onClick={() => setViewRefund(r.id)}
+                          className="hover:bg-gray-50/80 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer group"
+                        >
+                          <td className="p-3.5 font-mono font-bold text-gray-900 dark:text-zinc-100 group-hover:text-fire transition-colors">
+                            #{r.id.split('-')[0]}
+                          </td>
+                          <td className="p-3.5 font-mono text-gray-800 dark:text-zinc-200 font-semibold">
+                            {r.order_number}
+                          </td>
+                          <td className="p-3.5 font-semibold text-gray-900 dark:text-zinc-100">
+                            {r.customer_name}
+                          </td>
+                          <td className="p-3.5 text-right font-mono font-bold text-gray-900 dark:text-zinc-100">
+                            {fmt(r.amount)}
+                          </td>
+                          <td className="p-3.5 uppercase font-mono text-xs text-gray-700 dark:text-zinc-300">
+                            {r.method}
+                          </td>
+                          <td className="p-3.5">
+                            {r.status === 'completed' && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800 flex items-center gap-1 w-fit">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Completed
+                              </span>
+                            )}
+                            {r.status === 'pending' && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800 flex items-center gap-1 w-fit">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Pending
+                              </span>
+                            )}
+                            {r.status === 'processing' && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-purple-50 text-purple-700 border-purple-300 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800 flex items-center gap-1 w-fit">
+                                Processing
+                              </span>
+                            )}
+                            {r.status === 'failed' && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800 flex items-center gap-1 w-fit">
+                                Failed
+                              </span>
+                            )}
+                            {r.status === 'cancelled' && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded border bg-gray-100 text-gray-600 border-gray-300 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700 flex items-center gap-1 w-fit">
+                                Cancelled
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-3.5 text-gray-500 dark:text-zinc-400 font-mono text-xs">
+                            {new Date(r.created_at).toLocaleDateString()}
+                          </td>
+                          <td className="p-3.5 text-center" onClick={e => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              onClick={() => setViewRefund(r.id)}
+                              className="px-2.5 py-1 text-xs font-bold bg-gray-100 dark:bg-zinc-800 hover:bg-black hover:text-white dark:hover:bg-fire rounded transition-colors cursor-pointer text-gray-700 dark:text-zinc-300"
+                            >
+                              Details
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Drawers */}
+      {viewReturn && (
+        <ReturnDetailsDrawer
+          returnId={viewReturn.id}
+          onClose={() => setViewReturn(null)}
+          onUpdate={() => {
+            loadReturns();
+            loadRefunds();
+          }}
+        />
+      )}
+
+      {viewRefund && (
+        <RefundDetailsDrawer
+          refundId={viewRefund}
+          onClose={() => setViewRefund(null)}
+          onUpdate={() => {
+            loadRefunds();
+            loadReturns();
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -7253,183 +7673,6 @@ function ReturnDetailsDrawer({ returnId, onClose, onUpdate }) {
 
         </div>
       </motion.div>
-    </div>
-  );
-}
-
-
-
-function Refunds() {
-  const [data, setData] = useState({ refunds: [], pagination: {}, stats: {}, chartData: [], donutData: [] });
-  const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState({ page: 1, limit: 25, search: "", status: "all", method: "all" });
-  const [searchInput, setSearchInput] = useState("");
-  const [viewRefund, setViewRefund] = useState(null);
-  const [chartMode, setChartMode] = useState("amount"); // 'amount' or 'count'
-
-  const load = async () => {
-    setLoading(true);
-    try {
-      const q = new URLSearchParams(query).toString();
-      const res = await http.get(`/admin/refunds?${q}`);
-      setData(res.data.data);
-    } catch (e) { toast.error("Failed to load refunds"); }
-    setLoading(false);
-  };
-
-  useEffect(() => { load(); }, [query]);
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    setQuery({ ...query, search: searchInput, page: 1 });
-  };
-
-  const STATS = [
-    { label: "Total Refunded", count: fmt(data.stats?.totalRefunded || 0), color: "text-green-700" },
-    { label: "Pending Refunds", count: fmt(data.stats?.pendingAmount || 0), color: "text-fire", sub: `${data.stats?.pendingCount || 0} requests` },
-    { label: "Completed", count: fmt(data.stats?.completedAmount || 0), color: "text-green-600", sub: `${data.stats?.completedCount || 0} refunds` },
-    { label: "Failed", count: fmt(data.stats?.failedAmount || 0), color: "text-red-600", sub: `${data.stats?.failedCount || 0} transactions` },
-    { label: "Avg Refund", count: fmt(data.stats?.avgRefund || 0), color: "text-obsidian" }
-  ];
-
-  return (
-    <div>
-      <div className="flex justify-between items-start mb-6">
-        <div>
-          <h1 className="font-display tracking-tight text-2xl font-semibold ">Refunds</h1>
-          <p className="text-sm text-ink-500">Track and manage customer refunds and financial transactions</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-        {STATS.map(s => (
-          <div key={s.label} className="bg-white p-4 border border-ink-200 flex flex-col justify-between">
-            <span className="text-[10px] font-bold text-ink-500  tracking-wider">{s.label}</span>
-            <span className={`text-xl font-mono font-black mt-2 ${s.color}`}>{s.count}</span>
-            {s.sub && <span className="text-[10px] text-ink-400 mt-1">{s.sub}</span>}
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <div className="lg:col-span-2 bg-white border border-ink-200 p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500">Refund Overview (7D)</h3>
-            <div className="flex bg-ink-50 border border-ink-200 rounded-none p-1">
-              <button onClick={() => setChartMode('amount')} className={`px-3 py-1 text-xs font-bold  ${chartMode === 'amount' ? 'bg-white shadow border border-ink-100' : 'text-ink-500'}`}>Amount</button>
-              <button onClick={() => setChartMode('count')} className={`px-3 py-1 text-xs font-bold  ${chartMode === 'count' ? 'bg-white shadow border border-ink-100' : 'text-ink-500'}`}>Count</button>
-            </div>
-          </div>
-          <div className="h-64">
-            {data.chartData?.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={data.chartData}>
-                  <XAxis dataKey="name" fontSize={10} axisLine={false} tickLine={false} />
-                  <YAxis fontSize={10} axisLine={false} tickLine={false} tickFormatter={v => chartMode === 'amount' ? `$${v}` : v} />
-                  <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: 0, border: '1px solid #e5e5e5' }} />
-                  <Line type="monotone" dataKey={chartMode} stroke="#171717" strokeWidth={2} dot={{ r: 3, fill: '#171717' }} activeDot={{ r: 5 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-sm text-ink-400">No data available</div>
-            )}
-          </div>
-        </div>
-
-        <div className="bg-white border border-ink-200 p-6">
-          <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500 mb-6">Refund Status</h3>
-          <div className="h-48">
-            {data.donutData?.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={data.donutData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={2} dataKey="value">
-                    {data.donutData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
-                  </Pie>
-                  <Tooltip contentStyle={{ borderRadius: 0, border: '1px solid #e5e5e5' }} />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-sm text-ink-400">No data available</div>
-            )}
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            {data.donutData?.map(d => (
-              <div key={d.name} className="flex items-center gap-2 text-xs">
-                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: d.fill }}></div>
-                <span className="font-bold">{d.name}</span>
-                <span className="text-ink-400 ml-auto">{d.value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white p-4 border border-ink-200 mb-6 flex flex-col lg:flex-row gap-4 items-center">
-        <form onSubmit={handleSearch} className="flex-1 relative w-full">
-          <SearchIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
-          <input type="text" placeholder="Search refund ID, order ID..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className="w-full pl-9 pr-4 py-2 border border-ink-200 text-sm focus:border-obsidian focus:outline-none rounded-none font-mono" />
-        </form>
-        <div className="flex gap-2 w-full lg:w-auto">
-          <select value={query.status} onChange={(e) => setQuery({ ...query, status: e.target.value, page: 1 })} className="border border-ink-200 px-3 py-2 text-sm focus:outline-none rounded-none bg-white">
-            <option value="all">Status: All</option>
-            <option value="pending">Pending</option>
-            <option value="processing">Processing</option>
-            <option value="completed">Completed</option>
-            <option value="failed">Failed</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
-          <select value={query.method} onChange={(e) => setQuery({ ...query, method: e.target.value, page: 1 })} className="border border-ink-200 px-3 py-2 text-sm focus:outline-none rounded-none bg-white">
-            <option value="all">Method: All</option>
-            <option value="card">Card</option>
-            <option value="cod">COD</option>
-            <option value="wallet">Wallet</option>
-          </select>
-          <button onClick={() => { setSearchInput(""); setQuery({ page: 1, limit: 25, search: "", status: "all", method: "all" }); }} className="text-sm font-bold text-ink-500 hover:text-fire  px-3 py-2">Reset</button>
-        </div>
-      </div>
-
-      <div className="bg-white border border-ink-200 overflow-x-auto min-h-[400px]">
-        {loading ? <div className="p-10 flex justify-center"><div className="w-6 h-6 border-2 border-obsidian border-t-transparent rounded-full animate-spin"></div></div> : (
-          <table className="w-full text-sm text-left">
-            <thead className="bg-ink-100 font-mono text-[10px]  text-ink-500">
-              <tr>
-                <th className="p-3">Refund ID</th>
-                <th className="p-3">Order</th>
-                <th className="p-3">Customer</th>
-                <th className="p-3 text-right">Amount</th>
-                <th className="p-3">Method</th>
-                <th className="p-3">Status</th>
-                <th className="p-3">Date</th>
-                <th className="p-3 text-center">⋮</th>
-              </tr>
-            </thead>
-            <tbody>
-              {!data.refunds || data.refunds.length === 0 ? <tr><td colSpan="8" className="p-10 text-center text-ink-400">No refunds found.</td></tr> : data.refunds.map(r => (
-                <tr key={r.id} className="border-b border-ink-100 last:border-0 hover:bg-ink-50 cursor-pointer" onClick={() => setViewRefund(r.id)}>
-                  <td className="p-3 font-mono font-bold text-obsidian">{r.id.split('-')[0]}..</td>
-                  <td className="p-3 font-mono">{r.order_number}</td>
-                  <td className="p-3 font-bold">{r.customer_name}</td>
-                  <td className="p-3 text-right font-mono font-bold">{fmt(r.amount)}</td>
-                  <td className="p-3 text-xs ">{r.method}</td>
-                  <td className="p-3">
-                    {r.status === 'pending' && <span className="text-[10px] font-bold  px-2 py-0.5 bg-yellow-100 text-yellow-700">Pending</span>}
-                    {r.status === 'processing' && <span className="text-[10px] font-bold  px-2 py-0.5 bg-purple-100 text-purple-700">Processing</span>}
-                    {r.status === 'completed' && <span className="text-[10px] font-bold  px-2 py-0.5 bg-green-100 text-green-700">Completed</span>}
-                    {r.status === 'failed' && <span className="text-[10px] font-bold  px-2 py-0.5 bg-red-100 text-red-700">Failed</span>}
-                    {r.status === 'cancelled' && <span className="text-[10px] font-bold  px-2 py-0.5 bg-ink-200 text-ink-600">Cancelled</span>}
-                  </td>
-                  <td className="p-3 text-ink-500 text-xs">{new Date(r.created_at).toLocaleDateString()}</td>
-                  <td className="p-3 text-center">
-                    <button className="p-1 text-ink-400 hover:text-obsidian"><MoreVertical size={16} /></button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      {viewRefund && <RefundDetailsDrawer refundId={viewRefund} onClose={() => setViewRefund(null)} onUpdate={() => load()} />}
     </div>
   );
 }
