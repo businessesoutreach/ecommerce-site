@@ -4681,7 +4681,7 @@ function ProductDetailPage({ productId, initialProduct, isNew = false, onBack, o
                   className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs font-bold text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-fire capitalize cursor-pointer"
                 >
                   {availableCategories.length === 0 ? (
-                    <option value="retro">Retro & Classics</option>
+                    <option value="">-- No categories configured --</option>
                   ) : (
                     availableCategories.map(c => (
                       <option key={c.id} value={c.slug} className="bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100">
@@ -4735,7 +4735,7 @@ function ProductDetailPage({ productId, initialProduct, isNew = false, onBack, o
                   className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs font-bold text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-fire capitalize cursor-pointer"
                 >
                   {availableBrands.length === 0 ? (
-                    <option value="airvault">AirVault</option>
+                    <option value="">-- No brands configured --</option>
                   ) : (
                     availableBrands.map(b => (
                       <option key={b.id} value={b.slug} className="bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100">

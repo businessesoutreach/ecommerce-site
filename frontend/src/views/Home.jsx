@@ -152,7 +152,7 @@ export default function Home({ initialData }) {
         return (
           <section key={section.id} className="max-w-[1400px] mx-auto px-5 sm:px-8 py-16">
             <ScrollReveal>
-              <SectionHeader eyebrow="Most wanted" title="Best Sellers" tagline="Culture-approved. Cart-tested. Community-loved." action={<Link to="/collections/retro" className="hidden sm:inline-flex items-center gap-2 font-display text-sm tracking-wide hover:text-fire transition-colors">View All <ArrowRight size={16} /></Link>} />
+              <SectionHeader eyebrow="Most wanted" title="Best Sellers" tagline="Culture-approved. Cart-tested. Community-loved." action={<Link to="/shop" className="hidden sm:inline-flex items-center gap-2 font-display text-sm tracking-wide hover:text-fire transition-colors">View All <ArrowRight size={16} /></Link>} />
             </ScrollReveal>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {loading ? Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />) : data.best?.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}

@@ -940,8 +940,68 @@ router.get('/notifications', async (req, res) => {
 
 router.get('/categories', async (req, res) => {
     try {
-        const items = await prisma.category.findMany({ orderBy: { sort_order: 'asc' } });
-        res.json({ success: true, data: items });
+        const [items, productCounts] = await Promise.all([
+            prisma.category.findMany({
+                orderBy: { sort_order: 'asc' },
+                include: { parent: true, children: true }
+            }),
+            prisma.product.groupBy({
+                by: ['category_slug'],
+                _count: { id: true }
+            })
+        ]);
+        const countMap = Object.fromEntries(productCounts.map(c => [c.category_slug, c._count.id]));
+        const enriched = items.map(c => ({
+            ...c,
+            product_count: countMap[c.slug] || 0
+        }));
+        res.json({ success: true, data: enriched });
+    } catch (err) {
+        res.status(500).json({ detail: err.message });
+    }
+});
+
+router.get('/categories/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const category = await prisma.category.findFirst({
+            where: {
+                OR: [
+                    { id },
+                    { slug: id }
+                ]
+            },
+            include: {
+                parent: true,
+                children: true
+            }
+        });
+        if (!category) return res.status(404).json({ detail: "Category not found" });
+
+        const products = await prisma.product.findMany({
+            where: { category_slug: category.slug },
+            orderBy: { created_at: 'desc' },
+            include: { sizes: true }
+        });
+
+        const totalStock = products.reduce((acc, p) => acc + (p.sizes?.reduce((sAcc, s) => sAcc + s.stock, 0) || 0), 0);
+        const prices = products.map(p => p.base_price).filter(p => typeof p === 'number' && p > 0);
+        const minPrice = prices.length ? Math.min(...prices) : 0;
+        const maxPrice = prices.length ? Math.max(...prices) : 0;
+
+        res.json({
+            success: true,
+            data: {
+                ...category,
+                products,
+                stats: {
+                    product_count: products.length,
+                    total_stock: totalStock,
+                    min_price: minPrice,
+                    max_price: maxPrice
+                }
+            }
+        });
     } catch (err) {
         res.status(500).json({ detail: err.message });
     }
