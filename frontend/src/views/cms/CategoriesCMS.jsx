@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { http, fmt } from '../../lib/api';
 import { toast } from "sonner";
+import ConfirmModal from '../../components/ConfirmModal';
 import { 
   Trash2, Upload, Tag, Plus, Edit2, Check, X, Loader2, Image as ImageIcon, 
   Video, Search, ExternalLink, ArrowLeft, Package, Layers, Eye, Globe, ChevronRight 
@@ -22,6 +23,7 @@ export default function CategoriesCMS() {
   const [cats, setCats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
   const load = async () => {
     setLoading(true);
@@ -56,6 +58,29 @@ export default function CategoriesCMS() {
     next.set("categoryId", id);
     next.delete("action");
     setSearchParams(next);
+  };
+
+  const promptDeleteCategory = (c) => {
+    setConfirmModal({
+      isOpen: true,
+      title: `Delete category "${c.name}"?`,
+      message: "Products assigned to this category will keep their catalog records. This action cannot be undone.",
+      confirmText: "Delete Category",
+      variant: "danger",
+      loading: false,
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, loading: true }));
+        try {
+          await http.delete(`/admin/categories/${c.id}`);
+          toast.success("Category deleted successfully");
+          setConfirmModal({ isOpen: false });
+          load();
+        } catch {
+          toast.error("Failed to delete category");
+          setConfirmModal(prev => ({ ...prev, loading: false }));
+        }
+      }
+    });
   };
 
   // FULL PAGE VIEW: Create Category
@@ -95,17 +120,6 @@ export default function CategoriesCMS() {
     );
   }
 
-  const del = async (id, name) => {
-    if (!window.confirm(`Delete category "${name}"? Products in this category will keep their current records.`)) return;
-    try {
-      await http.delete(`/admin/categories/${id}`);
-      toast.success("Category deleted");
-      load();
-    } catch (err) {
-      toast.error("Failed to delete category");
-    }
-  };
-
   const filteredCats = cats.filter(c => 
     c.name.toLowerCase().includes(search.toLowerCase()) || 
     c.slug.toLowerCase().includes(search.toLowerCase())
@@ -140,7 +154,7 @@ export default function CategoriesCMS() {
         </div>
         <button
           onClick={openNewCategory}
-          className="px-4 py-2 bg-fire hover:bg-fire-hover text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-2 shrink-0"
+          className="px-4 py-2 bg-fire hover:bg-fire-hover text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-2 shrink-0 cursor-pointer"
         >
           <Plus size={15} />
           <span>Add New Category</span>
@@ -270,14 +284,14 @@ export default function CategoriesCMS() {
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => openCategory(c.id)}
-                            className="px-2.5 py-1.5 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-800 dark:text-zinc-200 font-bold text-xs rounded-lg transition-colors flex items-center gap-1"
+                            className="px-2.5 py-1.5 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-800 dark:text-zinc-200 font-bold text-xs rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
                             title="Edit Category"
                           >
                             <Edit2 size={12} /> Edit
                           </button>
                           <button
-                            onClick={() => del(c.id, c.name)}
-                            className="p-1.5 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-400 rounded-lg transition-colors"
+                            onClick={() => promptDeleteCategory(c)}
+                            className="p-1.5 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-400 rounded-lg transition-colors cursor-pointer"
                             title="Delete Category"
                           >
                             <Trash2 size={13} />
@@ -293,6 +307,19 @@ export default function CategoriesCMS() {
         )}
       </div>
 
+      {/* Reusable Custom Confirm Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        cancelText="Cancel"
+        variant={confirmModal.variant || "danger"}
+        loading={confirmModal.loading}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal({ isOpen: false })}
+      />
+
     </div>
   );
 }
@@ -300,13 +327,14 @@ export default function CategoriesCMS() {
 
 /* =========================================================================
    DEDICATED FULL-PAGE COMPONENT: CategoryDetailPage (View, Edit & Create)
-   Enterprise-grade Category Workbench with zero modals.
+   Enterprise-grade Category Workbench with zero modals and bottom action bar.
    ========================================================================= */
 
 function CategoryDetailPage({ categoryId, initialCategory, existingCategories = [], isNew = false, onBack, onSaved, onDelete }) {
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [categoryData, setCategoryData] = useState(initialCategory || null);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
   const [form, setForm] = useState({
     name: initialCategory?.name || "",
@@ -397,24 +425,36 @@ function CategoryDetailPage({ categoryId, initialCategory, existingCategories = 
     }
   };
 
-  const handleDelete = async () => {
+  const promptDeleteCategory = () => {
     if (isNew || !categoryId) return;
-    if (!window.confirm(`Delete category "${form.name}"? Products in this category will keep their records.`)) return;
-    try {
-      await http.delete(`/admin/categories/${categoryId}`);
-      toast.success("Category deleted");
-      if (onDelete) onDelete();
-      else onBack();
-    } catch (err) {
-      toast.error("Failed to delete category");
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: `Delete category "${form.name}"?`,
+      message: "Products assigned to this category will keep their catalog records. This action cannot be undone.",
+      confirmText: "Delete Category",
+      variant: "danger",
+      loading: false,
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, loading: true }));
+        try {
+          await http.delete(`/admin/categories/${categoryId}`);
+          toast.success("Category deleted");
+          setConfirmModal({ isOpen: false });
+          if (onDelete) onDelete();
+          else onBack();
+        } catch {
+          toast.error("Failed to delete category");
+          setConfirmModal(prev => ({ ...prev, loading: false }));
+        }
+      }
+    });
   };
 
   if (loading) {
     return (
       <div className="pb-10 max-w-6xl mx-auto space-y-6">
         <div className="flex items-center gap-3">
-          <button onClick={onBack} className="inline-flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-800 dark:text-zinc-200 font-bold text-xs rounded-lg border border-gray-300 dark:border-zinc-700 shadow-sm transition-colors">
+          <button onClick={onBack} className="inline-flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-800 dark:text-zinc-200 font-bold text-xs rounded-lg border border-gray-300 dark:border-zinc-700 shadow-sm transition-colors cursor-pointer">
             <ArrowLeft size={16} /> Back to Categories
           </button>
           <span className="text-gray-400">/</span>
@@ -441,12 +481,12 @@ function CategoryDetailPage({ categoryId, initialCategory, existingCategories = 
   return (
     <div className="pb-12 max-w-6xl mx-auto space-y-6 animate-in fade-in duration-150">
       
-      {/* Top Header & Breadcrumb Bar */}
+      {/* Top Header & Breadcrumb Bar (No top active/inactive dropdown as requested) */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3 flex-wrap">
           <button
             onClick={onBack}
-            className="inline-flex items-center gap-2 px-3.5 py-2 bg-white dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-900 dark:text-zinc-100 font-bold text-xs rounded-xl border border-gray-300 dark:border-zinc-700 shadow-sm transition-all hover:-translate-x-0.5"
+            className="inline-flex items-center gap-2 px-3.5 py-2 bg-white dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-900 dark:text-zinc-100 font-bold text-xs rounded-xl border border-gray-300 dark:border-zinc-700 shadow-sm transition-all hover:-translate-x-0.5 cursor-pointer"
           >
             <ArrowLeft size={16} /> Back to Categories
           </button>
@@ -460,19 +500,6 @@ function CategoryDetailPage({ categoryId, initialCategory, existingCategories = 
 
         {/* Action Controls */}
         <div className="flex items-center gap-2.5 flex-wrap">
-          {/* Active / Hidden Status Switcher */}
-          <div className="flex items-center gap-2 bg-white dark:bg-zinc-800/80 p-1 pl-3 pr-2 rounded-xl border border-gray-200 dark:border-zinc-700 shadow-sm">
-            <span className={`w-2 h-2 rounded-full ${form.is_active ? 'bg-emerald-500' : 'bg-gray-400'}`}></span>
-            <select
-              value={form.is_active ? "active" : "hidden"}
-              onChange={(e) => setForm({ ...form, is_active: e.target.value === "active" })}
-              className="bg-transparent text-xs font-bold uppercase tracking-wider text-gray-900 dark:text-zinc-100 focus:outline-none cursor-pointer"
-            >
-              <option value="active" className="bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100">Storefront Active</option>
-              <option value="hidden" className="bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100">Hidden / Draft</option>
-            </select>
-          </div>
-
           {!isNew && (
             <>
               <a
@@ -485,8 +512,8 @@ function CategoryDetailPage({ categoryId, initialCategory, existingCategories = 
               </a>
               <button
                 type="button"
-                onClick={handleDelete}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 font-bold text-xs rounded-xl border border-rose-200 dark:border-rose-900 shadow-sm transition-colors"
+                onClick={promptDeleteCategory}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 font-bold text-xs rounded-xl border border-rose-200 dark:border-rose-900 shadow-sm transition-colors cursor-pointer"
               >
                 <Trash2 size={14} /> Delete
               </button>
@@ -497,7 +524,7 @@ function CategoryDetailPage({ categoryId, initialCategory, existingCategories = 
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="px-5 py-2 bg-fire hover:bg-fire-hover text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-sm hover:shadow-fire/20 transition-all flex items-center gap-2"
+            className="px-5 py-2 bg-fire hover:bg-fire-hover text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-sm hover:shadow-fire/20 transition-all flex items-center gap-2 cursor-pointer"
           >
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
             {isNew ? "Create Category" : "Save Changes"}
@@ -555,9 +582,12 @@ function CategoryDetailPage({ categoryId, initialCategory, existingCategories = 
             <span className="font-bold text-gray-900 dark:text-zinc-100 block text-sm">
               {parentCat ? `Sub of ${parentCat.name}` : 'Root Level Collection'}
             </span>
-            <span className="text-[10px] font-mono text-fire mt-0.5 block">
-              /collections/{form.slug || 'slug'}
-            </span>
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className={`w-2 h-2 rounded-full ${form.is_active ? 'bg-emerald-500' : 'bg-gray-400'}`}></span>
+              <span className={`text-[10px] font-bold uppercase tracking-wider ${form.is_active ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400'}`}>
+                {form.is_active ? 'Active on Storefront' : 'Hidden'}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -636,13 +666,47 @@ function CategoryDetailPage({ categoryId, initialCategory, existingCategories = 
             </div>
           </div>
 
-          {/* Section 2: Identity & Taxonomy */}
+          {/* Section 2: Identity, Hierarchy & Formatted Visibility Toggle */}
           <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-4">
             <h2 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 border-b border-gray-100 dark:border-zinc-800 pb-3 flex items-center gap-2">
               <Tag size={16} className="text-fire" /> Category Identity & Hierarchy
             </h2>
 
             <div className="space-y-4">
+              
+              {/* Formatted Storefront Visibility Toggle (Below form as requested) */}
+              <div className="p-4 bg-gray-50 dark:bg-zinc-800/50 rounded-xl border border-gray-200 dark:border-zinc-700/60 flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-gray-900 dark:text-zinc-100">Storefront Visibility</span>
+                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border ${
+                      form.is_active 
+                        ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900' 
+                        : 'bg-gray-100 dark:bg-zinc-800 text-gray-500 border-gray-200 dark:border-zinc-700'
+                    }`}>
+                      {form.is_active ? 'Active on Storefront' : 'Hidden / Draft'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-gray-400 dark:text-zinc-500 mt-0.5">
+                    When active, this collection is shown to shoppers in navigation, filters, and collection pages.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setForm(prev => ({ ...prev, is_active: !prev.is_active }))}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    form.is_active ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-zinc-700'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                      form.is_active ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1">
@@ -831,6 +895,52 @@ function CategoryDetailPage({ categoryId, initialCategory, existingCategories = 
         </div>
 
       </div>
+
+      {/* Prominent Bottom Action Bar (as requested: Save Changes at bottom of form) */}
+      <div className="p-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl shadow-sm flex items-center justify-between sticky bottom-4 z-20">
+        <button
+          type="button"
+          onClick={onBack}
+          className="px-4 py-2 text-xs font-bold text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-xl transition-colors cursor-pointer"
+        >
+          Cancel
+        </button>
+
+        <div className="flex items-center gap-3">
+          {!isNew && (
+            <button
+              type="button"
+              onClick={promptDeleteCategory}
+              className="px-4 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors cursor-pointer"
+            >
+              Delete Category
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="px-6 py-2.5 bg-fire hover:bg-fire-hover text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-sm hover:shadow-fire/20 transition-all flex items-center gap-2 cursor-pointer"
+          >
+            {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+            <span>{isNew ? "Create Category" : "Save Changes"}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Reusable Custom Confirm Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        cancelText="Cancel"
+        variant={confirmModal.variant || "danger"}
+        loading={confirmModal.loading}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal({ isOpen: false })}
+      />
 
     </div>
   );

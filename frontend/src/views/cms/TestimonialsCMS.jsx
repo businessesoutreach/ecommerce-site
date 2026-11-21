@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { http } from '../../lib/api';
 import { toast } from "sonner";
+import ConfirmModal from '../../components/ConfirmModal';
 import { Trash2, Star } from 'lucide-react';
 
 export default function TestimonialsCMS() {
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false });
   const [testimonials, setTestimonials] = useState([]);
   const [f, setF] = useState({ author_name: "", author_meta: "Verified Customer", content: "", rating: 5 });
   const [loading, setLoading] = useState(true);
@@ -33,15 +35,26 @@ export default function TestimonialsCMS() {
     }
   };
 
-  const del = async (id) => { 
-    if(!window.confirm("Delete this testimonial?")) return;
-    try {
-      await http.delete(`/admin/cms/testimonials/${id}`); 
-      toast.success("Testimonial deleted");
-      load(); 
-    } catch (err) {
-      toast.error("Failed to delete testimonial");
-    }
+  const del = (id) => { 
+    setConfirmModal({
+      isOpen: true,
+      title: "Delete this testimonial?",
+      message: "Are you sure you want to delete this customer review testimonial?",
+      confirmText: "Delete Testimonial",
+      variant: "danger",
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, loading: true }));
+        try {
+          await http.delete(`/admin/cms/testimonials/${id}`); 
+          toast.success("Testimonial deleted");
+          setConfirmModal({ isOpen: false });
+          load(); 
+        } catch (err) {
+          toast.error("Failed to delete testimonial");
+          setConfirmModal(prev => ({ ...prev, loading: false }));
+        }
+      }
+    });
   };
 
   const toggleStatus = async (testimonial) => {

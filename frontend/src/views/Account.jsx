@@ -28,6 +28,7 @@ import { useStore } from "../context/StoreContext";
 import { EmptyState } from "../components/common";
 import PhoneInput from "../components/PhoneInput";
 import ProductCard from "../components/ProductCard";
+import ConfirmModal from "../components/ConfirmModal";
 import { toast } from "sonner";
 import {
   CustomDropdown,
@@ -84,6 +85,7 @@ function AddressesTab() {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [settingDefaultId, setSettingDefaultId] = useState(null);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
   const load = () =>
     http
@@ -156,19 +158,30 @@ function AddressesTab() {
     }
   };
 
-  const del = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this address?")) return;
-    setDeletingId(id);
-    try {
-      await http.delete(`/me/addresses/${id}`);
-      toast.success("Address removed");
-      if (editingId === id) resetForm();
-      load();
-    } catch (e) {
-      toast.error("Could not delete address");
-    } finally {
-      setDeletingId(null);
-    }
+  const del = (id) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Delete this shipping address?",
+      message: "Are you sure you want to remove this address from your saved address book?",
+      confirmText: "Delete Address",
+      variant: "danger",
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, loading: true }));
+        setDeletingId(id);
+        try {
+          await http.delete(`/me/addresses/${id}`);
+          toast.success("Address removed");
+          if (editingId === id) resetForm();
+          setConfirmModal({ isOpen: false });
+          load();
+        } catch (e) {
+          toast.error("Could not delete address");
+          setConfirmModal(prev => ({ ...prev, loading: false }));
+        } finally {
+          setDeletingId(null);
+        }
+      }
+    });
   };
 
   const inp =
@@ -377,6 +390,18 @@ function AddressesTab() {
           </button>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        cancelText="Cancel"
+        variant={confirmModal.variant || "danger"}
+        loading={confirmModal.loading}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal({ isOpen: false })}
+      />
     </div>
   );
 }

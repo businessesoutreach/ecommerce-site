@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { http } from '../../lib/api';
 import { toast } from "sonner";
+import ConfirmModal from '../../components/ConfirmModal';
 import { Trash2, Edit } from 'lucide-react';
 
 export default function PagesCMS() {
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false });
   const [pages, setPages] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [f, setF] = useState({ title: "", slug: "", content_html: "", seo_title: "", seo_description: "" });
@@ -37,15 +39,26 @@ export default function PagesCMS() {
     }
   };
 
-  const del = async (id) => { 
-    if(!window.confirm("Delete this page? This might break links if hardcoded.")) return;
-    try {
-      await http.delete(`/admin/cms/pages/${id}`); 
-      toast.success("Page deleted");
-      load(); 
-    } catch (err) {
-      toast.error("Failed to delete page");
-    }
+  const del = (id) => { 
+    setConfirmModal({
+      isOpen: true,
+      title: "Delete this page?",
+      message: "This might break navigation links if this page slug is referenced. Are you sure you want to delete it?",
+      confirmText: "Delete Page",
+      variant: "danger",
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, loading: true }));
+        try {
+          await http.delete(`/admin/cms/pages/${id}`); 
+          toast.success("Page deleted");
+          setConfirmModal({ isOpen: false });
+          load(); 
+        } catch (err) {
+          toast.error("Failed to delete page");
+          setConfirmModal(prev => ({ ...prev, loading: false }));
+        }
+      }
+    });
   };
 
   const toggleStatus = async (page) => {

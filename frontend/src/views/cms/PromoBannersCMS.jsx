@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { http, imgUrl } from '../../lib/api';
 import { toast } from "sonner";
+import ConfirmModal from '../../components/ConfirmModal';
 import { Trash2, Upload } from 'lucide-react';
 
 async function uploadImage(file) {
@@ -38,6 +39,7 @@ function ImageInput({ value, onChange }) {
 }
 
 export default function PromoBannersCMS() {
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false });
   const [banners, setBanners] = useState([]);
   const [f, setF] = useState({ title: "", subtitle: "", cta_text: "SHOP SALE", link: "/sale", image_url: "", start_date: "", end_date: "" });
   const [loading, setLoading] = useState(true);
@@ -68,15 +70,26 @@ export default function PromoBannersCMS() {
     }
   };
 
-  const del = async (id) => { 
-    if(!window.confirm("Delete this banner?")) return;
-    try {
-      await http.delete(`/admin/cms/promo-banners/${id}`); 
-      toast.success("Banner deleted");
-      load(); 
-    } catch (err) {
-      toast.error("Failed to delete banner");
-    }
+  const del = (id) => { 
+    setConfirmModal({
+      isOpen: true,
+      title: "Delete this promo banner?",
+      message: "Are you sure you want to delete this promotional banner?",
+      confirmText: "Delete Banner",
+      variant: "danger",
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, loading: true }));
+        try {
+          await http.delete(`/admin/cms/promo-banners/${id}`); 
+          toast.success("Banner deleted");
+          setConfirmModal({ isOpen: false });
+          load(); 
+        } catch (err) {
+          toast.error("Failed to delete banner");
+          setConfirmModal(prev => ({ ...prev, loading: false }));
+        }
+      }
+    });
   };
 
   const toggleStatus = async (banner) => {

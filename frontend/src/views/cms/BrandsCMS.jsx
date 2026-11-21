@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { http } from '../../lib/api';
 import { toast } from "sonner";
+import ConfirmModal from '../../components/ConfirmModal';
 import { Trash2, Upload, Box, Plus, Edit2, Check, X, Loader2, Image as ImageIcon, Search } from 'lucide-react';
 
 async function uploadBrandLogo(file) {
@@ -17,6 +18,7 @@ export default function BrandsCMS() {
   const [editingId, setEditingId] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [search, setSearch] = useState("");
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
   const [form, setForm] = useState({
     name: "",
@@ -94,15 +96,26 @@ export default function BrandsCMS() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const del = async (id, name) => {
-    if (!window.confirm(`Delete brand "${name}"? Existing sneaker records will keep their reference.`)) return;
-    try {
-      await http.delete(`/admin/brands/${id}`);
-      toast.success("Brand deleted");
-      load();
-    } catch (err) {
-      toast.error("Failed to delete brand");
-    }
+  const del = (id, name) => {
+    setConfirmModal({
+      isOpen: true,
+      title: `Delete brand "${name}"?`,
+      message: "Existing sneaker records will keep their reference, but this brand silhouette will be removed from future selection.",
+      confirmText: "Delete Brand",
+      variant: "danger",
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, loading: true }));
+        try {
+          await http.delete(`/admin/brands/${id}`);
+          toast.success("Brand deleted");
+          setConfirmModal({ isOpen: false });
+          load();
+        } catch (err) {
+          toast.error("Failed to delete brand");
+          setConfirmModal(prev => ({ ...prev, loading: false }));
+        }
+      }
+    });
   };
 
   const filteredBrands = brands.filter(b => 
@@ -348,6 +361,18 @@ export default function BrandsCMS() {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        cancelText="Cancel"
+        variant={confirmModal.variant || "danger"}
+        loading={confirmModal.loading}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal({ isOpen: false })}
+      />
 
     </div>
   );

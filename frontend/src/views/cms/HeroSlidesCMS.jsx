@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { http, imgUrl } from '../../lib/api';
 import { toast } from "sonner";
+import ConfirmModal from '../../components/ConfirmModal';
 import { Trash2, Image as ImageIcon, Upload } from 'lucide-react';
 
 async function uploadImage(file) {
@@ -38,6 +39,7 @@ function ImageInput({ value, onChange }) {
 }
 
 export default function HeroSlidesCMS() {
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false });
   const [slides, setSlides] = useState([]);
   const [loading, setLoading] = useState(true);
   const [f, setF] = useState({ title: "", subtitle: "", badge: "", cta_text: "Shop Now", link_url: "/new-arrivals", image_url: "", start_date: "", end_date: "" });
@@ -69,15 +71,26 @@ export default function HeroSlidesCMS() {
     }
   };
 
-  const del = async (id) => { 
-    if(!window.confirm('Delete this slide?')) return;
-    try {
-      await http.delete(`/admin/hero-slides/${id}`); 
-      toast.success("Slide deleted");
-      load(); 
-    } catch (err) {
-      toast.error("Failed to delete slide");
-    }
+  const del = (id) => { 
+    setConfirmModal({
+      isOpen: true,
+      title: "Delete this hero slide?",
+      message: "Are you sure you want to remove this slide from the storefront homepage carousel?",
+      confirmText: "Delete Slide",
+      variant: "danger",
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, loading: true }));
+        try {
+          await http.delete(`/admin/hero-slides/${id}`); 
+          toast.success("Slide deleted");
+          setConfirmModal({ isOpen: false });
+          load(); 
+        } catch (err) {
+          toast.error("Failed to delete slide");
+          setConfirmModal(prev => ({ ...prev, loading: false }));
+        }
+      }
+    });
   };
 
   const toggleStatus = async (slide) => {

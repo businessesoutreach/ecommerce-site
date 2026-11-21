@@ -18,6 +18,7 @@ import FlashSaleCMS from './cms/FlashSaleCMS';
 import TestimonialsCMS from './cms/TestimonialsCMS';
 import PagesCMS from './cms/PagesCMS';
 import SeoCMS from './cms/SeoCMS';
+import ConfirmModal from '../components/ConfirmModal';
 
 
 const ORDER_STATES = ["placed", "confirmed", "packed", "shipped", "out_for_delivery", "delivered", "cancelled", "returned"];
@@ -979,6 +980,7 @@ function Orders() {
   const [showStatusGuide, setShowStatusGuide] = useState(false);
   const [trackParcelOrder, setTrackParcelOrder] = useState(null);
   const [showBulkStatusMenu, setShowBulkStatusMenu] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false });
   const bulkDropdownRef = useRef(null);
 
   useEffect(() => {
@@ -1047,11 +1049,26 @@ function Orders() {
     }
   };
 
-  const bulkUpdateStatus = async (status) => { 
-    if(!window.confirm(`Mark ${selected.length} orders as ${status}?`)) return;
-    await http.patch(`/admin/orders/bulk-status`, { orderIds: selected, status });
-    toast.success(`Updated ${selected.length} orders to ${status}`);
-    load();
+  const bulkUpdateStatus = (status) => { 
+    setConfirmModal({
+      isOpen: true,
+      title: `Update ${selected.length} orders?`,
+      message: `Are you sure you want to mark ${selected.length} selected orders as "${status.replace(/_/g, ' ')}"?`,
+      confirmText: `Mark as ${status.replace(/_/g, ' ')}`,
+      variant: status === "cancelled" ? "danger" : "primary",
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, loading: true }));
+        try {
+          await http.patch(`/admin/orders/bulk-status`, { orderIds: selected, status });
+          toast.success(`Updated ${selected.length} orders to ${status}`);
+          setConfirmModal({ isOpen: false });
+          load();
+        } catch (e) {
+          toast.error(e.response?.data?.detail || "Failed to update status");
+          setConfirmModal(prev => ({ ...prev, loading: false }));
+        }
+      }
+    });
   };
 
   const toggleSelect = (id) => setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
@@ -3306,14 +3323,30 @@ function Products() {
     else setSelected([...selected, id]);
   };
 
-  const bulkUpdate = async (action, value = null) => {
-    if (!window.confirm(`Are you sure you want to ${action} ${selected.length} products?`)) return;
-    try {
-      await http.patch("/admin/products/bulk", { productIds: selected, action, value });
-      toast.success(`Bulk action completed successfully`);
-      setSelected([]);
-      load();
-    } catch (e) { toast.error("Action failed"); }
+  const bulkUpdate = (action, value = null) => {
+    const isDelete = action === 'delete';
+    setConfirmModal({
+      isOpen: true,
+      title: isDelete ? `Delete ${selected.length} products?` : `Apply ${action} to ${selected.length} products?`,
+      message: isDelete
+        ? `Are you sure you want to permanently delete ${selected.length} selected products? This action cannot be undone.`
+        : `Are you sure you want to ${action} ${selected.length} selected products?`,
+      confirmText: isDelete ? 'Delete Products' : 'Confirm Action',
+      variant: isDelete ? 'danger' : 'primary',
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, loading: true }));
+        try {
+          await http.patch("/admin/products/bulk", { productIds: selected, action, value });
+          toast.success(`Bulk action completed successfully`);
+          setSelected([]);
+          setConfirmModal({ isOpen: false });
+          load();
+        } catch (e) {
+          toast.error("Action failed");
+          setConfirmModal(prev => ({ ...prev, loading: false }));
+        }
+      }
+    });
   };
 
   const duplicate = async (id) => {
@@ -3327,13 +3360,26 @@ function Products() {
     } catch (e) { toast.error("Duplication failed"); }
   };
   
-  const del = async (id) => {
-    if (!window.confirm("Permanently delete this product drop? This action cannot be undone.")) return;
-    try {
-      await http.patch("/admin/products/bulk", { productIds: [id], action: 'delete' });
-      toast.success("Product deleted successfully");
-      load();
-    } catch (e) { toast.error("Delete failed"); }
+  const del = (id) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Permanently delete product?",
+      message: "Permanently delete this product drop? This action cannot be undone.",
+      confirmText: "Delete Product",
+      variant: "danger",
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, loading: true }));
+        try {
+          await http.patch("/admin/products/bulk", { productIds: [id], action: 'delete' });
+          toast.success("Product deleted successfully");
+          setConfirmModal({ isOpen: false });
+          load();
+        } catch (e) {
+          toast.error("Delete failed");
+          setConfirmModal(prev => ({ ...prev, loading: false }));
+        }
+      }
+    });
   };
 
   const exportCSV = () => {
@@ -3757,6 +3803,18 @@ function Products() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        cancelText="Cancel"
+        variant={confirmModal.variant || "danger"}
+        loading={confirmModal.loading}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal({ isOpen: false })}
+      />
     </div>
   );
 }
@@ -3770,6 +3828,7 @@ function Products() {
 function ProductDetailPage({ productId, initialProduct, isNew = false, onBack, onSaved, onDelete }) {
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false });
   const [activePhotoIdx, setActivePhotoIdx] = useState(0);
   const [urlInput, setUrlInput] = useState("");
   const [customSizeInput, setCustomSizeInput] = useState("");
@@ -4055,17 +4114,28 @@ function ProductDetailPage({ productId, initialProduct, isNew = false, onBack, o
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (isNew || !productId) return;
-    if (!window.confirm("Permanently delete this product drop? This action cannot be undone.")) return;
-    try {
-      await http.patch("/admin/products/bulk", { productIds: [productId], action: 'delete' });
-      toast.success("Product deleted");
-      if (onDelete) onDelete();
-      else onBack();
-    } catch (e) {
-      toast.error("Failed to delete product");
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: `Delete product "${form.name || 'this item'}"?`,
+      message: "Permanently delete this product drop? This action cannot be undone.",
+      confirmText: "Delete Product",
+      variant: "danger",
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, loading: true }));
+        try {
+          await http.patch("/admin/products/bulk", { productIds: [productId], action: 'delete' });
+          toast.success("Product deleted");
+          setConfirmModal({ isOpen: false });
+          if (onDelete) onDelete();
+          else onBack();
+        } catch (e) {
+          toast.error("Failed to delete product");
+          setConfirmModal(prev => ({ ...prev, loading: false }));
+        }
+      }
+    });
   };
 
   if (loading) {
@@ -4844,6 +4914,18 @@ function ProductDetailPage({ productId, initialProduct, isNew = false, onBack, o
         </div>
 
       </div>
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        cancelText="Cancel"
+        variant={confirmModal.variant || "danger"}
+        loading={confirmModal.loading}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal({ isOpen: false })}
+      />
 
     </div>
   );
@@ -6375,14 +6457,28 @@ function Customers() {
     else setSelected([...selected, id]);
   };
 
-  const bulkUpdate = async (action) => {
-    if (!window.confirm(`Are you sure you want to ${action} ${selected.length} customers?`)) return;
-    try {
-      await http.patch("/admin/users/bulk", { userIds: selected, action });
-      toast.success(`Bulk action completed`);
-      setSelected([]);
-      load();
-    } catch (e) { toast.error("Action failed"); }
+  const bulkUpdate = (action) => {
+    const isBlock = action === 'block';
+    setConfirmModal({
+      isOpen: true,
+      title: `${isBlock ? 'Block' : 'Update'} ${selected.length} customers?`,
+      message: `Are you sure you want to ${action} ${selected.length} selected customer accounts?`,
+      confirmText: isBlock ? 'Block Customers' : 'Confirm Action',
+      variant: isBlock ? 'danger' : 'primary',
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, loading: true }));
+        try {
+          await http.patch("/admin/users/bulk", { userIds: selected, action });
+          toast.success(`Bulk action completed`);
+          setSelected([]);
+          setConfirmModal({ isOpen: false });
+          load();
+        } catch (e) {
+          toast.error("Action failed");
+          setConfirmModal(prev => ({ ...prev, loading: false }));
+        }
+      }
+    });
   };
 
   const block = async (id, val) => {
@@ -6516,6 +6612,18 @@ function Customers() {
       )}
 
       {viewUser && <CustomerDetailsDrawer user={viewUser} onClose={() => setViewUser(null)} onUpdate={load} />}
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        cancelText="Cancel"
+        variant={confirmModal.variant || "danger"}
+        loading={confirmModal.loading}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal({ isOpen: false })}
+      />
     </div>
   );
 }
@@ -7149,6 +7257,7 @@ function BundlesManager() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [allProducts, setAllProducts] = useState([]);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
   const load = () => {
     setLoading(true);
@@ -7160,11 +7269,26 @@ function BundlesManager() {
     http.get('/admin/products?limit=200').then(res => setAllProducts(res.data.data.products || []));
   }, []);
 
-  const del = async (id) => {
-    if (!window.confirm('Delete this bundle?')) return;
-    await http.delete(`/admin/bundles/${id}`);
-    toast.success('Bundle deleted');
-    load();
+  const del = (id) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Delete this bundle?",
+      message: "Are you sure you want to delete this bundle? Products in the bundle will not be deleted.",
+      confirmText: "Delete Bundle",
+      variant: "danger",
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, loading: true }));
+        try {
+          await http.delete(`/admin/bundles/${id}`);
+          toast.success('Bundle deleted');
+          setConfirmModal({ isOpen: false });
+          load();
+        } catch (e) {
+          toast.error("Failed to delete bundle");
+          setConfirmModal(prev => ({ ...prev, loading: false }));
+        }
+      }
+    });
   };
 
   const totalRRP = (b) => b.items?.reduce((acc, it) => acc + (it.product?.base_price || 0) * it.quantity, 0) || 0;
@@ -7233,6 +7357,18 @@ function BundlesManager() {
           onSaved={() => { setShowForm(false); load(); }}
         />
       )}
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        cancelText="Cancel"
+        variant={confirmModal.variant || "danger"}
+        loading={confirmModal.loading}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal({ isOpen: false })}
+      />
     </div>
   );
 }
