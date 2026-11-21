@@ -9398,10 +9398,101 @@ function ProfitabilityAnalytics() {
               </div>
               <div className="flex items-center justify-between text-[10px] text-gray-400 font-mono">
                 <span>Returns / Cancellations:</span>
-                            <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-zinc-800 flex items-center justify-center shrink-0">
-                              <Box size={14} className="text-gray-400" />
-                            </div>
-                          )}
+                <span className="text-rose-500 font-bold">{returnRate}%</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* Two-Column Lower Grid: Regional Demand & Top Products Unit Economics */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+          {/* Left Column (5 cols): Geographic Breakdown (Top Cities & Provinces) */}
+          <div className="lg:col-span-5 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-100 dark:border-zinc-800 pb-3">
+              <h3 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-2">
+                <MapPin size={15} className="text-fire" />
+                Geographic Order Volume & Cities
+              </h3>
+              <span className="text-[10px] text-gray-400">Delivery destinations</span>
+            </div>
+
+            <div className="space-y-3">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">Top Demand Cities</span>
+              {cities.length === 0 ? (
+                <p className="text-xs text-gray-400 py-4 text-center">No city data available</p>
+              ) : (
+                cities.map(c => (
+                  <div key={c.city} className="flex items-center justify-between text-xs p-2 rounded-xl bg-gray-50 dark:bg-zinc-800/40">
+                    <div className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-fire" />
+                      <span className="font-bold text-gray-800 dark:text-zinc-200">{c.city}</span>
+                    </div>
+                    <span className="font-mono font-bold text-gray-900 dark:text-zinc-100">{fmt(c.revenue)}</span>
+                  </div>
+                ))
+              )}
+
+              {provinces.length > 0 && (
+                <div className="pt-3 border-t border-gray-100 dark:border-zinc-800 space-y-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">Provinces</span>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    {provinces.map(p => (
+                      <div key={p.province} className="p-2 bg-gray-50 dark:bg-zinc-800/40 rounded-xl">
+                        <span className="text-[10px] text-gray-400 block">{p.province}</span>
+                        <span className="font-mono font-bold text-gray-900 dark:text-zinc-100">{fmt(p.revenue)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Column (7 cols): Top Sneaker Unit Economics Table */}
+          <div className="lg:col-span-7 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-100 dark:border-zinc-800 pb-3">
+              <div>
+                <h3 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-2">
+                  <ShoppingBag size={15} className="text-fire" />
+                  Top Performing Sneaker Drops & Unit Margins
+                </h3>
+                <p className="text-[10px] text-gray-400 mt-0.5">Ranked by gross sales volume and net profitability</p>
+              </div>
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300">
+                Top 10
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              {topProducts.length === 0 ? (
+                <p className="text-xs text-gray-400 py-8 text-center">No product orders recorded in this interval</p>
+              ) : (
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-gray-100 dark:border-zinc-800 text-[10px] font-bold uppercase text-gray-400 tracking-wider">
+                      <th className="pb-2.5">Sneaker Silhouette</th>
+                      <th className="pb-2.5 text-center">Sold</th>
+                      <th className="pb-2.5 text-right">Revenue</th>
+                      <th className="pb-2.5 text-right">Net Profit</th>
+                      <th className="pb-2.5 text-right">Margin</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50 dark:divide-zinc-800/60 font-mono">
+                    {topProducts.map((p, idx) => (
+                      <tr key={p.id || idx} className="hover:bg-gray-50/60 dark:hover:bg-zinc-800/30 transition-colors">
+                        <td className="py-2.5 pr-2 font-sans">
+                          <div className="flex items-center gap-2.5">
+                            {p.image ? (
+                              <img src={p.image} alt="" className="w-8 h-8 rounded-lg object-cover bg-gray-100 shrink-0" />
+                            ) : (
+                              <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-zinc-800 flex items-center justify-center shrink-0">
+                                <Box size={14} className="text-gray-400" />
+                              </div>
+                            )}
                           <div className="min-w-0">
                             <span className="font-bold text-gray-900 dark:text-zinc-100 truncate block text-xs">
                               {p.name}
