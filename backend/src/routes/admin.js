@@ -1933,8 +1933,59 @@ router.patch('/settings', async (req, res) => {
 
 router.get('/returns', async (req, res) => {
     try {
-        const items = await prisma.returnRequest.findMany({ orderBy: { created_at: 'desc' } });
-        res.json({ success: true, data: items });
+        const { search, status, reason } = req.query;
+        const where = {};
+        if (status && status !== 'all') where.status = status;
+        if (reason && reason !== 'all') where.reason = { contains: reason, mode: 'insensitive' };
+        if (search) {
+            where.OR = [
+                { id: { contains: search, mode: 'insensitive' } },
+                { order_number: { contains: search, mode: 'insensitive' } },
+                { customer_name: { contains: search, mode: 'insensitive' } },
+                { customer_phone: { contains: search, mode: 'insensitive' } }
+            ];
+        }
+
+        const [items, allReturns] = await Promise.all([
+            prisma.returnRequest.findMany({
+                where,
+                orderBy: { created_at: 'desc' },
+                include: { order: true }
+            }),
+            prisma.returnRequest.findMany()
+        ]);
+
+        const stats = {
+            total: allReturns.length,
+            pending: allReturns.filter(r => r.status === 'pending').length,
+            approved: allReturns.filter(r => r.status === 'approved').length,
+            processing: allReturns.filter(r => r.status === 'processing').length,
+            refunded: allReturns.filter(r => r.status === 'refunded').length,
+            rejected: allReturns.filter(r => r.status === 'rejected').length,
+            refund_amount: allReturns.filter(r => r.status === 'refunded').reduce((acc, r) => acc + (r.refund_amount || 0), 0)
+        };
+
+        res.json({
+            success: true,
+            data: {
+                returns: items,
+                stats,
+                pagination: { totalCount: items.length, page: 1, totalPages: 1 }
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ detail: err.message });
+    }
+});
+
+router.get('/returns/:id', async (req, res) => {
+    try {
+        const item = await prisma.returnRequest.findUnique({
+            where: { id: req.params.id },
+            include: { order: true, refunds: true }
+        });
+        if (!item) return res.status(404).json({ detail: 'Return request not found' });
+        res.json({ success: true, data: item });
     } catch (err) {
         res.status(500).json({ detail: err.message });
     }
@@ -1942,25 +1993,39 @@ router.get('/returns', async (req, res) => {
 
 router.patch('/returns/:id', async (req, res) => {
     try {
-        const { status } = req.body;
-        if (!['approved', 'rejected'].includes(status)) {
+        const { status, refund_amount, admin_note } = req.body;
+        if (!['pending', 'approved', 'processing', 'refunded', 'rejected'].includes(status)) {
             return res.status(400).json({ detail: 'Invalid status' });
         }
         
-        const rr = await prisma.returnRequest.findUnique({ where: { id: req.params.id } });
-        if (!rr) return res.status(404).json({ detail: 'Return request not found' });
-        if (rr.status !== 'pending') return res.status(400).json({ detail: `Return already ${rr.status}` });
-        
-        await prisma.returnRequest.update({
+        const updateData = { status };
+        if (refund_amount !== undefined) updateData.refund_amount = Number(refund_amount) || 0;
+
+        const updated = await prisma.returnRequest.update({
             where: { id: req.params.id },
-            data: { status }
+            data: updateData,
+            include: { order: true }
         });
+
+        // If marked refunded, also log a completed Refund record automatically
+        if (status === 'refunded' && updated.order) {
+            await prisma.refund.create({
+                data: {
+                    id: uuidv4(),
+                    order_id: updated.order_id,
+                    order_number: updated.order_number,
+                    return_request_id: updated.id,
+                    amount: updated.refund_amount > 0 ? updated.refund_amount : updated.order.total,
+                    reason: updated.reason || 'Customer Return Refund',
+                    method: updated.order.payment_method === 'COD' ? 'cod' : 'card',
+                    status: 'completed',
+                    processed_at: new Date()
+                }
+            }).catch(e => console.error("Auto refund ledger creation notice:", e.message));
+        }
         
-        const updated = await prisma.returnRequest.findUnique({ where: { id: req.params.id } });
-        const o = await prisma.order.findUnique({ where: { id: rr.order_id } });
-        
-        if (o) {
-            await notify(o, 'RETURN_UPDATE', `Your return for ${o.order_number} was ${status}.`);
+        if (updated.order) {
+            await notify(updated.order, 'RETURN_UPDATE', `Your return for ${updated.order_number} was ${status}.`);
         }
         
         res.json({ success: true, data: updated });
