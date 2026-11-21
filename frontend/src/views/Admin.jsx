@@ -14,10 +14,7 @@ import HeroSlidesCMS from './cms/HeroSlidesCMS';
 import CategoriesCMS from './cms/CategoriesCMS';
 import BrandsCMS from './cms/BrandsCMS';
 import ProductSectionsCMS from './cms/ProductSectionsCMS';
-import FlashSaleCMS from './cms/FlashSaleCMS';
 import TestimonialsCMS from './cms/TestimonialsCMS';
-import PagesCMS from './cms/PagesCMS';
-import SeoCMS from './cms/SeoCMS';
 import ConfirmModal from '../components/ConfirmModal';
 
 function TableActionDropdown({ isOpen, onToggle, onClose, children, menuWidth = "w-48" }) {
@@ -236,8 +233,8 @@ function AdminSearchModal({ isOpen, onClose, activeTab }) {
               type="button"
               onClick={() => setActiveFilter(f.id)}
               className={`px-3 py-1 rounded-lg font-bold text-xs transition-all cursor-pointer shrink-0 ${activeFilter === f.id
-                  ? "bg-fire text-white shadow-xs"
-                  : "bg-white dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-700 border border-gray-200 dark:border-zinc-700"
+                ? "bg-fire text-white shadow-xs"
+                : "bg-white dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-700 border border-gray-200 dark:border-zinc-700"
                 }`}
             >
               {f.label}
@@ -488,10 +485,7 @@ export default function Admin() {
     { id: "cms_hero", label: "Hero Slides", icon: ImageIcon },
     { id: "cms_announcement", label: "Announcement Bar", icon: Megaphone },
     { id: "cms_product_sections", label: "Product Sections", icon: Layers },
-    { id: "cms_flash_sale", label: "Flash Sale", icon: Zap },
     { id: "cms_testimonials", label: "Testimonials", icon: Star },
-    { id: "cms_pages", label: "Custom Pages", icon: FileText },
-    { id: "cms_seo", label: "SEO Settings", icon: SearchIcon },
   ];
 
   const NAV_SECTIONS = [
@@ -568,11 +562,10 @@ export default function Admin() {
                           if (!isCmsTab) setTab("cms_homepage");
                         }}
                         data-testid={`admin-nav-${k}`}
-                        className={`w-full flex items-center justify-between px-3 py-2 rounded-lg font-bold text-xs transition-all cursor-pointer ${
-                          isParentActive
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-lg font-bold text-xs transition-all cursor-pointer ${isParentActive
                             ? "bg-fire/10 dark:bg-fire/20 text-fire border border-fire/20 shadow-2xs"
                             : "text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 hover:bg-gray-100/70 dark:hover:bg-zinc-800/60 border border-transparent"
-                        }`}
+                          }`}
                         title={l}
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
@@ -581,9 +574,8 @@ export default function Admin() {
                         </div>
                         <ChevronDown
                           size={13}
-                          className={`hidden lg:block transition-transform duration-200 shrink-0 ${
-                            cmsExpanded ? "rotate-180" : ""
-                          }`}
+                          className={`hidden lg:block transition-transform duration-200 shrink-0 ${cmsExpanded ? "rotate-180" : ""
+                            }`}
                         />
                       </button>
 
@@ -598,11 +590,10 @@ export default function Admin() {
                                 key={sub.id}
                                 type="button"
                                 onClick={() => setTab(sub.id)}
-                                className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[11px] font-semibold transition-colors text-left cursor-pointer ${
-                                  isSubActive
+                                className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[11px] font-semibold transition-colors text-left cursor-pointer ${isSubActive
                                     ? "bg-fire text-white font-bold shadow-2xs"
                                     : "text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 hover:bg-gray-100 dark:hover:bg-zinc-800/50"
-                                }`}
+                                  }`}
                               >
                                 <SubIcon size={12} className="shrink-0" />
                                 <span className="truncate">{sub.label}</span>
@@ -722,10 +713,7 @@ export default function Admin() {
           {tab === "cms_hero" && <HeroSlidesCMS />}
           {tab === "cms_announcement" && <StoreSettings />}
           {tab === "cms_product_sections" && <ProductSectionsCMS />}
-          {tab === "cms_flash_sale" && <FlashSaleCMS />}
-          {tab === "cms_testimonials" && <TestimonialsCMS />}
-          {tab === "cms_pages" && <PagesCMS />}
-          {tab === "cms_seo" && <SeoCMS />}
+          {tab === "cms_testimonials" && <TestimonialsCMS isDark={isDark} />}
 
           {tab === "profitability" && <ProfitabilityAnalytics />}
           {tab === "audit_logs" && <AuditLogs isDark={isDark} />}
@@ -3818,10 +3806,10 @@ function QuickStockModal({ product, onClose, onUpdated, isDark }) {
                   {product.brand_slug || "AirVault"} • {product.category_slug}
                 </span>
                 <span className={`inline-flex items-center gap-1 font-mono font-bold px-2 py-0.5 rounded-full text-[10px] ${totalPairs === 0
-                    ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900'
-                    : totalPairs <= 5
-                      ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900'
-                      : 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900'
+                  ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900'
+                  : totalPairs <= 5
+                    ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900'
+                    : 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900'
                   }`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${totalPairs === 0 ? 'bg-rose-500' : totalPairs <= 5 ? 'bg-amber-500' : 'bg-emerald-500'}`} />
                   {totalPairs} {totalPairs === 1 ? 'pair' : 'pairs'}
@@ -3895,10 +3883,10 @@ function QuickStockModal({ product, onClose, onUpdated, isDark }) {
                   <div
                     key={s.id}
                     className={`p-3 rounded-xl border flex flex-col justify-between gap-2 transition-colors ${isOos
-                        ? "bg-rose-50/40 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50"
-                        : isLow
-                          ? "bg-amber-50/40 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50"
-                          : "bg-gray-50/60 dark:bg-zinc-800/40 border-gray-200 dark:border-zinc-700/60"
+                      ? "bg-rose-50/40 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50"
+                      : isLow
+                        ? "bg-amber-50/40 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50"
+                        : "bg-gray-50/60 dark:bg-zinc-800/40 border-gray-200 dark:border-zinc-700/60"
                       }`}
                   >
                     <div className="flex items-center justify-between">
@@ -3906,10 +3894,10 @@ function QuickStockModal({ product, onClose, onUpdated, isDark }) {
                         Size {s.size}
                       </span>
                       <span className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded ${isOos
-                          ? "bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300"
-                          : isLow
-                            ? "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300"
-                            : "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300"
+                        ? "bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300"
+                        : isLow
+                          ? "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300"
+                          : "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300"
                         }`}>
                         {isOos ? "OOS" : isLow ? "Low" : "In Stock"}
                       </span>
@@ -4243,8 +4231,8 @@ function Products({ isDark, initialStockFilter }) {
               }}
               title={`Click to filter by ${s.label}`}
               className={`bg-white dark:bg-zinc-900 p-5 rounded-2xl border transition-all cursor-pointer shadow-sm flex flex-col justify-between hover:border-fire/50 hover:shadow-md ${isActiveFilter
-                  ? 'border-fire ring-2 ring-fire/20 dark:ring-fire/30'
-                  : 'border-gray-200 dark:border-zinc-800'
+                ? 'border-fire ring-2 ring-fire/20 dark:ring-fire/30'
+                : 'border-gray-200 dark:border-zinc-800'
                 }`}
             >
               <div className="flex items-center justify-between">
@@ -4464,10 +4452,10 @@ function Products({ isDark, initialStockFilter }) {
                             }}
                             title="Click to quickly adjust stock quantities across sizes"
                             className={`inline-flex items-center justify-center gap-1.5 font-mono font-bold px-3 py-1 rounded-full text-xs whitespace-nowrap shadow-xs hover:scale-105 active:scale-95 transition-all cursor-pointer group/stock ${stock === 0
-                                ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 hover:bg-rose-100 dark:hover:bg-rose-900/40'
-                                : stock <= 5
-                                  ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900 hover:bg-amber-100 dark:hover:bg-amber-900/40'
-                                  : 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'
+                              ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 hover:bg-rose-100 dark:hover:bg-rose-900/40'
+                              : stock <= 5
+                                ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900 hover:bg-amber-100 dark:hover:bg-amber-900/40'
+                                : 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'
                               }`}
                           >
                             <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${stock === 0 ? 'bg-rose-500' : stock <= 5 ? 'bg-amber-500' : 'bg-emerald-500'}`} />
@@ -6167,8 +6155,8 @@ function CreateCouponForm({ onClose, onCreated, isDark }) {
                     type="button"
                     onClick={() => setF({ ...f, type: 'percentage' })}
                     className={`flex-1 py-2 text-xs font-bold rounded-lg border transition-colors ${f.type === 'percentage'
-                        ? 'bg-obsidian text-white border-obsidian dark:bg-white dark:text-black dark:border-white'
-                        : 'bg-white dark:bg-zinc-900 text-gray-700 dark:text-zinc-300 border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800'
+                      ? 'bg-obsidian text-white border-obsidian dark:bg-white dark:text-black dark:border-white'
+                      : 'bg-white dark:bg-zinc-900 text-gray-700 dark:text-zinc-300 border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800'
                       }`}
                   >
                     Percentage (%)
@@ -6177,8 +6165,8 @@ function CreateCouponForm({ onClose, onCreated, isDark }) {
                     type="button"
                     onClick={() => setF({ ...f, type: 'flat' })}
                     className={`flex-1 py-2 text-xs font-bold rounded-lg border transition-colors ${f.type === 'flat'
-                        ? 'bg-obsidian text-white border-obsidian dark:bg-white dark:text-black dark:border-white'
-                        : 'bg-white dark:bg-zinc-900 text-gray-700 dark:text-zinc-300 border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800'
+                      ? 'bg-obsidian text-white border-obsidian dark:bg-white dark:text-black dark:border-white'
+                      : 'bg-white dark:bg-zinc-900 text-gray-700 dark:text-zinc-300 border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800'
                       }`}
                   >
                     Fixed (Rs)
@@ -6540,8 +6528,8 @@ function Reviews({ isDark }) {
               <button
                 onClick={() => setChartMode('count')}
                 className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${chartMode === 'count'
-                    ? 'bg-white dark:bg-zinc-900 text-gray-900 dark:text-white shadow-sm'
-                    : 'text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white'
+                  ? 'bg-white dark:bg-zinc-900 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white'
                   }`}
               >
                 Volume
@@ -6549,8 +6537,8 @@ function Reviews({ isDark }) {
               <button
                 onClick={() => setChartMode('avgRating')}
                 className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${chartMode === 'avgRating'
-                    ? 'bg-white dark:bg-zinc-900 text-gray-900 dark:text-white shadow-sm'
-                    : 'text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white'
+                  ? 'bg-white dark:bg-zinc-900 text-gray-900 dark:text-white shadow-sm'
+                  : 'text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white'
                   }`}
               >
                 Avg Rating
@@ -6602,8 +6590,8 @@ function Reviews({ isDark }) {
                   key={tabItem.id}
                   onClick={() => { setStatus(tabItem.id); setPage(1); }}
                   className={`whitespace-nowrap px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${active
-                      ? 'bg-obsidian text-white dark:bg-white dark:text-black shadow-sm'
-                      : 'text-gray-600 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-zinc-100'
+                    ? 'bg-obsidian text-white dark:bg-white dark:text-black shadow-sm'
+                    : 'text-gray-600 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-zinc-100'
                     }`}
                 >
                   <span>{tabItem.label}</span>
@@ -6736,12 +6724,12 @@ function Reviews({ isDark }) {
                     {/* Status Badge */}
                     <td className="py-3.5 px-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${r.status === 'approved'
-                          ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/40'
-                          : r.status === 'pending'
-                            ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border-amber-200 dark:border-amber-800/40'
-                            : r.status === 'reported'
-                              ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border-rose-200 dark:border-rose-800/40'
-                              : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700'
+                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/40'
+                        : r.status === 'pending'
+                          ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border-amber-200 dark:border-amber-800/40'
+                          : r.status === 'reported'
+                            ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border-rose-200 dark:border-rose-800/40'
+                            : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700'
                         }`}>
                         {r.status === 'reported' ? 'Flagged Spam' : r.status}
                       </span>
@@ -6876,12 +6864,12 @@ function Reviews({ isDark }) {
                     </div>
                   </div>
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${viewReview.status === 'approved'
-                      ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/40'
-                      : viewReview.status === 'pending'
-                        ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border-amber-200 dark:border-amber-800/40'
-                        : viewReview.status === 'reported'
-                          ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border-rose-200 dark:border-rose-800/40'
-                          : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700'
+                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/40'
+                    : viewReview.status === 'pending'
+                      ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border-amber-200 dark:border-amber-800/40'
+                      : viewReview.status === 'reported'
+                        ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border-rose-200 dark:border-rose-800/40'
+                        : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700'
                     }`}>
                     {viewReview.status}
                   </span>
@@ -7182,18 +7170,16 @@ function ReturnsAndRefunds({ isDark, initialSubTab = "returns" }) {
         <button
           type="button"
           onClick={() => setActiveSubTab("returns")}
-          className={`px-4 py-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2 cursor-pointer ${
-            activeSubTab === "returns"
+          className={`px-4 py-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2 cursor-pointer ${activeSubTab === "returns"
               ? "border-fire text-fire dark:border-fire dark:text-fire font-black"
               : "border-transparent text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100"
-          }`}
+            }`}
         >
           <RotateCcw size={15} /> Return Requests
-          <span className={`text-xs px-2 py-0.5 rounded-full font-mono font-bold ${
-            activeSubTab === "returns"
+          <span className={`text-xs px-2 py-0.5 rounded-full font-mono font-bold ${activeSubTab === "returns"
               ? "bg-fire text-white"
               : "bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300"
-          }`}>
+            }`}>
             {returnsData.stats?.total || returnsData.returns?.length || 0}
           </span>
         </button>
@@ -7201,18 +7187,16 @@ function ReturnsAndRefunds({ isDark, initialSubTab = "returns" }) {
         <button
           type="button"
           onClick={() => setActiveSubTab("refunds")}
-          className={`px-4 py-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2 cursor-pointer ${
-            activeSubTab === "refunds"
+          className={`px-4 py-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2 cursor-pointer ${activeSubTab === "refunds"
               ? "border-fire text-fire dark:border-fire dark:text-fire font-black"
               : "border-transparent text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100"
-          }`}
+            }`}
         >
           <DollarSign size={15} /> Refund Ledger
-          <span className={`text-xs px-2 py-0.5 rounded-full font-mono font-bold ${
-            activeSubTab === "refunds"
+          <span className={`text-xs px-2 py-0.5 rounded-full font-mono font-bold ${activeSubTab === "refunds"
               ? "bg-fire text-white"
               : "bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300"
-          }`}>
+            }`}>
             {refundsData.refunds?.length || 0}
           </span>
         </button>
@@ -7235,11 +7219,10 @@ function ReturnsAndRefunds({ isDark, initialSubTab = "returns" }) {
                 key={tab.id}
                 type="button"
                 onClick={() => setReturnQuery({ ...returnQuery, status: tab.id, page: 1 })}
-                className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors whitespace-nowrap cursor-pointer ${
-                  returnQuery.status === tab.id
+                className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors whitespace-nowrap cursor-pointer ${returnQuery.status === tab.id
                     ? "bg-black dark:bg-fire text-white shadow-2xs"
                     : "bg-white dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 border border-gray-200 dark:border-zinc-700 hover:bg-gray-100 dark:hover:bg-zinc-700"
-                }`}
+                  }`}
               >
                 {tab.label}
               </button>
@@ -7342,11 +7325,10 @@ function ReturnsAndRefunds({ isDark, initialSubTab = "returns" }) {
                             </td>
                             <td className="p-3.5 font-mono text-gray-800 dark:text-zinc-200">
                               <div className="font-semibold">{r.order_number}</div>
-                              <span className={`inline-block mt-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded font-mono uppercase ${
-                                isCod
+                              <span className={`inline-block mt-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded font-mono uppercase ${isCod
                                   ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-800"
                                   : "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-300 dark:border-blue-800"
-                              }`}>
+                                }`}>
                                 {r.order?.payment_method || 'Card'}
                               </span>
                             </td>
@@ -7436,11 +7418,10 @@ function ReturnsAndRefunds({ isDark, initialSubTab = "returns" }) {
                 key={tab.id}
                 type="button"
                 onClick={() => setRefundQuery({ ...refundQuery, status: tab.id, page: 1 })}
-                className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors whitespace-nowrap cursor-pointer ${
-                  refundQuery.status === tab.id
+                className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition-colors whitespace-nowrap cursor-pointer ${refundQuery.status === tab.id
                     ? "bg-black dark:bg-fire text-white shadow-2xs"
                     : "bg-white dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 border border-gray-200 dark:border-zinc-700 hover:bg-gray-100 dark:hover:bg-zinc-700"
-                }`}
+                  }`}
               >
                 {tab.label}
               </button>
@@ -9286,8 +9267,8 @@ function AuditLogs({ isDark }) {
                 key={tab.id}
                 onClick={() => setActiveType(tab.id)}
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap transition-all ${active
-                    ? "bg-obsidian text-white dark:bg-white dark:text-black shadow-sm font-semibold"
-                    : "text-gray-600 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-zinc-100"
+                  ? "bg-obsidian text-white dark:bg-white dark:text-black shadow-sm font-semibold"
+                  : "text-gray-600 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-zinc-100"
                   }`}
               >
                 <span>{tab.label}</span>
@@ -10513,8 +10494,8 @@ function BundlesManager({ isDark }) {
           <button
             onClick={() => setStatusFilter("all")}
             className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${statusFilter === "all"
-                ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm"
-                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+              ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm"
+              : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
               }`}
           >
             All ({bundles.length})
@@ -10522,8 +10503,8 @@ function BundlesManager({ isDark }) {
           <button
             onClick={() => setStatusFilter("active")}
             className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${statusFilter === "active"
-                ? "bg-white dark:bg-zinc-900 text-emerald-600 dark:text-emerald-400 shadow-sm"
-                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+              ? "bg-white dark:bg-zinc-900 text-emerald-600 dark:text-emerald-400 shadow-sm"
+              : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
               }`}
           >
             Active ({activeCount})
@@ -10531,8 +10512,8 @@ function BundlesManager({ isDark }) {
           <button
             onClick={() => setStatusFilter("inactive")}
             className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${statusFilter === "inactive"
-                ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm"
-                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+              ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm"
+              : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
               }`}
           >
             Draft ({inactiveCount})
@@ -10601,8 +10582,8 @@ function BundlesManager({ isDark }) {
                     </div>
                     <span
                       className={`shrink-0 inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full ${b.is_active
-                          ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
-                          : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700'
+                        ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
+                        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700'
                         }`}
                     >
                       <span className={`w-1.5 h-1.5 rounded-full ${b.is_active ? 'bg-emerald-500' : 'bg-zinc-400'}`}></span>
@@ -10948,11 +10929,10 @@ function BundleDetailPage({ bundle, allProducts, isDark, onBack, onSaved }) {
                 <button
                   type="button"
                   onClick={() => setF({ ...f, is_active: true })}
-                  className={`p-3 rounded-lg border text-left transition-all ${
-                    f.is_active
+                  className={`p-3 rounded-lg border text-left transition-all ${f.is_active
                       ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-400 dark:border-emerald-700 text-emerald-950 dark:text-emerald-100 ring-1 ring-emerald-400'
                       : 'bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${f.is_active ? 'bg-emerald-500' : 'bg-zinc-300'}`}></span>
@@ -10966,11 +10946,10 @@ function BundleDetailPage({ bundle, allProducts, isDark, onBack, onSaved }) {
                 <button
                   type="button"
                   onClick={() => setF({ ...f, is_active: false })}
-                  className={`p-3 rounded-lg border text-left transition-all ${
-                    !f.is_active
+                  className={`p-3 rounded-lg border text-left transition-all ${!f.is_active
                       ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-400 dark:border-zinc-600 text-zinc-900 dark:text-zinc-100 ring-1 ring-zinc-400'
                       : 'bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${!f.is_active ? 'bg-zinc-500' : 'bg-zinc-300'}`}></span>
@@ -11043,8 +11022,8 @@ function BundleDetailPage({ bundle, allProducts, isDark, onBack, onSaved }) {
                     type="button"
                     onClick={() => setSelectedCategory("all")}
                     className={`px-2.5 py-1 rounded-md font-semibold shrink-0 transition-colors ${selectedCategory === "all"
-                        ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
-                        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                      ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
+                      : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
                       }`}
                   >
                     All Categories
@@ -11055,8 +11034,8 @@ function BundleDetailPage({ bundle, allProducts, isDark, onBack, onSaved }) {
                       type="button"
                       onClick={() => setSelectedCategory(cat)}
                       className={`px-2.5 py-1 rounded-md font-semibold shrink-0 transition-colors ${selectedCategory === cat
-                          ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
-                          : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                        ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
+                        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
                         }`}
                     >
                       {cat}
@@ -11097,10 +11076,10 @@ function BundleDetailPage({ bundle, allProducts, isDark, onBack, onSaved }) {
                               {fmt(product.base_price)}
                             </span>
                             <span className={`text-[10px] font-semibold px-1.5 py-0.2 rounded ${totalStock > 5
-                                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400'
-                                : totalStock > 0
-                                  ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400'
-                                  : 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400'
+                              ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400'
+                              : totalStock > 0
+                                ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400'
+                                : 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400'
                               }`}>
                               {totalStock > 0 ? `${totalStock} in stock` : 'Out of stock'}
                             </span>
@@ -11319,8 +11298,8 @@ function BundleDetailPage({ bundle, allProducts, isDark, onBack, onSaved }) {
             {/* Customer Savings Display */}
             {totalRRP > 0 && bundlePriceNum > 0 && (
               <div className={`p-4 rounded-xl border ${savings > 0
-                  ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-100'
-                  : 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-100'
+                ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-100'
+                : 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-100'
                 }`}>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider">Customer Incentive</span>

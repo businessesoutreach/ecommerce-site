@@ -58,7 +58,6 @@ export default function HomepageCMS({ setActiveTab, setMainTab }) {
       'new_arrivals': 'product_sections',
       'best_sellers': 'product_sections',
       'trending': 'product_sections',
-      'flash_sale': 'flash_sale',
       'testimonials': 'testimonials'
     };
     if (map[section.type] && setActiveTab) {
@@ -86,12 +85,12 @@ export default function HomepageCMS({ setActiveTab, setMainTab }) {
           <span>Homepage Sections</span>
           <span>Controls</span>
         </div>
-        
+
         <Reorder.Group axis="y" values={sections} onReorder={handleReorder} className="divide-y divide-ink-100">
           {sections.map((section) => (
-            <Reorder.Item 
-              key={section.id} 
-              value={section} 
+            <Reorder.Item
+              key={section.id}
+              value={section}
               className={`flex items-center justify-between p-4 bg-white hover:bg-ink-50/50 transition-colors cursor-grab active:cursor-grabbing ${!section.is_active ? 'opacity-50' : ''}`}
             >
               <div className="flex items-center gap-4">
@@ -102,14 +101,14 @@ export default function HomepageCMS({ setActiveTab, setMainTab }) {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => toggleVisibility(section)} 
+                <button
+                  onClick={() => toggleVisibility(section)}
                   className="p-2 text-ink-500 hover:text-obsidian hover:bg-ink-100 transition-colors"
                   title={section.is_active ? "Hide on Storefront" : "Show on Storefront"}
                 >
                   {section.is_active ? <Eye size={18} /> : <EyeOff size={18} />}
                 </button>
-                <button 
+                <button
                   onClick={() => openSettings(section)}
                   className="p-2 text-ink-500 hover:text-obsidian hover:bg-ink-100 transition-colors"
                   title="Section Settings"
@@ -121,7 +120,7 @@ export default function HomepageCMS({ setActiveTab, setMainTab }) {
           ))}
         </Reorder.Group>
       </div>
-      
+
       <div className="mt-6 text-sm text-ink-500 bg-blue-50 text-blue-800 p-4 border border-blue-200">
         <strong>Note:</strong> Changes are saved automatically when you drop a section.
       </div>
