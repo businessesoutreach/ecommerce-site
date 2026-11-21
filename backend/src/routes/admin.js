@@ -1010,7 +1010,7 @@ router.get('/orders', async (req, res) => {
         const limit = parseInt(req.query.limit) || 25;
         const skip = (page - 1) * limit;
 
-        const { status, payment, date, search } = req.query;
+        const { status, payment, payment_method, cod_status, date, search } = req.query;
         let where = {};
 
         if (status && status !== 'all') {
@@ -1018,6 +1018,13 @@ router.get('/orders', async (req, res) => {
         }
         if (payment && payment !== 'all') {
             where.payment_status = payment;
+        }
+        if (payment_method && payment_method !== 'all') {
+            where.payment_method = payment_method;
+        }
+        if (cod_status && cod_status !== 'all') {
+            where.payment_method = 'COD';
+            where.cod_remittance_status = cod_status;
         }
 
         if (date && date !== 'all') {
@@ -1063,17 +1070,39 @@ router.get('/orders', async (req, res) => {
                 include: { items: { include: { product: true } }, status_history: true }
             }),
             prisma.order.count({ where }),
-            prisma.order.findMany({ select: { status: true } }) // to calculate top status tabs counts efficiently
+            prisma.order.findMany({ select: { status: true, payment_method: true, cod_remittance_status: true, total: true } }) // to calculate top status tabs counts efficiently
         ]);
 
-        const counts = { all: allOrders.length, pending: 0, processing: 0, shipped: 0, delivered: 0, cancelled: 0, refunded: 0 };
+        let codPendingCount = 0;
+        let codPendingTotal = 0;
+        let codRemittedCount = 0;
+        let codRemittedTotal = 0;
+        let totalCodOrders = 0;
+        let totalCodAmount = 0;
+
         for (const o of allOrders) {
-            if (counts[o.status] !== undefined) counts[o.status]++;
-            else if (o.status === 'placed' || o.status === 'confirmed') counts.pending++; // mapping placed/confirmed to pending for tab
-            // Wait, let's just output raw counts and let frontend group them if needed, or map them here.
-            // Let's use exact statuses for counts to match the db schema.
+            if (o.payment_method === 'COD') {
+                totalCodOrders++;
+                totalCodAmount += (o.total || 0);
+                if (o.cod_remittance_status === 'remitted') {
+                    codRemittedCount++;
+                    codRemittedTotal += (o.total || 0);
+                } else {
+                    codPendingCount++;
+                    codPendingTotal += (o.total || 0);
+                }
+            }
         }
-        
+
+        const cod_summary = {
+            total_count: totalCodOrders,
+            total_amount: totalCodAmount,
+            pending_count: codPendingCount,
+            pending_amount: codPendingTotal,
+            remitted_count: codRemittedCount,
+            remitted_amount: codRemittedTotal,
+        };
+
         const status_counts = {
             all: allOrders.length,
             placed: allOrders.filter(o => o.status === 'placed').length,
@@ -1087,6 +1116,8 @@ router.get('/orders', async (req, res) => {
             pending: allOrders.filter(o => ['placed', 'confirmed', 'pending'].includes(o.status)).length,
             processing: allOrders.filter(o => ['processing', 'packed'].includes(o.status)).length,
             refunded: allOrders.filter(o => ['refunded', 'returned'].includes(o.status)).length,
+            cod_pending: codPendingCount,
+            cod_remitted: codRemittedCount,
         };
 
         res.json({
@@ -1095,6 +1126,7 @@ router.get('/orders', async (req, res) => {
                 orders: items,
                 pagination: { page, limit, totalCount, totalPages: Math.ceil(totalCount / limit) },
                 status_counts,
+                cod_summary,
                 courier_configured: courierService.isConfigured()
             }
         });
@@ -1345,6 +1377,26 @@ router.patch('/orders/:id/status', async (req, res) => {
             note: note || undefined
         });
         
+        res.json({ success: true, data: o });
+    } catch (err) {
+        res.status(500).json({ detail: err.message });
+    }
+});
+
+router.patch('/orders/:id/cod-remittance', async (req, res) => {
+    try {
+        const { status } = req.body;
+        if (!status || !['pending', 'remitted'].includes(status)) {
+            return res.status(400).json({ detail: "Status must be 'pending' or 'remitted'" });
+        }
+        const o = await prisma.order.update({
+            where: { id: req.params.id },
+            data: { cod_remittance_status: status }
+        });
+        await logAdminAction(req.user, 'UPDATE_COD_REMITTANCE', 'order', req.params.id, {
+            status,
+            order_number: o.order_number
+        });
         res.json({ success: true, data: o });
     } catch (err) {
         res.status(500).json({ detail: err.message });
