@@ -640,12 +640,17 @@ router.get('/orders', async (req, res) => {
         
         const status_counts = {
             all: allOrders.length,
-            pending: allOrders.filter(o => ['placed', 'confirmed'].includes(o.status)).length,
-            processing: allOrders.filter(o => o.status === 'processing' || o.status === 'packed').length,
+            placed: allOrders.filter(o => o.status === 'placed').length,
+            confirmed: allOrders.filter(o => o.status === 'confirmed').length,
+            packed: allOrders.filter(o => o.status === 'packed').length,
             shipped: allOrders.filter(o => o.status === 'shipped').length,
+            out_for_delivery: allOrders.filter(o => o.status === 'out_for_delivery').length,
             delivered: allOrders.filter(o => o.status === 'delivered').length,
             cancelled: allOrders.filter(o => o.status === 'cancelled').length,
-            refunded: allOrders.filter(o => o.status === 'refunded').length,
+            returned: allOrders.filter(o => o.status === 'returned').length,
+            pending: allOrders.filter(o => ['placed', 'confirmed', 'pending'].includes(o.status)).length,
+            processing: allOrders.filter(o => ['processing', 'packed'].includes(o.status)).length,
+            refunded: allOrders.filter(o => ['refunded', 'returned'].includes(o.status)).length,
         };
 
         res.json({

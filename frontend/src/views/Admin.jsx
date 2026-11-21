@@ -1154,6 +1154,7 @@ function Orders() {
     { id: "confirmed", label: "Confirmed", count: data.status_counts?.confirmed || 0 },
     { id: "packed", label: "Packed", count: data.status_counts?.packed || 0 },
     { id: "shipped", label: "Shipped", count: data.status_counts?.shipped || 0 },
+    { id: "out_for_delivery", label: "Out for Delivery", count: data.status_counts?.out_for_delivery || 0 },
     { id: "delivered", label: "Delivered", count: data.status_counts?.delivered || 0 },
     { id: "cancelled", label: "Cancelled", count: data.status_counts?.cancelled || 0 },
     { id: "returned", label: "Returned", count: data.status_counts?.returned || 0 },
@@ -2664,6 +2665,7 @@ function OrderDetailPage({ orderId, initialOrder, onBack, onUpdate }) {
     { key: "confirmed", label: "Confirmed" },
     { key: "packed", label: "Packed" },
     { key: "shipped", label: "Shipped" },
+    { key: "out_for_delivery", label: "Out for Delivery" },
     { key: "delivered", label: "Delivered" }
   ];
 
@@ -2671,6 +2673,9 @@ function OrderDetailPage({ orderId, initialOrder, onBack, onUpdate }) {
   const currentStepIdx = stepOrder.indexOf(status);
 
   const historyMap = {};
+  if (order?.created_at) {
+    historyMap['placed'] = order.created_at;
+  }
   (order?.status_history || []).forEach(h => {
     historyMap[h.status] = h.at;
   });
@@ -2825,7 +2830,15 @@ function OrderDetailPage({ orderId, initialOrder, onBack, onUpdate }) {
         </div>
 
         {/* Milestone Stepper */}
-        {status !== 'cancelled' ? (
+        {status === 'cancelled' ? (
+          <div className="bg-rose-50 dark:bg-rose-950/40 border-b border-rose-200 dark:border-rose-900 p-4 px-6 text-rose-800 dark:text-rose-300 text-xs font-bold flex items-center gap-2">
+            <AlertTriangle size={16} /> Order #{order.order_number} has been cancelled.
+          </div>
+        ) : status === 'returned' ? (
+          <div className="bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-900 p-4 px-6 text-amber-800 dark:text-amber-300 text-xs font-bold flex items-center gap-2">
+            <AlertTriangle size={16} /> Order #{order.order_number} has been marked as returned to origin (RTO).
+          </div>
+        ) : (
           <div className="p-6 border-b border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
             <div className="max-w-3xl mx-auto flex items-center justify-between relative">
               <div className="absolute top-4 left-6 right-6 h-0.5 bg-gray-200 dark:bg-zinc-800 z-0"></div>
@@ -2859,10 +2872,6 @@ function OrderDetailPage({ orderId, initialOrder, onBack, onUpdate }) {
                 );
               })}
             </div>
-          </div>
-        ) : (
-          <div className="bg-rose-50 dark:bg-rose-950/40 border-b border-rose-200 dark:border-rose-900 p-4 px-6 text-rose-800 dark:text-rose-300 text-xs font-bold flex items-center gap-2">
-            <AlertTriangle size={16} /> Order #{order.order_number} has been cancelled.
           </div>
         )}
 
