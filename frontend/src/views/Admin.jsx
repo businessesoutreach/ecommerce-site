@@ -7715,6 +7715,40 @@ function PosSystem() {
   );
 }
 
+function AnalyticsChartTooltip({ active, payload, label }) {
+  if (!active || !payload || !payload.length) return null;
+  return (
+    <div className="bg-zinc-950/95 dark:bg-zinc-900/95 backdrop-blur-md border border-zinc-800 text-white rounded-xl p-3.5 shadow-2xl text-xs space-y-2 min-w-[210px] pointer-events-none animate-in fade-in zoom-in-95 duration-100">
+      <div className="flex items-center justify-between border-b border-zinc-800/80 pb-1.5 mb-1">
+        <span className="font-mono text-[11px] text-zinc-400 font-bold">{label}</span>
+        <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Metrics</span>
+      </div>
+      <div className="space-y-1.5">
+        {payload.map((entry, idx) => {
+          const isOrders = entry.dataKey === "orders" || entry.name?.toLowerCase().includes("order");
+          const formattedVal = isOrders ? `${entry.value} orders` : fmt(entry.value);
+          const name = entry.name || (
+            entry.dataKey === "revenue" ? "Gross Revenue" :
+            entry.dataKey === "profit" ? "Net Profit" :
+            entry.dataKey === "cogs" ? "COGS Basis" :
+            entry.dataKey === "orders" ? "Orders Volume" : entry.dataKey
+          );
+          const dotColor = entry.color || entry.stroke || entry.fill || "#FF3B30";
+          return (
+            <div key={`tooltip-${idx}`} className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-zinc-300">
+                <span className="w-2.5 h-2.5 rounded-full shrink-0 shadow-xs" style={{ backgroundColor: dotColor }} />
+                <span className="font-bold text-zinc-200">{name}:</span>
+              </div>
+              <span className="font-mono font-black text-white shrink-0">{formattedVal}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ProfitabilityAnalytics() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -8155,8 +8189,8 @@ function ProfitabilityAnalytics() {
                 <BarChart data={timeline}>
                   <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#888' }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 10, fill: '#888' }} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', borderRadius: '12px', color: '#fff', fontSize: '12px' }} />
-                  <Bar dataKey="orders" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                  <Tooltip content={<AnalyticsChartTooltip />} cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }} />
+                  <Bar dataKey="orders" name="Orders Volume" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                 </BarChart>
               ) : (
                 <AreaChart data={timeline}>
@@ -8172,10 +8206,7 @@ function ProfitabilityAnalytics() {
                   </defs>
                   <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#888' }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 10, fill: '#888' }} axisLine={false} tickLine={false} />
-                  <Tooltip
-                    formatter={(val) => [fmt(val), ""]}
-                    contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', borderRadius: '12px', color: '#fff', fontSize: '12px' }}
-                  />
+                  <Tooltip content={<AnalyticsChartTooltip />} />
                   {(activeChartMetric === "dynamics" || activeChartMetric === "revenue") && (
                     <Area type="monotone" dataKey="revenue" name="Gross Revenue" stroke="#FF3B30" strokeWidth={2.5} fillOpacity={1} fill="url(#colorRev)" />
                   )}
@@ -8183,7 +8214,7 @@ function ProfitabilityAnalytics() {
                     <Area type="monotone" dataKey="profit" name="Net Profit" stroke="#10b981" strokeWidth={2.5} fillOpacity={1} fill="url(#colorProfit)" />
                   )}
                   {activeChartMetric === "dynamics" && (
-                    <Area type="monotone" dataKey="cogs" name="COGS" stroke="#f97316" strokeWidth={1.5} strokeDasharray="3 3" fill="none" />
+                    <Area type="monotone" dataKey="cogs" name="COGS Basis" stroke="#f97316" strokeWidth={1.5} strokeDasharray="3 3" fill="none" />
                   )}
                 </AreaChart>
               )}
