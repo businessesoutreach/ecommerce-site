@@ -100,13 +100,22 @@ function TableActionDropdown({ isOpen, onToggle, onClose, children, menuWidth = 
 
 const ORDER_STATES = ["placed", "confirmed", "packed", "shipped", "out_for_delivery", "delivered", "cancelled", "returned"];
 
-function AdminNavbarSearch({ activeTab, onSelectTab }) {
+function AdminSearchModal({ isOpen, onClose, activeTab }) {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState("all");
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const searchContainerRef = useRef(null);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => inputRef.current?.focus(), 50);
+    } else {
+      setQuery("");
+      setResults(null);
+    }
+  }, [isOpen]);
 
   // Debounced search against /api/admin/omnisearch
   useEffect(() => {
@@ -122,163 +131,228 @@ function AdminNavbarSearch({ activeTab, onSelectTab }) {
       try {
         const res = await http.get(`/admin/omnisearch?q=${encodeURIComponent(q)}`);
         setResults(res.data?.data || { products: [], orders: [], customers: [] });
-      } catch (e) {
+      } catch {
         setResults({ products: [], orders: [], customers: [] });
       } finally {
         setLoading(false);
       }
-    }, 200);
+    }, 180);
 
     return () => clearTimeout(timer);
   }, [query]);
 
-  // Click outside to close dropdown
+  // Escape key listener
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target)) {
-        setIsOpen(false);
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape" && isOpen) {
+        onClose();
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
 
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter" && query.trim()) {
-      setIsOpen(false);
-      const q = encodeURIComponent(query.trim());
-      if (activeTab === "orders") {
-        navigate(`?tab=orders&search=${q}`);
-      } else if (activeTab === "customers") {
-        navigate(`?tab=customers&search=${q}`);
-      } else {
-        navigate(`?tab=products&search=${q}`);
-      }
-    } else if (e.key === "Escape") {
-      setIsOpen(false);
-    }
-  };
+  if (!isOpen || typeof document === "undefined") return null;
 
   const handleSelectProduct = (p) => {
-    setIsOpen(false);
-    setQuery("");
+    onClose();
     navigate(`?tab=products&productId=${p.id}`);
   };
 
   const handleSelectOrder = (o) => {
-    setIsOpen(false);
-    setQuery("");
+    onClose();
     navigate(`?tab=orders&orderId=${o.order_number || o.id}`);
   };
 
   const handleSelectCustomer = (c) => {
-    setIsOpen(false);
-    setQuery("");
+    onClose();
     navigate(`?tab=customers&userId=${c.id}`);
   };
 
-  const hasAnyResults = results && (results.products?.length > 0 || results.orders?.length > 0 || results.customers?.length > 0);
-  const noResults = results && !loading && !hasAnyResults && query.trim().length >= 2;
+  const handleApplyFilter = (e) => {
+    if (e) e.preventDefault();
+    if (!query.trim()) return;
+    onClose();
+    const q = encodeURIComponent(query.trim());
+    if (activeFilter === "orders" || (activeFilter === "all" && activeTab === "orders")) {
+      navigate(`?tab=orders&search=${q}`);
+    } else if (activeFilter === "customers" || (activeFilter === "all" && activeTab === "customers")) {
+      navigate(`?tab=customers&search=${q}`);
+    } else {
+      navigate(`?tab=products&search=${q}`);
+    }
+  };
 
-  return (
-    <div ref={searchContainerRef} className="hidden md:flex items-center relative max-w-md w-full mx-4">
-      <Search size={14} className="absolute left-3.5 text-gray-400 dark:text-zinc-500 pointer-events-none" />
-      <input
-        type="text"
-        value={query}
-        onChange={(e) => {
-          setQuery(e.target.value);
-          setIsOpen(true);
-        }}
-        onFocus={() => setIsOpen(true)}
-        onKeyDown={handleKeyDown}
-        placeholder="Search sneakers, orders (#1004), customers..."
-        className="w-full bg-gray-100 dark:bg-zinc-800/80 border border-transparent dark:border-zinc-700/60 rounded-xl pl-9 pr-14 py-1.5 text-xs text-gray-900 dark:text-zinc-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-fire/50 focus:bg-white dark:focus:bg-zinc-900 transition-all shadow-2xs"
-      />
-      {loading ? (
-        <Loader2 size={13} className="absolute right-3 animate-spin text-fire" />
-      ) : (
-        <span className="absolute right-2 px-1.5 py-0.5 text-[9px] font-mono font-bold text-gray-400 dark:text-zinc-500 bg-white dark:bg-zinc-700 rounded border border-gray-200 dark:border-zinc-600 shadow-2xs pointer-events-none">
-          ENTER
-        </span>
-      )}
+  const filteredProducts = activeFilter === "all" || activeFilter === "products" ? results?.products || [] : [];
+  const filteredOrders = activeFilter === "all" || activeFilter === "orders" ? results?.orders || [] : [];
+  const filteredCustomers = activeFilter === "all" || activeFilter === "customers" ? results?.customers || [] : [];
 
-      {/* Live Omnisearch Dropdown Popover */}
-      {isOpen && query.trim().length >= 2 && (
-        <div className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 shadow-2xl rounded-2xl overflow-hidden z-50 text-xs divide-y divide-gray-100 dark:divide-zinc-800 animate-in fade-in zoom-in-95 duration-100 max-h-96 overflow-y-auto">
-          {noResults && (
-            <div className="p-6 text-center text-gray-400 dark:text-zinc-500">
-              <p className="font-bold text-xs">No matches found for "{query}"</p>
-              <p className="text-[11px] mt-0.5 text-gray-400">Press ENTER to filter current tab</p>
+  const totalCount = filteredProducts.length + filteredOrders.length + filteredCustomers.length;
+  const noMatches = results && !loading && totalCount === 0 && query.trim().length >= 2;
+
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 sm:pt-20 p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150" onClick={onClose}>
+      <div
+        className="w-full max-w-2xl bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150 max-h-[82vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Search Input Box */}
+        <div className="p-4 border-b border-gray-100 dark:border-zinc-800 flex items-center gap-3">
+          <Search size={20} className="text-fire shrink-0" />
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") handleApplyFilter(e); }}
+            placeholder="Search kicks, orders (#1004), customers, emails..."
+            className="w-full bg-transparent text-sm sm:text-base font-medium text-gray-900 dark:text-zinc-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:outline-none"
+          />
+          {loading && <Loader2 size={16} className="animate-spin text-fire shrink-0" />}
+          {query && !loading && (
+            <button type="button" onClick={() => setQuery("")} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-zinc-200 rounded-md cursor-pointer">
+              <X size={16} />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-2 py-1 text-[11px] font-mono font-bold bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-500 dark:text-zinc-400 rounded-lg border border-gray-200 dark:border-zinc-700 transition-colors cursor-pointer"
+          >
+            ESC
+          </button>
+        </div>
+
+        {/* Filter Chips Toolbar */}
+        <div className="px-4 py-2.5 bg-gray-50/80 dark:bg-zinc-800/40 border-b border-gray-100 dark:border-zinc-800 flex items-center gap-2 overflow-x-auto text-xs">
+          <span className="text-[11px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider shrink-0 mr-1">Filter:</span>
+          {[
+            { id: "all", label: "All Categories" },
+            { id: "products", label: "Sneakers" },
+            { id: "orders", label: "Orders" },
+            { id: "customers", label: "Customers" }
+          ].map(f => (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => setActiveFilter(f.id)}
+              className={`px-3 py-1 rounded-lg font-bold text-xs transition-all cursor-pointer shrink-0 ${
+                activeFilter === f.id
+                  ? "bg-fire text-white shadow-xs"
+                  : "bg-white dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-700 border border-gray-200 dark:border-zinc-700"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+          {query.trim().length >= 2 && (
+            <button
+              type="button"
+              onClick={handleApplyFilter}
+              className="ml-auto text-xs font-bold text-fire hover:underline shrink-0 cursor-pointer"
+            >
+              Apply in Table ↵
+            </button>
+          )}
+        </div>
+
+        {/* Results Body */}
+        <div className="p-3 overflow-y-auto space-y-4 flex-1">
+          {(!query || query.trim().length < 2) && (
+            <div className="py-12 text-center text-gray-400 dark:text-zinc-500 space-y-2">
+              <Search size={32} className="mx-auto opacity-30 text-fire" />
+              <p className="text-xs font-bold text-gray-600 dark:text-zinc-300">Type at least 2 characters to search across SoleKicks</p>
+              <p className="text-[11px] text-gray-400">Search by sneaker name, order reference #, customer name, phone, or email</p>
             </div>
           )}
 
-          {/* Sneakers / Products Group */}
-          {results?.products?.length > 0 && (
-            <div className="p-2">
-              <div className="px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-gray-400 dark:text-zinc-500 flex items-center justify-between">
-                <span className="flex items-center gap-1.5"><Package size={12} className="text-fire" /> Sneakers ({results.products.length})</span>
-                <span className="text-[9px] text-gray-400">Click to view/edit</span>
+          {noMatches && (
+            <div className="py-12 text-center text-gray-400 dark:text-zinc-500 space-y-3">
+              <p className="text-sm font-bold text-gray-700 dark:text-zinc-300">No matching records found for "{query}"</p>
+              <button
+                type="button"
+                onClick={handleApplyFilter}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-fire text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer hover:bg-fire-hover"
+              >
+                Search in current "{activeTab}" table ↵
+              </button>
+            </div>
+          )}
+
+          {/* Sneakers / Products */}
+          {filteredProducts.length > 0 && (
+            <div className="space-y-1">
+              <div className="px-2 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-gray-400 dark:text-zinc-500 flex items-center justify-between">
+                <span className="flex items-center gap-1.5"><Package size={13} className="text-fire" /> Sneakers ({filteredProducts.length})</span>
+                <span className="text-[10px] text-gray-400">Click to edit drop</span>
               </div>
-              <div className="space-y-0.5">
-                {results.products.map(p => (
+              <div className="space-y-1">
+                {filteredProducts.map(p => (
                   <button
                     key={p.id}
                     type="button"
                     onClick={() => handleSelectProduct(p)}
-                    className="w-full px-2.5 py-2 rounded-xl flex items-center gap-2.5 hover:bg-gray-100 dark:hover:bg-zinc-800/80 transition-colors text-left cursor-pointer group"
+                    className="w-full p-2.5 rounded-xl flex items-center gap-3 bg-gray-50/50 dark:bg-zinc-800/30 hover:bg-gray-100 dark:hover:bg-zinc-800 border border-gray-100 dark:border-zinc-800/80 transition-all text-left cursor-pointer group"
                   >
                     {p.images?.[0] ? (
-                      <img src={p.images[0]} alt="" className="w-8 h-8 rounded-lg object-cover bg-gray-100 shrink-0 border border-gray-200 dark:border-zinc-700" />
+                      <img src={p.images[0]} alt="" className="w-10 h-10 rounded-lg object-cover bg-gray-100 shrink-0 border border-gray-200 dark:border-zinc-700" />
                     ) : (
-                      <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-zinc-800 flex items-center justify-center shrink-0">
-                        <Box size={14} className="text-gray-400" />
+                      <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-zinc-800 flex items-center justify-center shrink-0">
+                        <Box size={16} className="text-gray-400" />
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
-                      <div className="font-bold text-gray-900 dark:text-zinc-100 truncate group-hover:text-fire transition-colors">{p.name}</div>
-                      <div className="text-[10px] text-gray-400 flex items-center gap-2 font-mono">
-                        <span>{fmt(p.base_price)}</span>
+                      <div className="font-bold text-xs text-gray-900 dark:text-zinc-100 truncate group-hover:text-fire transition-colors">{p.name}</div>
+                      <div className="text-[11px] text-gray-400 flex items-center gap-2 font-mono mt-0.5">
+                        <span className="font-bold text-gray-800 dark:text-zinc-200">{fmt(p.base_price)}</span>
                         <span>•</span>
                         <span className="capitalize">{p.category_slug}</span>
+                        {p.brand_slug && (
+                          <>
+                            <span>•</span>
+                            <span className="capitalize">{p.brand_slug}</span>
+                          </>
+                        )}
                       </div>
                     </div>
+                    <span className="text-[10px] font-bold text-fire group-hover:underline shrink-0">Edit Drop →</span>
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Orders Group */}
-          {results?.orders?.length > 0 && (
-            <div className="p-2">
-              <div className="px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-gray-400 dark:text-zinc-500 flex items-center justify-between">
-                <span className="flex items-center gap-1.5"><ShoppingBag size={12} className="text-blue-500" /> Orders ({results.orders.length})</span>
-                <span className="text-[9px] text-gray-400">Click to inspect</span>
+          {/* Orders */}
+          {filteredOrders.length > 0 && (
+            <div className="space-y-1">
+              <div className="px-2 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-gray-400 dark:text-zinc-500 flex items-center justify-between">
+                <span className="flex items-center gap-1.5"><ShoppingBag size={13} className="text-blue-500" /> Orders ({filteredOrders.length})</span>
+                <span className="text-[10px] text-gray-400">Click to inspect</span>
               </div>
-              <div className="space-y-0.5">
-                {results.orders.map(o => (
+              <div className="space-y-1">
+                {filteredOrders.map(o => (
                   <button
                     key={o.id}
                     type="button"
                     onClick={() => handleSelectOrder(o)}
-                    className="w-full px-2.5 py-2 rounded-xl flex items-center justify-between hover:bg-gray-100 dark:hover:bg-zinc-800/80 transition-colors text-left cursor-pointer group"
+                    className="w-full p-2.5 rounded-xl flex items-center justify-between bg-gray-50/50 dark:bg-zinc-800/30 hover:bg-gray-100 dark:hover:bg-zinc-800 border border-gray-100 dark:border-zinc-800/80 transition-all text-left cursor-pointer group"
                   >
                     <div className="min-w-0">
-                      <div className="font-mono font-bold text-gray-900 dark:text-zinc-100 group-hover:text-fire transition-colors">
-                        #{o.order_number}
+                      <div className="font-mono font-bold text-xs text-gray-900 dark:text-zinc-100 group-hover:text-fire transition-colors flex items-center gap-2">
+                        <span>#{o.order_number}</span>
+                        <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${
+                          o.status === 'delivered' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
+                        }`}>
+                          {o.status}
+                        </span>
                       </div>
-                      <div className="text-[10px] text-gray-400 truncate">
+                      <div className="text-[11px] text-gray-500 dark:text-zinc-400 truncate mt-0.5">
                         {o.customer_name} • {o.customer_email || 'No email'}
                       </div>
                     </div>
-                    <div className="text-right shrink-0 pl-2">
-                      <div className="font-mono font-bold text-gray-900 dark:text-zinc-100">{fmt(o.total)}</div>
-                      <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${
-                        o.status === 'delivered' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-zinc-300'
-                      }`}>
-                        {o.status}
-                      </span>
+                    <div className="text-right shrink-0 pl-3">
+                      <div className="font-mono font-bold text-xs text-gray-900 dark:text-zinc-100">{fmt(o.total)}</div>
+                      <span className="text-[10px] text-gray-400 font-mono">{new Date(o.created_at).toLocaleDateString()}</span>
                     </div>
                   </button>
                 ))}
@@ -286,58 +360,64 @@ function AdminNavbarSearch({ activeTab, onSelectTab }) {
             </div>
           )}
 
-          {/* Customers Group */}
-          {results?.customers?.length > 0 && (
-            <div className="p-2">
-              <div className="px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-gray-400 dark:text-zinc-500 flex items-center justify-between">
-                <span className="flex items-center gap-1.5"><Users size={12} className="text-emerald-500" /> Customers ({results.customers.length})</span>
-                <span className="text-[9px] text-gray-400">Click to view profile</span>
+          {/* Customers */}
+          {filteredCustomers.length > 0 && (
+            <div className="space-y-1">
+              <div className="px-2 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-gray-400 dark:text-zinc-500 flex items-center justify-between">
+                <span className="flex items-center gap-1.5"><Users size={13} className="text-emerald-500" /> Customers ({filteredCustomers.length})</span>
+                <span className="text-[10px] text-gray-400">Click to view profile</span>
               </div>
-              <div className="space-y-0.5">
-                {results.customers.map(c => (
+              <div className="space-y-1">
+                {filteredCustomers.map(c => (
                   <button
                     key={c.id}
                     type="button"
                     onClick={() => handleSelectCustomer(c)}
-                    className="w-full px-2.5 py-2 rounded-xl flex items-center gap-2.5 hover:bg-gray-100 dark:hover:bg-zinc-800/80 transition-colors text-left cursor-pointer group"
+                    className="w-full p-2.5 rounded-xl flex items-center gap-3 bg-gray-50/50 dark:bg-zinc-800/30 hover:bg-gray-100 dark:hover:bg-zinc-800 border border-gray-100 dark:border-zinc-800/80 transition-all text-left cursor-pointer group"
                   >
                     {c.picture ? (
-                      <img src={c.picture} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" />
+                      <img src={c.picture} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
                     ) : (
-                      <div className="w-7 h-7 rounded-full bg-gray-900 dark:bg-zinc-700 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-gray-900 dark:bg-zinc-700 text-white flex items-center justify-center font-bold text-xs shrink-0">
                         {c.name ? c.name[0].toUpperCase() : 'U'}
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
-                      <div className="font-bold text-gray-900 dark:text-zinc-100 truncate group-hover:text-fire transition-colors">{c.name}</div>
-                      <div className="text-[10px] text-gray-400 font-mono truncate">{c.email}</div>
+                      <div className="font-bold text-xs text-gray-900 dark:text-zinc-100 truncate group-hover:text-fire transition-colors">{c.name}</div>
+                      <div className="text-[11px] text-gray-400 font-mono truncate">{c.email} {c.phone ? `• ${c.phone}` : ''}</div>
                     </div>
-                    {c.is_blocked && (
-                      <span className="text-[9px] font-bold text-rose-500 px-1.5 py-0.5 bg-rose-50 dark:bg-rose-950 rounded uppercase">Blocked</span>
+                    {c.is_blocked ? (
+                      <span className="text-[9px] font-bold text-rose-500 px-2 py-0.5 bg-rose-50 dark:bg-rose-950 rounded uppercase">Blocked</span>
+                    ) : (
+                      <span className="text-[10px] font-bold text-fire group-hover:underline shrink-0">Dossier →</span>
                     )}
                   </button>
                 ))}
               </div>
             </div>
           )}
+        </div>
 
-          {/* Enter quick jump footer */}
-          <div className="px-3.5 py-2 bg-gray-50/80 dark:bg-zinc-800/50 flex items-center justify-between text-[11px] text-gray-500">
-            <span>Press <kbd className="font-mono font-bold bg-white dark:bg-zinc-700 px-1.5 py-0.5 rounded border border-gray-200 dark:border-zinc-600 text-[10px]">ENTER</kbd> to search in {activeTab}</span>
+        {/* Modal Footer */}
+        <div className="px-4 py-2.5 bg-gray-50 dark:bg-zinc-800/60 border-t border-gray-100 dark:border-zinc-800 flex items-center justify-between text-[11px] text-gray-500 dark:text-zinc-400">
+          <div className="flex items-center gap-3">
+            <span>Press <kbd className="font-mono font-bold bg-white dark:bg-zinc-700 px-1.5 py-0.5 rounded border border-gray-200 dark:border-zinc-600 text-[10px]">ENTER</kbd> to apply in table</span>
+            <span className="hidden sm:inline">•</span>
+            <span className="hidden sm:inline">Press <kbd className="font-mono font-bold bg-white dark:bg-zinc-700 px-1.5 py-0.5 rounded border border-gray-200 dark:border-zinc-600 text-[10px]">ESC</kbd> to close</span>
+          </div>
+          {query.trim().length >= 2 && (
             <button
               type="button"
-              onClick={() => {
-                setIsOpen(false);
-                navigate(`?tab=${activeTab === 'overview' ? 'products' : activeTab}&search=${encodeURIComponent(query.trim())}`);
-              }}
+              onClick={handleApplyFilter}
               className="font-bold text-fire hover:underline cursor-pointer"
             >
-              Search All →
+              Filter "{activeTab}" Table →
             </button>
-          </div>
+          )}
         </div>
-      )}
-    </div>
+      </div>
+    </div>,
+    document.body
   );
 }
 
@@ -346,6 +426,19 @@ export default function Admin() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get("tab") || "overview";
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
+
+  // Global Ctrl+K / Cmd+K listener to open search modal
+  useEffect(() => {
+    const handleGlobalKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSearchModalOpen(prev => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, []);
 
   // Dark Mode State with LocalStorage Persistence
   const [isDark, setIsDark] = useState(() => {
@@ -495,7 +588,8 @@ export default function Admin() {
       {/* Main Content Area with Enterprise Sticky Top Navigation Bar */}
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
         {tab !== "cms" && (
-          <header className="h-14 bg-white/85 dark:bg-zinc-900/85 backdrop-blur-md border-b border-gray-200 dark:border-zinc-800 sticky top-0 z-30 px-4 lg:px-8 flex items-center justify-between shrink-0 transition-colors">
+          <>
+            <header className="h-14 bg-white/85 dark:bg-zinc-900/85 backdrop-blur-md border-b border-gray-200 dark:border-zinc-800 sticky top-0 z-30 px-4 lg:px-8 flex items-center justify-between shrink-0 transition-colors">
             {/* Left: Breadcrumbs & Module Title */}
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-gray-400 dark:text-zinc-500">Admin</span>
@@ -505,11 +599,21 @@ export default function Admin() {
               </span>
             </div>
 
-            {/* Center: Global Omnisearch Bar */}
-            <AdminNavbarSearch activeTab={tab} onSelectTab={setTab} />
+            {/* Right: Search Bar Trigger beside Dark Mode Toggle */}
+            <div className="flex items-center gap-2 sm:gap-2.5">
+              <button
+                type="button"
+                onClick={() => setSearchModalOpen(true)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-zinc-800/80 hover:bg-gray-200 dark:hover:bg-zinc-700/80 border border-gray-200 dark:border-zinc-700/70 rounded-xl text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 transition-all cursor-pointer shadow-2xs"
+                title="Search SoleKicks (Ctrl+K)"
+              >
+                <Search size={14} className="text-gray-400 dark:text-zinc-400" />
+                <span className="hidden sm:inline font-medium">Search...</span>
+                <kbd className="hidden md:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-mono font-bold text-gray-400 dark:text-zinc-500 bg-white dark:bg-zinc-700 rounded border border-gray-200 dark:border-zinc-600">
+                  Ctrl K
+                </kbd>
+              </button>
 
-            {/* Right: Dark Mode Toggle */}
-            <div className="flex items-center gap-2">
               <button
                 onClick={() => setIsDark(!isDark)}
                 className="p-2 rounded-xl text-gray-600 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 border border-gray-200 dark:border-zinc-700 transition-colors cursor-pointer"
@@ -519,6 +623,13 @@ export default function Admin() {
               </button>
             </div>
           </header>
+
+          <AdminSearchModal
+            isOpen={searchModalOpen}
+            onClose={() => setSearchModalOpen(false)}
+            activeTab={tab}
+          />
+          </>
         )}
 
         <main className={`flex-1 ${tab === 'cms' ? 'h-full' : 'p-4 lg:p-8 min-w-0'}`}>
