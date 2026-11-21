@@ -40,6 +40,24 @@ export default function BrandsCMS() {
 
   useEffect(() => { load(); }, []);
 
+  // Modal Escape key trap and scroll lock
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape" && showAddForm && !saving) {
+        setShowAddForm(false);
+        setEditingId(null);
+      }
+    };
+    if (showAddForm) {
+      document.body.style.overflow = "hidden";
+      window.addEventListener("keydown", handleKeyDown);
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [showAddForm, saving]);
+
   const handleUploadLogo = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -93,7 +111,6 @@ export default function BrandsCMS() {
       image_url: b.image_url || ""
     });
     setShowAddForm(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const del = (id, name) => {
@@ -141,138 +158,153 @@ export default function BrandsCMS() {
         </div>
         <button
           onClick={() => {
-            if (showAddForm && !editingId) {
-              setShowAddForm(false);
-            } else {
-              setEditingId(null);
-              setForm({ name: "", slug: "", image_url: "" });
-              setShowAddForm(true);
-            }
+            setEditingId(null);
+            setForm({ name: "", slug: "", image_url: "" });
+            setShowAddForm(true);
           }}
-          className="px-4 py-2 bg-fire hover:bg-fire-hover text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-2 shrink-0"
+          className="px-4 py-2 bg-fire hover:bg-fire-hover text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-2 shrink-0 cursor-pointer"
         >
-          {showAddForm ? <X size={15} /> : <Plus size={15} />}
-          <span>{showAddForm ? (editingId ? "Cancel Edit" : "Close Form") : "Add New Brand"}</span>
+          <Plus size={15} />
+          <span>Add New Brand</span>
         </button>
       </div>
 
-      {/* Add / Edit Form Card */}
+      {/* Add / Edit Brand Modal Dialog */}
       {showAddForm && (
-        <form onSubmit={handleSave} className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm space-y-5 animate-in fade-in slide-in-from-top-2 duration-150">
-          <div className="flex items-center justify-between border-b border-gray-100 dark:border-zinc-800 pb-3">
-            <h2 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-2">
-              <Box size={16} className="text-fire" />
-              {editingId ? "Edit Brand Details" : "Register New Sneaker Brand"}
-            </h2>
-            <span className="text-[10px] text-gray-400">Fields marked * are required</span>
-          </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+            onClick={() => { if (!saving) { setShowAddForm(false); setEditingId(null); } }}
+          />
 
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-            
-            {/* Logo Upload */}
-            <div className="md:col-span-4 space-y-2">
-              <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300">
-                Brand Logo / Emblem
-              </label>
-              <div className="relative aspect-square max-w-[200px] mx-auto bg-gray-50 dark:bg-zinc-800/80 rounded-2xl border-2 border-dashed border-gray-200 dark:border-zinc-700 flex flex-col items-center justify-center overflow-hidden group">
-                {form.image_url ? (
-                  <>
-                    <img src={form.image_url} alt="" className="w-full h-full object-contain p-4" />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                      <span className="text-white text-xs font-bold">Change Logo</span>
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-center p-4">
-                    <ImageIcon size={28} className="mx-auto text-gray-400 dark:text-zinc-500 mb-1" />
-                    <span className="text-xs font-bold text-gray-600 dark:text-zinc-400 block">Upload Logo</span>
-                    <span className="text-[10px] text-gray-400 dark:text-zinc-500">PNG, SVG, or JPG</span>
+          {/* Modal Dialog Card */}
+          <div className="relative w-full max-w-2xl bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl shadow-2xl p-6 overflow-hidden z-10 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-gray-100 dark:border-zinc-800 pb-3 mb-5">
+              <h2 className="font-display font-bold uppercase tracking-wider text-sm text-gray-900 dark:text-zinc-100 flex items-center gap-2">
+                <Box size={18} className="text-fire" />
+                {editingId ? "Edit Brand Details" : "Register New Sneaker Brand"}
+              </h2>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => { setShowAddForm(false); setEditingId(null); }}
+                className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-zinc-200 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSave} className="space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                
+                {/* Logo Upload */}
+                <div className="md:col-span-4 space-y-2">
+                  <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300">
+                    Brand Logo / Emblem
+                  </label>
+                  <div className="relative aspect-square max-w-[200px] mx-auto bg-gray-50 dark:bg-zinc-800/80 rounded-2xl border-2 border-dashed border-gray-200 dark:border-zinc-700 flex flex-col items-center justify-center overflow-hidden group">
+                    {form.image_url ? (
+                      <>
+                        <img src={form.image_url} alt="" className="w-full h-full object-contain p-4" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                          <span className="text-white text-xs font-bold">Change Logo</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center p-4">
+                        <ImageIcon size={28} className="mx-auto text-gray-400 dark:text-zinc-500 mb-1" />
+                        <span className="text-xs font-bold text-gray-600 dark:text-zinc-400 block">Upload Logo</span>
+                        <span className="text-[10px] text-gray-400 dark:text-zinc-500">PNG, SVG, or JPG</span>
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleUploadLogo}
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                    />
                   </div>
-                )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleUploadLogo}
-                  className="absolute inset-0 opacity-0 cursor-pointer"
-                />
-              </div>
 
-              <input
-                type="url"
-                placeholder="Or paste logo image URL..."
-                value={form.image_url}
-                onChange={(e) => setForm({ ...form, image_url: e.target.value })}
-                className="w-full px-3 py-1.5 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-zinc-100 placeholder-gray-400 focus:outline-none focus:border-fire"
-              />
-            </div>
-
-            {/* General Fields */}
-            <div className="md:col-span-8 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1">
-                    Brand Name *
-                  </label>
                   <input
-                    type="text"
-                    required
-                    placeholder="e.g. Jordan Brand, Nike, Yeezy, New Balance"
-                    value={form.name}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setForm(prev => ({
-                        ...prev,
-                        name: val,
-                        ...(!editingId ? { slug: val.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") } : {})
-                      }));
-                    }}
-                    className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs font-bold text-gray-900 dark:text-zinc-100 placeholder-gray-400 focus:outline-none focus:border-fire"
+                    type="url"
+                    placeholder="Or paste logo image URL..."
+                    value={form.image_url}
+                    onChange={(e) => setForm({ ...form, image_url: e.target.value })}
+                    className="w-full px-3 py-1.5 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-zinc-100 placeholder-gray-400 focus:outline-none focus:border-fire"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1">
-                    Brand Slug / Identifier *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="jordan, nike, yeezy"
-                    value={form.slug}
-                    onChange={(e) => setForm({ ...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, "") })}
-                    className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl font-mono text-xs text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-fire"
-                  />
+                {/* General Fields */}
+                <div className="md:col-span-8 space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1">
+                        Brand Name *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Jordan Brand, Nike, Yeezy, New Balance"
+                        value={form.name}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setForm(prev => ({
+                            ...prev,
+                            name: val,
+                            ...(!editingId ? { slug: val.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") } : {})
+                          }));
+                        }}
+                        className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs font-bold text-gray-900 dark:text-zinc-100 placeholder-gray-400 focus:outline-none focus:border-fire"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1">
+                        Brand Slug / Identifier *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="jordan, nike, yeezy"
+                        value={form.slug}
+                        onChange={(e) => setForm({ ...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, "") })}
+                        className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl font-mono text-xs text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-fire"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-gray-50 dark:bg-zinc-800/50 rounded-xl border border-gray-200 dark:border-zinc-700/60 text-xs text-gray-600 dark:text-zinc-400 space-y-1">
+                    <p className="font-bold text-gray-800 dark:text-zinc-200">ℹ️ Automatic App Integration</p>
+                    <p>
+                      Once added, this brand will immediately be selectable in Product Creation, Inventory Management, Storefront Filters, and Search Facets across the entire website.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-gray-100 dark:border-zinc-800">
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={() => { setShowAddForm(false); setEditingId(null); }}
+                      className="px-4 py-2 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={saving}
+                      className="px-5 py-2 bg-fire hover:bg-fire-hover text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                    >
+                      {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                      <span>{editingId ? "Update Brand" : "Save Brand"}</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              <div className="p-4 bg-gray-50 dark:bg-zinc-800/50 rounded-xl border border-gray-200 dark:border-zinc-700/60 text-xs text-gray-600 dark:text-zinc-400 space-y-1">
-                <p className="font-bold text-gray-800 dark:text-zinc-200">ℹ️ Automatic App Integration</p>
-                <p>
-                  Once added, this brand will immediately be selectable in Product Creation, Inventory Management, Storefront Filters, and Search Facets across the entire website.
-                </p>
               </div>
-
-              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-gray-100 dark:border-zinc-800">
-                <button
-                  type="button"
-                  onClick={() => { setShowAddForm(false); setEditingId(null); }}
-                  className="px-4 py-2 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 text-xs font-bold rounded-xl transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="px-5 py-2 bg-fire hover:bg-fire-hover text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center gap-1.5"
-                >
-                  {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
-                  <span>{editingId ? "Update Brand" : "Save Brand"}</span>
-                </button>
-              </div>
-            </div>
-
+            </form>
           </div>
-        </form>
+        </div>
       )}
 
       {/* Toolbar */}

@@ -519,16 +519,6 @@ function CategoryDetailPage({ categoryId, initialCategory, existingCategories = 
               </button>
             </>
           )}
-
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="px-5 py-2 bg-fire hover:bg-fire-hover text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-sm hover:shadow-fire/20 transition-all flex items-center gap-2 cursor-pointer"
-          >
-            {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
-            {isNew ? "Create Category" : "Save Changes"}
-          </button>
         </div>
       </div>
 
