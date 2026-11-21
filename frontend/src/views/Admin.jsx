@@ -649,7 +649,7 @@ export default function Admin() {
           {tab === "brands" && <BrandsCMS />}
           {tab === "cms" && <Cms setTab={setTab} />}
           {tab === "profitability" && <ProfitabilityAnalytics />}
-          {tab === "audit_logs" && <AuditLogs />}
+          {tab === "audit_logs" && <AuditLogs isDark={isDark} />}
         </main>
       </div>
     </div>
@@ -7893,7 +7893,7 @@ function InventoryManagement() {
   );
 }
 
-function AuditLogs() {
+function AuditLogs({ isDark }) {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -8233,17 +8233,17 @@ function AuditLogs() {
       {/* Detail Inspector Modal */}
       {selectedLog && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150"
+          className={`${isDark ? 'dark' : ''} fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-150`}
           onClick={() => setSelectedLog(null)}
         >
           <div
-            className="w-full max-w-2xl bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-150"
+            className="w-full max-w-2xl bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-150 text-gray-900 dark:text-zinc-100"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="p-5 border-b border-gray-200 dark:border-zinc-800 flex items-center justify-between bg-gray-50/50 dark:bg-zinc-850">
+            <div className="p-5 border-b border-gray-200 dark:border-zinc-800 flex items-center justify-between bg-gray-50/80 dark:bg-zinc-900">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-obsidian text-white dark:bg-white dark:text-black flex items-center justify-center font-bold">
+                <div className="w-10 h-10 rounded-xl bg-obsidian text-white dark:bg-zinc-800 dark:text-zinc-100 dark:border dark:border-zinc-700 flex items-center justify-center font-bold shadow-sm">
                   <Shield size={20} />
                 </div>
                 <div>
@@ -8260,16 +8260,16 @@ function AuditLogs() {
               </div>
               <button
                 onClick={() => setSelectedLog(null)}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
               >
                 <X size={18} />
               </button>
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 overflow-y-auto space-y-5 text-xs">
+            <div className="p-6 overflow-y-auto space-y-5 text-xs bg-white dark:bg-zinc-900">
               {/* Core Metadata Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-gray-50 dark:bg-zinc-800/50 p-3.5 rounded-xl border border-gray-100 dark:border-zinc-800">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-gray-50 dark:bg-zinc-950/70 p-3.5 rounded-xl border border-gray-200 dark:border-zinc-800">
                 <div>
                   <span className="text-[10px] font-medium text-gray-400 dark:text-zinc-500 uppercase tracking-wider block">Operator</span>
                   <span className="font-semibold text-gray-900 dark:text-zinc-100 mt-0.5 block">{selectedLog.admin_name}</span>
@@ -8280,13 +8280,13 @@ function AuditLogs() {
                 </div>
                 <div>
                   <span className="text-[10px] font-medium text-gray-400 dark:text-zinc-500 uppercase tracking-wider block">Entity ID</span>
-                  <span className="font-mono text-gray-900 dark:text-zinc-100 mt-0.5 block truncate" title={selectedLog.entity_id}>
+                  <span className="font-mono text-gray-900 dark:text-zinc-200 mt-0.5 block truncate" title={selectedLog.entity_id}>
                     {selectedLog.entity_id || "—"}
                   </span>
                 </div>
                 <div>
                   <span className="text-[10px] font-medium text-gray-400 dark:text-zinc-500 uppercase tracking-wider block">Date & Time</span>
-                  <span className="font-mono text-gray-900 dark:text-zinc-100 mt-0.5 block">
+                  <span className="font-mono text-gray-900 dark:text-zinc-200 mt-0.5 block">
                     {new Date(selectedLog.created_at).toLocaleString()}
                   </span>
                 </div>
@@ -8298,14 +8298,14 @@ function AuditLogs() {
                   <span className="text-xs font-semibold text-gray-700 dark:text-zinc-300">Detailed Action Payload</span>
                   <button
                     onClick={() => copyToClipboard(JSON.stringify(selectedLog.details, null, 2), "payload")}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-750 text-gray-700 dark:text-zinc-300 border border-gray-200 dark:border-zinc-700 transition-colors"
                   >
                     {copiedId === "payload" ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
                     <span>{copiedId === "payload" ? "Copied" : "Copy JSON"}</span>
                   </button>
                 </div>
-                <div className="relative rounded-xl overflow-hidden border border-gray-200 dark:border-zinc-800 bg-zinc-950 text-zinc-100 p-4 font-mono text-[11px] leading-relaxed max-h-64 overflow-y-auto">
-                  <pre className="whitespace-pre-wrap break-all">
+                <div className="relative rounded-xl overflow-hidden border border-gray-200 dark:border-zinc-800 bg-zinc-950 dark:bg-black text-zinc-100 p-4 font-mono text-[11px] leading-relaxed max-h-64 overflow-y-auto">
+                  <pre className="whitespace-pre-wrap break-all text-gray-200 dark:text-zinc-300">
                     {JSON.stringify(selectedLog.details, null, 2)}
                   </pre>
                 </div>
@@ -8313,10 +8313,10 @@ function AuditLogs() {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 border-t border-gray-200 dark:border-zinc-800 flex justify-end bg-gray-50/50 dark:bg-zinc-850">
+            <div className="p-4 border-t border-gray-200 dark:border-zinc-800 flex justify-end bg-gray-50/80 dark:bg-zinc-900">
               <button
                 onClick={() => setSelectedLog(null)}
-                className="px-4 py-2 text-xs font-medium rounded-lg bg-gray-200 dark:bg-zinc-800 text-gray-800 dark:text-zinc-200 hover:bg-gray-300 dark:hover:bg-zinc-700 transition-colors"
+                className="px-4 py-2 text-xs font-medium rounded-lg bg-gray-200 dark:bg-zinc-800 text-gray-800 dark:text-zinc-200 hover:bg-gray-300 dark:hover:bg-zinc-700 border border-transparent dark:border-zinc-700 transition-colors"
               >
                 Close
               </button>
