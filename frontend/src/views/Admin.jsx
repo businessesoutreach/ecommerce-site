@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Home, Megaphone, Tag, Layers, Zap, FileText, Search, LayoutDashboard, Package, ShoppingCart, Ticket, Star, Users, LogOut, TrendingUp, AlertTriangle, Plus, Trash2, X, RotateCcw, DollarSign, Image as ImageIcon, Upload, MessageCircle, Search as SearchIcon, Filter, MoreVertical, Eye, Download, Printer, CheckCircle, Check, Truck, MapPin, Edit, Copy, Activity, Loader2, HelpCircle, ExternalLink, Clock, ArrowLeft, ArrowUpRight, ArrowDownRight, RefreshCw, ShoppingBag, Box, ChevronRight, ChevronDown, Sun, Moon, Bell } from "lucide-react";
+import { CreditCard, Wallet, Home, Megaphone, Tag, Layers, Zap, FileText, Search, LayoutDashboard, Package, ShoppingCart, Ticket, Star, Users, LogOut, TrendingUp, AlertTriangle, Plus, Trash2, X, RotateCcw, DollarSign, Image as ImageIcon, Upload, MessageCircle, Search as SearchIcon, Filter, MoreVertical, Eye, Download, Printer, CheckCircle, Check, Truck, MapPin, Edit, Copy, Activity, Loader2, HelpCircle, ExternalLink, Clock, ArrowLeft, ArrowUpRight, ArrowDownRight, RefreshCw, ShoppingBag, Box, ChevronRight, ChevronDown, Sun, Moon, Bell } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell } from "recharts";
 import { http, fmt, imgUrl, waLink } from "../lib/api";
 import { useStore } from "../context/StoreContext";
@@ -972,6 +972,20 @@ function Orders() {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [showStatusGuide, setShowStatusGuide] = useState(false);
   const [trackParcelOrder, setTrackParcelOrder] = useState(null);
+  const [showBulkStatusMenu, setShowBulkStatusMenu] = useState(false);
+  const bulkDropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleOutside = (e) => {
+      if (bulkDropdownRef.current && !bulkDropdownRef.current.contains(e.target)) {
+        setShowBulkStatusMenu(false);
+      }
+    };
+    if (showBulkStatusMenu) {
+      document.addEventListener("mousedown", handleOutside);
+      return () => document.removeEventListener("mousedown", handleOutside);
+    }
+  }, [showBulkStatusMenu]);
 
   const openOrder = (o) => {
     const next = new URLSearchParams(searchParams);
@@ -1274,17 +1288,73 @@ function Orders() {
         </div>
       </div>
 
-      {/* Bulk Actions Floating Bar */}
+      {/* Bulk Actions Floating Bar with ALL Statuses */}
       {selected.length > 0 && (
-        <div className="bg-black dark:bg-zinc-900 border border-zinc-800 text-white p-3.5 flex justify-between items-center mb-4 sticky top-14 z-20 shadow-xl rounded-xl animate-in slide-in-from-top-2 duration-150">
-          <span className="font-bold text-sm flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-fire animate-ping" />
-            {selected.length} order{selected.length === 1 ? '' : 's'} selected
-          </span>
-          <div className="flex gap-2">
-            <button onClick={printPackingSlips} className="px-3 py-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 rounded-md transition-colors flex items-center gap-1.5"><Printer size={13}/> Print Slips</button>
-            <button onClick={() => bulkUpdateStatus('packed')} className="px-3 py-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 rounded-md transition-colors">Mark Packed</button>
-            <button onClick={() => bulkUpdateStatus('shipped')} className="px-3 py-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 rounded-md transition-colors">Mark Shipped</button>
+        <div className="bg-black dark:bg-zinc-900 border border-zinc-800 text-white p-3.5 flex flex-wrap gap-3 justify-between items-center mb-4 sticky top-14 z-20 shadow-xl rounded-xl animate-in slide-in-from-top-2 duration-150">
+          <div className="flex items-center gap-2.5">
+            <span className="font-bold text-sm flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-fire animate-ping" />
+              {selected.length} order{selected.length === 1 ? '' : 's'} selected
+            </span>
+            <button
+              onClick={() => setSelected([])}
+              className="text-xs text-zinc-400 hover:text-white underline ml-1 cursor-pointer"
+            >
+              Clear
+            </button>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button onClick={printPackingSlips} className="px-3 py-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer">
+              <Printer size={13}/> Print Slips
+            </button>
+            
+            <button onClick={() => bulkUpdateStatus('packed')} className="px-3 py-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 rounded-lg transition-colors cursor-pointer">
+              Mark Packed
+            </button>
+            <button onClick={() => bulkUpdateStatus('shipped')} className="px-3 py-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 rounded-lg transition-colors cursor-pointer">
+              Mark Shipped
+            </button>
+            <button onClick={() => bulkUpdateStatus('delivered')} className="px-3 py-1.5 text-xs font-bold bg-white/10 hover:bg-white/20 rounded-lg transition-colors cursor-pointer">
+              Mark Delivered
+            </button>
+
+            {/* All 8 Statuses Dropdown Popover */}
+            <div className="relative inline-block text-left" ref={bulkDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setShowBulkStatusMenu(!showBulkStatusMenu)}
+                className="px-3.5 py-1.5 text-xs font-bold bg-fire hover:bg-fire/90 text-white rounded-lg transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+              >
+                <span>Update Status to...</span>
+                <ChevronDown size={13} className={`transition-transform duration-150 ${showBulkStatusMenu ? "rotate-180" : ""}`} />
+              </button>
+
+              {showBulkStatusMenu && (
+                <div className="absolute right-0 top-full mt-1.5 w-56 rounded-xl bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 shadow-2xl py-1.5 z-50 text-gray-900 dark:text-zinc-100 animate-in fade-in zoom-in-95 duration-100">
+                  <div className="px-3 py-1.5 text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider border-b border-gray-100 dark:border-zinc-800">
+                    Apply Status to {selected.length} orders
+                  </div>
+                  {ORDER_STATES.map((s) => {
+                    const cfg = STATUS_CONFIG[s] || { label: s, dot: "bg-gray-400" };
+                    return (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => {
+                          setShowBulkStatusMenu(false);
+                          bulkUpdateStatus(s);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold hover:bg-gray-100 dark:hover:bg-zinc-800 text-left transition-colors cursor-pointer"
+                      >
+                        <span className={`w-2 h-2 rounded-full ${cfg.dot}`} />
+                        <span className="capitalize">{cfg.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -1503,8 +1573,13 @@ function CreateOrderPage({ onBack, onCreated }) {
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState([]);
   const [fetchingProducts, setFetchingProducts] = useState(true);
+  
+  // Catalog filters & search
+  const [catalogSearch, setCatalogSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [onlyInStock, setOnlyInStock] = useState(false);
 
-  // Form state
+  // Form state (Customer & Address)
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
@@ -1517,10 +1592,10 @@ function CreateOrderPage({ onBack, onCreated }) {
   const [discountAmount, setDiscountAmount] = useState(0);
   const [customerNote, setCustomerNote] = useState("");
 
-  // Items added to the order
+  // Items added to the order basket
   const [items, setItems] = useState([]);
 
-  // Current item selection draft
+  // Active sneaker selection for PDP-style configurator
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedQty, setSelectedQty] = useState(1);
@@ -1538,7 +1613,7 @@ function CreateOrderPage({ onBack, onCreated }) {
   ];
 
   useEffect(() => {
-    http.get('/products?limit=50')
+    http.get('/products?limit=100')
       .then(res => {
         const prods = res.data?.data || [];
         setProducts(prods);
@@ -1552,8 +1627,26 @@ function CreateOrderPage({ onBack, onCreated }) {
       .finally(() => setFetchingProducts(false));
   }, []);
 
-  const handleProductChange = (prodId) => {
-    const prod = products.find(p => p.id === prodId);
+  // Filter products by category, search term, and in-stock toggle
+  const categories = ["all", ...new Set(products.map(p => p.category_slug || p.brand_slug).filter(Boolean))];
+
+  const filteredProducts = products.filter(p => {
+    const matchesSearch = !catalogSearch.trim() || 
+      p.name?.toLowerCase().includes(catalogSearch.toLowerCase()) ||
+      p.brand_slug?.toLowerCase().includes(catalogSearch.toLowerCase()) ||
+      p.category_slug?.toLowerCase().includes(catalogSearch.toLowerCase());
+    
+    const matchesCat = selectedCategory === "all" || 
+      p.category_slug === selectedCategory || 
+      p.brand_slug === selectedCategory;
+
+    const totalStock = (p.sizes || []).reduce((acc, s) => acc + (s.stock || 0), 0);
+    const matchesStock = !onlyInStock || totalStock > 0;
+
+    return matchesSearch && matchesCat && matchesStock;
+  });
+
+  const selectSneaker = (prod) => {
     setSelectedProduct(prod);
     if (prod && prod.sizes?.length > 0) {
       const inStock = prod.sizes.find(s => s.stock > 0);
@@ -1600,7 +1693,24 @@ function CreateOrderPage({ onBack, onCreated }) {
       ]);
     }
 
-    toast.success(`Added ${selectedProduct.name} (EU ${selectedSize})`);
+    toast.success(`Added ${selectedProduct.name} (EU ${selectedSize}) to bag`);
+  };
+
+  const updateItemQty = (idx, delta) => {
+    setItems(prev => {
+      const updated = [...prev];
+      const it = updated[idx];
+      const newQty = it.quantity + delta;
+      if (newQty <= 0) {
+        return updated.filter((_, i) => i !== idx);
+      }
+      if (newQty > it.max_stock) {
+        toast.error(`Max stock available is ${it.max_stock}`);
+        return prev;
+      }
+      it.quantity = newQty;
+      return updated;
+    });
   };
 
   const removeItem = (idx) => {
@@ -1659,9 +1769,17 @@ function CreateOrderPage({ onBack, onCreated }) {
     }
   };
 
+  const activeSizeObj = selectedProduct?.sizes?.find(s => s.size === selectedSize);
+  const activeStock = activeSizeObj ? activeSizeObj.stock : 0;
+  const activeUnitPrice = selectedProduct ? (
+    selectedProduct.is_flash_sale && selectedProduct.flash_sale_price 
+      ? selectedProduct.flash_sale_price 
+      : selectedProduct.base_price
+  ) : 0;
+
   return (
-    <div className="pb-12 max-w-6xl mx-auto space-y-6 animate-in fade-in duration-150">
-      {/* Top Header */}
+    <div className="pb-16 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-150">
+      {/* Top Navigation & Breadcrumbs */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
           <button
@@ -1673,25 +1791,270 @@ function CreateOrderPage({ onBack, onCreated }) {
           <span className="text-gray-300 dark:text-zinc-700 text-sm hidden sm:inline">/</span>
           <span className="text-xs font-mono font-bold text-gray-500 dark:text-zinc-400 hidden sm:inline">Orders</span>
           <span className="text-gray-300 dark:text-zinc-700 text-sm hidden sm:inline">/</span>
-          <span className="text-xs font-mono font-black text-fire hidden sm:inline">New Order</span>
+          <span className="text-xs font-mono font-black text-fire hidden sm:inline">New Manual Order</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-mono text-gray-500 dark:text-zinc-400 bg-gray-100 dark:bg-zinc-800 px-3 py-1 rounded-full border border-gray-200 dark:border-zinc-700">
+            {products.length} Sneaker models available
+          </span>
         </div>
       </div>
 
       <div>
-        <h1 className="font-display tracking-tight text-2xl font-black text-gray-900 dark:text-zinc-100">Create Customer Order</h1>
-        <p className="text-sm text-gray-600 dark:text-zinc-400 font-medium">Direct manual order booking for WhatsApp, phone, or in-store drop with live stock validation.</p>
+        <h1 className="font-display tracking-tight text-2xl lg:text-3xl font-black text-gray-900 dark:text-zinc-100">
+          Manual Order Placement Desk
+        </h1>
+        <p className="text-sm text-gray-600 dark:text-zinc-400 font-medium">
+          Visual sneaker catalog selection, real-time EU warehouse sizing, and streamlined checkout for phone, WhatsApp & in-store orders.
+        </p>
       </div>
 
-      {/* Main 2-Column Form */}
+      {/* Main 2-Column Responsive Layout */}
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column: Customer & Delivery Address (7 cols) */}
+        
+        {/* Left Column (7 cols): Sneaker Catalog Picker + Customer Destination */}
         <div className="lg:col-span-7 space-y-6">
-          {/* Customer Info Card */}
-          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm space-y-4">
+          
+          {/* Card 1: Visual Sneaker Selector with Search & Filtering */}
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-gray-100 dark:border-zinc-800 pb-3">
+              <div>
+                <h2 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-2">
+                  <Package size={16} className="text-fire" /> 1. Select Sneaker Model
+                </h2>
+                <p className="text-[11px] text-gray-500 dark:text-zinc-400 mt-0.5">Click any sneaker card to configure size & quantity</p>
+              </div>
+
+              {/* In-Stock Only Toggle */}
+              <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-gray-700 dark:text-zinc-300">
+                <input
+                  type="checkbox"
+                  checked={onlyInStock}
+                  onChange={e => setOnlyInStock(e.target.checked)}
+                  className="rounded text-fire accent-fire"
+                />
+                <span>In-Stock Only</span>
+              </label>
+            </div>
+
+            {/* Catalog Search & Category Filter Pills */}
+            <div className="space-y-2.5">
+              <div className="relative">
+                <SearchIcon size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-500" />
+                <input
+                  type="text"
+                  placeholder="Search sneakers by name, brand (Jordan, Nike, Yeezy), or SKU..."
+                  value={catalogSearch}
+                  onChange={e => setCatalogSearch(e.target.value)}
+                  className="w-full pl-10 pr-9 py-2 border border-gray-300 dark:border-zinc-700 rounded-xl text-xs font-medium text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-fire placeholder:text-gray-400 dark:placeholder:text-zinc-500"
+                />
+                {catalogSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setCatalogSearch("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-fire"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+
+              {/* Category Pills */}
+              <div className="flex overflow-x-auto hide-scrollbar gap-1.5 py-1">
+                {categories.slice(0, 8).map(c => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setSelectedCategory(c)}
+                    className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
+                      selectedCategory === c
+                        ? "bg-black dark:bg-fire text-white shadow-sm"
+                        : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-700"
+                    }`}
+                  >
+                    {c === "all" ? "All Drops" : c.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Visual Sneaker Cards Scrollable Grid */}
+            {fetchingProducts ? (
+              <div className="p-8 text-center text-gray-400 dark:text-zinc-500 font-mono flex items-center justify-center gap-2">
+                <Loader2 size={16} className="animate-spin text-fire" /> Loading sneaker inventory...
+              </div>
+            ) : filteredProducts.length === 0 ? (
+              <div className="p-8 text-center border border-dashed border-gray-200 dark:border-zinc-800 rounded-xl text-xs text-gray-500 dark:text-zinc-400 font-mono">
+                No sneakers found matching "{catalogSearch}". Try another keyword or clear filter.
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-[300px] overflow-y-auto pr-1">
+                {filteredProducts.map(p => {
+                  const isSelected = selectedProduct?.id === p.id;
+                  const totalStock = (p.sizes || []).reduce((acc, s) => acc + (s.stock || 0), 0);
+                  const displayPrice = p.is_flash_sale && p.flash_sale_price ? p.flash_sale_price : p.base_price;
+                  const img = p.images?.[0] || p.hover_image || '';
+
+                  return (
+                    <div
+                      key={p.id}
+                      onClick={() => selectSneaker(p)}
+                      className={`cursor-pointer p-2.5 rounded-xl border transition-all text-left relative flex flex-col justify-between group ${
+                        isSelected
+                          ? "border-fire bg-fire/5 dark:bg-fire/10 ring-2 ring-fire/50 shadow-sm"
+                          : "border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-800/60 hover:border-gray-400 dark:hover:border-zinc-600"
+                      }`}
+                    >
+                      <div>
+                        <div className="aspect-square bg-gray-50 dark:bg-zinc-800 rounded-lg overflow-hidden flex items-center justify-center mb-2 border border-gray-100 dark:border-zinc-700">
+                          {img ? (
+                            <img src={img} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" />
+                          ) : (
+                            <Package size={24} className="text-gray-300" />
+                          )}
+                        </div>
+                        <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-gray-400 dark:text-zinc-500 block truncate">
+                          {p.brand_slug?.replace('-', ' ') || 'SNEAKER'}
+                        </span>
+                        <p className="font-bold text-xs text-gray-900 dark:text-zinc-100 line-clamp-1 leading-snug">
+                          {p.name}
+                        </p>
+                      </div>
+
+                      <div className="mt-2 pt-1.5 border-t border-gray-100 dark:border-zinc-700/60 flex items-center justify-between">
+                        <span className="font-mono font-bold text-xs text-fire">
+                          {fmt(displayPrice)}
+                        </span>
+                        <span className={`text-[10px] font-mono font-bold ${totalStock > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
+                          {totalStock > 0 ? `${totalStock} in stock` : 'Sold out'}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Active Sneaker Sizing Bench (PDP Style) */}
+            {selectedProduct && (
+              <div className="pt-3 border-t border-gray-100 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 p-4 rounded-xl space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-14 h-14 bg-white dark:bg-zinc-800 rounded-lg overflow-hidden border border-gray-200 dark:border-zinc-700 shrink-0">
+                    <img src={selectedProduct.images?.[0] || selectedProduct.hover_image} alt={selectedProduct.name} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-[10px] font-mono uppercase font-bold tracking-wider text-fire">
+                      Selected Silhouette
+                    </span>
+                    <h3 className="font-bold text-sm text-gray-900 dark:text-zinc-100 truncate">
+                      {selectedProduct.name}
+                    </h3>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="font-mono font-bold text-xs text-gray-900 dark:text-zinc-100">
+                        {fmt(activeUnitPrice)}
+                      </span>
+                      {selectedProduct.compare_at_price > activeUnitPrice && (
+                        <span className="font-mono text-xs text-gray-400 line-through">
+                          {fmt(selectedProduct.compare_at_price)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* EU Size Selection Grid */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="font-bold text-xs text-gray-700 dark:text-zinc-300">
+                      Select EU Size
+                    </label>
+                    {selectedSize && (
+                      <span className="text-[11px] font-mono text-gray-500 dark:text-zinc-400">
+                        {activeStock > 0 ? (
+                          <span className="text-emerald-600 dark:text-emerald-400 font-bold">● {activeStock} pairs available</span>
+                        ) : (
+                          <span className="text-rose-500 font-bold">● Out of stock</span>
+                        )}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5">
+                    {selectedProduct.sizes?.map(s => {
+                      const isSelected = selectedSize === s.size;
+                      const inStock = s.stock > 0;
+                      return (
+                        <button
+                          key={s.size}
+                          type="button"
+                          disabled={!inStock}
+                          onClick={() => {
+                            setSelectedSize(s.size);
+                            setSelectedQty(1);
+                          }}
+                          className={`py-2 rounded-lg border text-xs font-mono transition-all text-center flex flex-col items-center justify-center ${
+                            isSelected
+                              ? "bg-black dark:bg-fire text-white border-black dark:border-fire shadow-sm font-bold scale-[1.02]"
+                              : inStock
+                              ? "bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 border-gray-200 dark:border-zinc-700 hover:border-black dark:hover:border-white font-semibold"
+                              : "bg-gray-100 dark:bg-zinc-950 text-gray-400 dark:text-zinc-600 border-gray-200 dark:border-zinc-800 line-through cursor-not-allowed opacity-50"
+                          }`}
+                        >
+                          <span className="font-bold">{s.size}</span>
+                          <span className="text-[9px] opacity-75">{inStock ? `${s.stock} left` : '0'}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Quantity and Add Button */}
+                <div className="flex items-center gap-3 pt-1">
+                  <div className="w-28">
+                    <label className="font-bold text-xs text-gray-700 dark:text-zinc-300 block mb-1">Quantity</label>
+                    <div className="flex items-center border border-gray-300 dark:border-zinc-700 rounded-lg overflow-hidden bg-white dark:bg-zinc-800">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedQty(Math.max(1, selectedQty - 1))}
+                        className="px-2.5 py-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-600 dark:text-zinc-300 font-bold"
+                      >
+                        -
+                      </button>
+                      <span className="flex-1 text-center font-mono font-bold text-xs text-gray-900 dark:text-zinc-100">
+                        {selectedQty}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedQty(Math.min(activeStock || 10, selectedQty + 1))}
+                        className="px-2.5 py-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-600 dark:text-zinc-300 font-bold"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex-1 pt-5">
+                    <button
+                      type="button"
+                      disabled={!activeStock || activeStock <= 0}
+                      onClick={addItem}
+                      className="w-full bg-black dark:bg-fire hover:bg-fire dark:hover:bg-fire/90 text-white font-bold py-2.5 rounded-lg text-xs transition-colors flex items-center justify-center gap-2 shadow-sm uppercase tracking-wider disabled:opacity-40"
+                    >
+                      <Plus size={15} /> Add EU {selectedSize || '--'} to Order Bag
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Card 2: Customer Contact & Delivery Address (Public Checkout Style) */}
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-4">
             <h2 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-2 border-b border-gray-100 dark:border-zinc-800 pb-3">
-              <Users size={16} className="text-fire" /> 1. Customer Information
+              <Users size={16} className="text-fire" /> 2. Customer & Delivery Destination
             </h2>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="font-bold text-xs text-gray-700 dark:text-zinc-300 block mb-1">Customer Full Name *</label>
@@ -1721,23 +2084,18 @@ function CreateOrderPage({ onBack, onCreated }) {
               <label className="font-bold text-xs text-gray-700 dark:text-zinc-300 block mb-1">Email Address (Optional)</label>
               <input
                 type="email"
-                placeholder="customer@gmail.com (for shipping invoice email)"
+                placeholder="customer@gmail.com (for digital order invoice)"
                 value={customerEmail}
                 onChange={e => setCustomerEmail(e.target.value)}
                 className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg px-3.5 py-2 text-xs font-medium text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-fire"
               />
             </div>
-          </div>
 
-          {/* Delivery Destination Card */}
-          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm space-y-4">
-            <h2 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-2 border-b border-gray-100 dark:border-zinc-800 pb-3">
-              <MapPin size={16} className="text-fire" /> 2. Delivery Destination
-            </h2>
-
-            {/* Quick City Buttons */}
+            {/* Quick Pakistani City Selector */}
             <div>
-              <label className="font-bold text-[11px] uppercase tracking-wider text-gray-500 dark:text-zinc-400 block mb-2">Quick City Selection</label>
+              <label className="font-bold text-[11px] uppercase tracking-wider text-gray-500 dark:text-zinc-400 block mb-2">
+                Quick Pakistan City Selection
+              </label>
               <div className="flex flex-wrap gap-1.5">
                 {CITIES.map(c => (
                   <button
@@ -1750,7 +2108,7 @@ function CreateOrderPage({ onBack, onCreated }) {
                     className={`px-2.5 py-1 text-xs font-bold rounded-lg border transition-all ${
                       city.toLowerCase() === c.name.toLowerCase()
                         ? "bg-black dark:bg-fire text-white border-black dark:border-fire shadow-sm"
-                        : "bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 border-gray-200 dark:border-zinc-700 hover:border-black"
+                        : "bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 border-gray-200 dark:border-zinc-700 hover:border-black dark:hover:border-white"
                     }`}
                   >
                     {c.name}
@@ -1812,10 +2170,10 @@ function CreateOrderPage({ onBack, onCreated }) {
             </div>
 
             <div>
-              <label className="font-bold text-xs text-gray-700 dark:text-zinc-300 block mb-1">Delivery / Internal Staff Note (Optional)</label>
+              <label className="font-bold text-xs text-gray-700 dark:text-zinc-300 block mb-1">Special Delivery Instructions / Note</label>
               <textarea
                 rows={2}
-                placeholder="e.g. Call before delivery, handle with care, WhatsApp customer"
+                placeholder="e.g. Call before delivery, handle sneaker box with care"
                 value={customerNote}
                 onChange={e => setCustomerNote(e.target.value)}
                 className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg p-3 text-xs text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-fire resize-none"
@@ -1824,164 +2182,187 @@ function CreateOrderPage({ onBack, onCreated }) {
           </div>
         </div>
 
-        {/* Right Column: Sneaker Inventory Picker & Price Calculation (5 cols) */}
+        {/* Right Column (5 cols): Order Basket + Payment Cards + Total Checkout Receipt */}
         <div className="lg:col-span-5 space-y-6">
-          {/* Sneaker Picker Card */}
-          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm space-y-4">
-            <h2 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-2 border-b border-gray-100 dark:border-zinc-800 pb-3">
-              <Package size={16} className="text-fire" /> 3. Select Sneaker Drop
-            </h2>
+          
+          {/* Card 3: Order Basket Table (Public Cart Style) */}
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-100 dark:border-zinc-800 pb-3">
+              <h2 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-2">
+                <ShoppingBag size={16} className="text-fire" /> Order Basket ({items.reduce((acc, it) => acc + it.quantity, 0)} items)
+              </h2>
+              {items.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setItems([])}
+                  className="text-[11px] text-gray-400 hover:text-fire transition-colors"
+                >
+                  Clear Bag
+                </button>
+              )}
+            </div>
 
-            {fetchingProducts ? (
-              <div className="p-6 text-center text-gray-400 dark:text-zinc-500 font-mono flex items-center justify-center gap-2">
-                <Loader2 size={16} className="animate-spin text-fire" /> Loading sneaker inventory...
+            {items.length === 0 ? (
+              <div className="p-8 text-center border border-dashed border-gray-200 dark:border-zinc-800 rounded-xl space-y-2">
+                <ShoppingBag size={28} className="mx-auto text-gray-300 dark:text-zinc-600" />
+                <p className="font-bold text-xs text-gray-600 dark:text-zinc-400">Order bag is currently empty</p>
+                <p className="text-[11px] text-gray-400 dark:text-zinc-500">
+                  Pick a sneaker from the catalog on the left and select an EU size to add pairs.
+                </p>
               </div>
             ) : (
-              <div className="space-y-4">
-                <div>
-                  <label className="font-bold text-xs text-gray-700 dark:text-zinc-300 block mb-1.5">Sneaker Silhouette</label>
-                  <select
-                    value={selectedProduct?.id || ""}
-                    onChange={e => handleProductChange(e.target.value)}
-                    className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg px-3.5 py-2.5 text-xs font-semibold text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-fire"
-                  >
-                    {products.map(p => (
-                      <option key={p.id} value={p.id}>
-                        {p.name} — Rs. {(p.is_flash_sale && p.flash_sale_price ? p.flash_sale_price : p.base_price).toLocaleString()}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* EU Size Pill Selector with live stock */}
-                <div>
-                  <label className="font-bold text-xs text-gray-700 dark:text-zinc-300 block mb-1.5">Select EU Size</label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {selectedProduct?.sizes?.map(s => {
-                      const isSelected = selectedSize === s.size;
-                      const inStock = s.stock > 0;
-                      return (
-                        <button
-                          key={s.size}
-                          type="button"
-                          disabled={!inStock}
-                          onClick={() => setSelectedSize(s.size)}
-                          className={`py-2 px-1 text-center rounded-lg border text-xs font-mono transition-all ${
-                            isSelected
-                              ? "bg-black dark:bg-fire text-white border-black dark:border-fire shadow-sm font-bold"
-                              : inStock
-                              ? "bg-white dark:bg-zinc-800 text-gray-800 dark:text-zinc-200 border-gray-200 dark:border-zinc-700 hover:border-black font-semibold"
-                              : "bg-gray-100 dark:bg-zinc-950 text-gray-400 dark:text-zinc-600 border-gray-200 dark:border-zinc-800 cursor-not-allowed opacity-50"
-                          }`}
-                        >
-                          <span className="block font-bold">EU {s.size}</span>
-                          <span className="text-[10px] block opacity-80">{inStock ? `${s.stock} left` : 'Sold Out'}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Quantity and Add Button */}
-                <div className="flex items-center gap-3 pt-2">
-                  <div className="w-28">
-                    <label className="font-bold text-xs text-gray-700 dark:text-zinc-300 block mb-1">Quantity</label>
-                    <div className="flex items-center border border-gray-300 dark:border-zinc-700 rounded-lg overflow-hidden bg-white dark:bg-zinc-800">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedQty(Math.max(1, selectedQty - 1))}
-                        className="px-2.5 py-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-600 dark:text-zinc-300 font-bold"
-                      >
-                        -
-                      </button>
-                      <span className="flex-1 text-center font-mono font-bold text-xs text-gray-900 dark:text-zinc-100">
-                        {selectedQty}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedQty(selectedQty + 1)}
-                        className="px-2.5 py-1.5 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-600 dark:text-zinc-300 font-bold"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex-1 pt-5">
-                    <button
-                      type="button"
-                      onClick={addItem}
-                      className="w-full bg-black dark:bg-zinc-800 hover:bg-fire dark:hover:bg-fire text-white font-bold py-2.5 rounded-lg text-xs transition-colors flex items-center justify-center gap-2 shadow-sm uppercase tracking-wider"
-                    >
-                      <Plus size={15} /> Add to Order
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Added Items List */}
-            <div className="pt-2">
-              <label className="font-bold text-[11px] uppercase tracking-wider text-gray-500 dark:text-zinc-400 block mb-2">
-                Order Items ({items.length})
-              </label>
-              {items.length === 0 ? (
-                <div className="p-6 text-center text-gray-400 dark:text-zinc-500 border border-dashed border-gray-200 dark:border-zinc-800 rounded-xl font-mono text-xs">
-                  No sneakers added yet. Pick a model and size above.
-                </div>
-              ) : (
-                <div className="border border-gray-200 dark:border-zinc-800 rounded-xl divide-y divide-gray-100 dark:divide-zinc-800 overflow-hidden bg-gray-50/50 dark:bg-zinc-800/40">
-                  {items.map((it, idx) => (
-                    <div key={idx} className="p-3 flex items-center justify-between gap-3 text-xs">
-                      <div className="flex items-center gap-3 min-w-0">
-                        {it.image ? (
-                          <img src={it.image} alt={it.name} className="w-12 h-12 object-cover rounded-lg border border-gray-200 dark:border-zinc-700 shrink-0" />
-                        ) : (
-                          <div className="w-12 h-12 bg-gray-100 dark:bg-zinc-800 rounded-lg grid place-items-center text-gray-400 shrink-0"><Package size={18}/></div>
-                        )}
-                        <div className="min-w-0">
-                          <p className="font-bold text-gray-900 dark:text-zinc-100 truncate">{it.name}</p>
-                          <p className="text-gray-500 dark:text-zinc-400 font-mono text-[11px]">EU {it.size} · Rs. {it.unit_price.toLocaleString()} × {it.quantity}</p>
+              <div className="divide-y divide-gray-100 dark:divide-zinc-800 max-h-[320px] overflow-y-auto pr-1">
+                {items.map((it, idx) => (
+                  <div key={idx} className="py-3 flex items-center justify-between gap-3 text-xs">
+                    <div className="flex items-center gap-3 min-w-0">
+                      {it.image ? (
+                        <img src={it.image} alt={it.name} className="w-12 h-12 object-cover rounded-lg border border-gray-200 dark:border-zinc-700 shrink-0" />
+                      ) : (
+                        <div className="w-12 h-12 bg-gray-100 dark:bg-zinc-800 rounded-lg grid place-items-center text-gray-400 shrink-0"><Package size={18}/></div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="font-bold text-gray-900 dark:text-zinc-100 truncate">{it.name}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="bg-black dark:bg-fire text-white font-mono text-[10px] font-bold px-1.5 py-0.5 rounded">
+                            EU {it.size}
+                          </span>
+                          <span className="text-gray-500 dark:text-zinc-400 font-mono text-[11px]">
+                            {fmt(it.unit_price)}
+                          </span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="font-mono font-bold text-gray-900 dark:text-zinc-100">
-                          Rs. {(it.unit_price * it.quantity).toLocaleString()}
+                    </div>
+
+                    <div className="flex items-center gap-3 shrink-0">
+                      {/* Inline Quantity Stepper */}
+                      <div className="flex items-center border border-gray-200 dark:border-zinc-700 rounded-md overflow-hidden bg-gray-50 dark:bg-zinc-800">
+                        <button
+                          type="button"
+                          onClick={() => updateItemQty(idx, -1)}
+                          className="px-2 py-0.5 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 font-bold"
+                        >
+                          -
+                        </button>
+                        <span className="px-2 font-mono font-bold text-xs text-gray-900 dark:text-zinc-100">
+                          {it.quantity}
                         </span>
                         <button
                           type="button"
-                          onClick={() => removeItem(idx)}
-                          className="text-gray-400 hover:text-fire p-1"
-                          title="Remove item"
+                          onClick={() => updateItemQty(idx, 1)}
+                          className="px-2 py-0.5 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 font-bold"
                         >
-                          <Trash2 size={15} />
+                          +
                         </button>
                       </div>
+
+                      <span className="font-mono font-bold text-xs text-gray-900 dark:text-zinc-100 w-20 text-right">
+                        {fmt(it.unit_price * it.quantity)}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => removeItem(idx)}
+                        className="text-gray-400 hover:text-fire p-1"
+                        title="Remove pair"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
-                  ))}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Card 4: Payment Method Selection Cards (Like Public Checkout) */}
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-3">
+            <h2 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-2 border-b border-gray-100 dark:border-zinc-800 pb-3">
+              <DollarSign size={16} className="text-fire" /> 3. Payment Method
+            </h2>
+
+            <div className="grid grid-cols-1 gap-2.5">
+              {/* COD Card */}
+              <div
+                onClick={() => setPaymentMethod("COD")}
+                className={`cursor-pointer p-3.5 rounded-xl border flex items-center justify-between transition-all ${
+                  paymentMethod === "COD"
+                    ? "border-black dark:border-fire bg-gray-50 dark:bg-zinc-800 shadow-sm"
+                    : "border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                    <Truck size={18} />
+                  </div>
+                  <div>
+                    <p className="font-bold text-xs text-gray-900 dark:text-zinc-100">Cash on Delivery (COD)</p>
+                    <p className="text-[11px] text-gray-500 dark:text-zinc-400">Rider collects cash upon doorstep delivery</p>
+                  </div>
                 </div>
-              )}
+                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                  paymentMethod === "COD" ? "border-fire bg-fire" : "border-gray-300 dark:border-zinc-600"
+                }`}>
+                  {paymentMethod === "COD" && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
+                </div>
+              </div>
+
+              {/* Online Card / Safepay */}
+              <div
+                onClick={() => setPaymentMethod("Card")}
+                className={`cursor-pointer p-3.5 rounded-xl border flex items-center justify-between transition-all ${
+                  paymentMethod === "Card"
+                    ? "border-black dark:border-fire bg-gray-50 dark:bg-zinc-800 shadow-sm"
+                    : "border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 flex items-center justify-center shrink-0">
+                    <CreditCard size={18} />
+                  </div>
+                  <div>
+                    <p className="font-bold text-xs text-gray-900 dark:text-zinc-100">Card / Safepay</p>
+                    <p className="text-[11px] text-gray-500 dark:text-zinc-400">Prepaid via Visa, Mastercard, or Safepay link</p>
+                  </div>
+                </div>
+                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                  paymentMethod === "Card" ? "border-fire bg-fire" : "border-gray-300 dark:border-zinc-600"
+                }`}>
+                  {paymentMethod === "Card" && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
+                </div>
+              </div>
+
+              {/* Bank Transfer */}
+              <div
+                onClick={() => setPaymentMethod("Bank Transfer")}
+                className={`cursor-pointer p-3.5 rounded-xl border flex items-center justify-between transition-all ${
+                  paymentMethod === "Bank Transfer"
+                    ? "border-black dark:border-fire bg-gray-50 dark:bg-zinc-800 shadow-sm"
+                    : "border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-400 flex items-center justify-center shrink-0">
+                    <Wallet size={18} />
+                  </div>
+                  <div>
+                    <p className="font-bold text-xs text-gray-900 dark:text-zinc-100">Direct Bank Transfer</p>
+                    <p className="text-[11px] text-gray-500 dark:text-zinc-400">Customer transfers via mobile banking / IBFT</p>
+                  </div>
+                </div>
+                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                  paymentMethod === "Bank Transfer" ? "border-fire bg-fire" : "border-gray-300 dark:border-zinc-600"
+                }`}>
+                  {paymentMethod === "Bank Transfer" && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Payment & Invoice Summary Card */}
-          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm space-y-4">
+          {/* Card 5: Checkout Receipt & Order Issuance */}
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-4">
             <h2 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-2 border-b border-gray-100 dark:border-zinc-800 pb-3">
-              <DollarSign size={16} className="text-fire" /> 4. Payment & Financial Total
+              <FileText size={16} className="text-fire" /> 4. Financial Calculations
             </h2>
-
-            <div>
-              <label className="font-bold text-xs text-gray-700 dark:text-zinc-300 block mb-1">Payment Method</label>
-              <select
-                value={paymentMethod}
-                onChange={e => setPaymentMethod(e.target.value)}
-                className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg px-3.5 py-2 text-xs font-semibold text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-fire"
-              >
-                <option value="COD">Cash on Delivery (COD)</option>
-                <option value="Card">Safepay / Debit & Credit Card</option>
-                <option value="Bank Transfer">Direct Bank Transfer</option>
-              </select>
-            </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -2007,7 +2388,7 @@ function CreateOrderPage({ onBack, onCreated }) {
             </div>
 
             {/* Calculations Breakdown */}
-            <div className="pt-3 border-t border-gray-100 dark:border-zinc-800 space-y-2 text-xs">
+            <div className="pt-2 border-t border-gray-100 dark:border-zinc-800 space-y-2 text-xs">
               <div className="flex justify-between text-gray-600 dark:text-zinc-400">
                 <span>Items Subtotal</span>
                 <span className="font-mono font-bold text-gray-900 dark:text-zinc-100">Rs. {subtotal.toLocaleString()}</span>
@@ -2027,7 +2408,7 @@ function CreateOrderPage({ onBack, onCreated }) {
               <div className="pt-3 border-t border-gray-200 dark:border-zinc-700 flex justify-between items-baseline">
                 <div>
                   <span className="font-display text-sm font-black text-gray-900 dark:text-zinc-100 block">Total Due</span>
-                  <span className="text-[10px] text-gray-500 dark:text-zinc-400 font-medium">{paymentMethod}</span>
+                  <span className="text-[10px] text-gray-500 dark:text-zinc-400 font-medium">Payment: {paymentMethod}</span>
                 </div>
                 <span className="font-mono text-2xl font-black text-fire">
                   Rs. {total.toLocaleString()}
@@ -2038,10 +2419,10 @@ function CreateOrderPage({ onBack, onCreated }) {
             <button
               type="submit"
               disabled={loading || items.length === 0}
-              className="w-full bg-black dark:bg-fire hover:bg-fire dark:hover:bg-fire/90 text-white font-bold py-3 rounded-xl transition-all shadow-md text-xs uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50 mt-2"
+              className="w-full bg-black dark:bg-fire hover:bg-fire dark:hover:bg-fire/90 text-white font-bold py-3.5 rounded-xl transition-all shadow-md text-xs uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50 mt-2"
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
-              <span>Create Order & Issue Invoice</span>
+              <span>Place Order & Issue Invoice</span>
             </button>
           </div>
         </div>
