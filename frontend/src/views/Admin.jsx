@@ -9243,7 +9243,7 @@ function PosSystem() {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-5 h-[calc(100vh-80px)] pb-4">
+    <div className="flex flex-col lg:flex-row gap-5 pb-8 min-h-[calc(100vh-85px)] lg:h-[calc(100vh-85px)]">
       {/* LEFT COLUMN: Product Catalog & Fast Search */}
       <div className="flex-1 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl flex flex-col min-h-0 shadow-sm overflow-hidden">
         {/* Search & Category Header */}
@@ -9399,16 +9399,16 @@ function PosSystem() {
       </div>
 
       {/* RIGHT COLUMN: Interactive Cart & Fast Counter Checkout */}
-      <div className="w-full lg:w-[410px] bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl flex flex-col shrink-0 min-h-0 shadow-sm overflow-hidden">
+      <div className="w-full lg:w-[430px] bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl flex flex-col shrink-0 shadow-sm overflow-y-auto custom-scrollbar lg:h-full">
         {/* Cart Top Bar */}
-        <div className="p-4 border-b border-gray-200 dark:border-zinc-800 flex justify-between items-center bg-gray-50/60 dark:bg-zinc-900/60">
+        <div className="p-4 border-b border-gray-200 dark:border-zinc-800 flex justify-between items-center bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xs sticky top-0 z-10 shrink-0">
           <div className="flex items-center gap-2">
             <ShoppingBag size={17} className="text-fire" />
             <h3 className="font-display font-bold text-base text-gray-900 dark:text-zinc-100 tracking-tight">
               Counter Register
             </h3>
             <span className="bg-fire text-white text-[10px] font-bold px-2 py-0.5 rounded-full font-mono">
-              {cart.reduce((sum, it) => sum + it.quantity, 0)}
+              {cart.reduce((sum, it) => sum + it.quantity, 0)} items
             </span>
           </div>
 
@@ -9423,11 +9423,11 @@ function PosSystem() {
           )}
         </div>
 
-        {/* Cart Items List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+        {/* Cart Items List - Full Natural Height (No Squeezing) */}
+        <div className="p-4 space-y-3 shrink-0">
           {cart.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center p-6 text-gray-400 dark:text-zinc-500">
-              <ShoppingCart size={36} className="text-gray-300 dark:text-zinc-700 mb-2 stroke-[1.5]" />
+            <div className="py-10 flex flex-col items-center justify-center text-center text-gray-400 dark:text-zinc-500">
+              <ShoppingCart size={38} className="text-gray-300 dark:text-zinc-700 mb-2 stroke-[1.5]" />
               <p className="text-sm font-bold text-gray-700 dark:text-zinc-300">Cart is empty</p>
               <p className="text-xs">Click sneaker drops from the left to ring up sales</p>
             </div>
@@ -9435,9 +9435,9 @@ function PosSystem() {
             cart.map(item => (
               <div
                 key={item.key}
-                className="bg-gray-50/80 dark:bg-zinc-800/60 border border-gray-200 dark:border-zinc-700/80 rounded-xl p-3 flex gap-3 items-center"
+                className="bg-gray-50/90 dark:bg-zinc-800/70 border border-gray-200 dark:border-zinc-700/80 rounded-xl p-3.5 flex gap-3.5 items-center shadow-2xs"
               >
-                <div className="w-12 h-12 rounded-lg bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 overflow-hidden shrink-0">
+                <div className="w-14 h-14 rounded-lg bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 overflow-hidden shrink-0">
                   <img
                     src={item.image_url || 'https://via.placeholder.com/60?text=Shoe'}
                     alt={item.name}
@@ -9446,25 +9446,25 @@ function PosSystem() {
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <h5 className="text-xs font-bold text-gray-900 dark:text-zinc-100 truncate" title={item.name}>
+                  <h5 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-zinc-100 truncate" title={item.name}>
                     {item.name}
                   </h5>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[10px] font-bold bg-gray-200 dark:bg-zinc-700 px-1.5 py-0.5 rounded text-gray-700 dark:text-zinc-300 font-mono">
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[11px] font-bold bg-white dark:bg-zinc-700 border border-gray-300 dark:border-zinc-600 px-2 py-0.5 rounded text-gray-800 dark:text-zinc-200 font-mono shadow-2xs">
                       Size: {item.size}
                     </span>
-                    <span className="text-[11px] text-gray-500 dark:text-zinc-400 font-mono">
+                    <span className="text-xs text-gray-600 dark:text-zinc-400 font-mono font-medium">
                       {fmt(item.price)}
                     </span>
                   </div>
 
                   {/* Quantity Stepper Controls */}
-                  <div className="flex items-center gap-2 mt-2">
-                    <div className="flex items-center border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 shadow-2xs">
+                  <div className="flex items-center gap-2.5 mt-2.5">
+                    <div className="flex items-center border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 shadow-2xs overflow-hidden">
                       <button
                         type="button"
                         onClick={() => updateQuantity(item.key, item.quantity - 1)}
-                        className="px-2 py-1 text-gray-600 dark:text-zinc-300 hover:text-black dark:hover:text-white transition-colors cursor-pointer text-xs font-bold"
+                        className="w-7 h-7 flex items-center justify-center text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer text-sm font-bold"
                         title="Decrease"
                       >
                         -
@@ -9481,7 +9481,7 @@ function PosSystem() {
                         type="button"
                         onClick={() => updateQuantity(item.key, item.quantity + 1)}
                         disabled={item.quantity >= item.max_stock}
-                        className="px-2 py-1 text-gray-600 dark:text-zinc-300 hover:text-black dark:hover:text-white transition-colors cursor-pointer text-xs font-bold disabled:opacity-30 disabled:pointer-events-none"
+                        className="w-7 h-7 flex items-center justify-center text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer text-sm font-bold disabled:opacity-30 disabled:pointer-events-none"
                         title="Increase"
                       >
                         +
@@ -9489,21 +9489,21 @@ function PosSystem() {
                     </div>
 
                     <span className="text-[10px] text-gray-500 dark:text-zinc-400 font-mono">
-                      max {item.max_stock}
+                      in stock: {item.max_stock}
                     </span>
                   </div>
                 </div>
 
-                <div className="text-right flex flex-col justify-between items-end self-stretch shrink-0">
+                <div className="text-right flex flex-col justify-between items-end self-stretch shrink-0 py-0.5">
                   <button
                     type="button"
                     onClick={() => removeFromCart(item.key)}
-                    className="text-gray-400 hover:text-rose-600 transition-colors cursor-pointer p-1"
+                    className="text-gray-400 hover:text-rose-600 transition-colors cursor-pointer p-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/30"
                     title="Remove item"
                   >
-                    <Trash2 size={13} />
+                    <Trash2 size={15} />
                   </button>
-                  <span className="font-mono font-bold text-xs text-gray-900 dark:text-zinc-100">
+                  <span className="font-mono font-black text-sm text-gray-900 dark:text-zinc-100">
                     {fmt(item.price * item.quantity)}
                   </span>
                 </div>
