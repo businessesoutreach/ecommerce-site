@@ -4002,13 +4002,13 @@ function Products() {
                       className="accent-fire rounded"
                     />
                   </th>
-                  <th className="p-3.5">Sneaker Product</th>
-                  <th className="p-3.5">SKU / Handle</th>
-                  <th className="p-3.5">Category & Brand</th>
-                  <th className="p-3.5">Retail Price</th>
-                  <th className="p-3.5 text-center">Stock Depth</th>
-                  <th className="p-3.5">Status</th>
-                  <th className="p-3.5 pr-5 text-right">Actions</th>
+                  <th className="p-3.5 min-w-[220px]">Sneaker Product</th>
+                  <th className="p-3.5 whitespace-nowrap">SKU / Handle</th>
+                  <th className="p-3.5 whitespace-nowrap">Category & Brand</th>
+                  <th className="p-3.5 whitespace-nowrap">Retail Price</th>
+                  <th className="p-3.5 text-center whitespace-nowrap">Stock Depth</th>
+                  <th className="p-3.5 whitespace-nowrap">Status</th>
+                  <th className="p-3.5 pr-5 text-right whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-zinc-800/60">
@@ -4056,10 +4056,10 @@ function Products() {
                             </div>
                           </div>
                         </td>
-                        <td className="p-3.5 font-mono text-xs text-gray-500 dark:text-zinc-400">
+                        <td className="p-3.5 font-mono text-xs text-gray-500 dark:text-zinc-400 whitespace-nowrap">
                           {p.slug}
                         </td>
-                        <td className="p-3.5">
+                        <td className="p-3.5 whitespace-nowrap">
                           <span className="font-bold capitalize text-gray-900 dark:text-zinc-200 block">
                             {p.category_slug}
                           </span>
@@ -4067,7 +4067,7 @@ function Products() {
                             {p.brand_slug || "AirVault"}
                           </span>
                         </td>
-                        <td className="p-3.5 font-mono font-black text-sm text-gray-900 dark:text-zinc-100">
+                        <td className="p-3.5 font-mono font-black text-sm text-gray-900 dark:text-zinc-100 whitespace-nowrap">
                           {fmt(p.base_price)}
                           {p.compare_at_price && (
                             <span className="block text-[10px] text-gray-400 line-through font-normal">
@@ -4075,18 +4075,19 @@ function Products() {
                             </span>
                           )}
                         </td>
-                        <td className="p-3.5 text-center">
-                          <span className={`font-mono font-bold px-2 py-0.5 rounded-full text-xs ${stock === 0
+                        <td className="p-3.5 text-center whitespace-nowrap">
+                          <span className={`inline-flex items-center justify-center gap-1.5 font-mono font-bold px-2.5 py-1 rounded-full text-xs whitespace-nowrap shadow-2xs ${stock === 0
                             ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900'
                             : stock <= 5
                               ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900'
                               : 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900'
                             }`}>
-                            {stock} {stock === 1 ? 'pair' : 'pairs'}
+                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${stock === 0 ? 'bg-rose-500' : stock <= 5 ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+                            <span>{stock} {stock === 1 ? 'pair' : 'pairs'}</span>
                           </span>
                         </td>
-                        <td className="p-3.5">
-                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${p.status === 'active'
+                        <td className="p-3.5 whitespace-nowrap">
+                          <span className={`inline-block text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border whitespace-nowrap ${p.status === 'active'
                             ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900'
                             : p.status === 'draft'
                               ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900'
@@ -4095,7 +4096,7 @@ function Products() {
                             {p.status}
                           </span>
                         </td>
-                        <td className="p-3.5 pr-5 text-right relative" onClick={e => e.stopPropagation()}>
+                        <td className="p-3.5 pr-5 text-right relative whitespace-nowrap" onClick={e => e.stopPropagation()}>
                           <div className="flex items-center justify-end gap-1.5">
                             <button
                               onClick={() => openProduct(p.id)}
