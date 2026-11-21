@@ -483,19 +483,14 @@ export default function Admin() {
       items: [
         ["overview", "Overview", LayoutDashboard],
         ["orders", "Orders", ShoppingCart],
+        ["pos", "POS Counter", Plus],
+        ["returns", "Returns", RotateCcw],
+        ["refunds", "Refunds", DollarSign],
         ["products", "Products", Package],
         ["categories", "Categories", Tag],
         ["brands", "Brands", Box],
         ["customers", "Customers", Users],
         ["profitability", "Analytics", TrendingUp],
-      ]
-    },
-    {
-      category: "Operations",
-      items: [
-        ["pos", "POS Counter", Plus],
-        ["returns", "Returns", RotateCcw],
-        ["refunds", "Refunds", DollarSign],
       ]
     },
     {
