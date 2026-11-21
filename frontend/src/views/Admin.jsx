@@ -2736,12 +2736,17 @@ function OrderDetailPage({ orderId, initialOrder, onBack, onUpdate }) {
           {updatingStatus && <Loader2 size={16} className="animate-spin text-fire" />}
 
           {/* Clean 1-Click Status Dropdown */}
-          <StatusBadgeDropdown
-            size="md"
-            currentStatus={status}
-            onSelect={updateStatus}
-            disabled={updatingStatus}
-          />
+          <div className="flex items-center gap-2 bg-gray-50 dark:bg-zinc-800/70 p-1 pl-3 pr-1 rounded-xl border border-gray-200 dark:border-zinc-700 shadow-sm">
+            <span className="text-xs font-bold text-gray-600 dark:text-zinc-300 whitespace-nowrap">
+              Update Status:
+            </span>
+            <StatusBadgeDropdown
+              size="md"
+              currentStatus={status}
+              onSelect={updateStatus}
+              disabled={updatingStatus}
+            />
+          </div>
 
           <button
             onClick={() => window.print()}
