@@ -1547,11 +1547,6 @@ function Orders({ initialCodStatus }) {
 
   const TABS = [
     { id: "all", label: "All", count: data.status_counts?.all || 0 },
-    { id: "placed", label: "Placed", count: data.status_counts?.placed || 0 },
-    { id: "confirmed", label: "Confirmed", count: data.status_counts?.confirmed || 0 },
-    { id: "packed", label: "Packed", count: data.status_counts?.packed || 0 },
-    { id: "shipped", label: "Shipped", count: data.status_counts?.shipped || 0 },
-    { id: "out_for_delivery", label: "Out for Delivery", count: data.status_counts?.out_for_delivery || 0 },
     { id: "delivered", label: "Delivered", count: data.status_counts?.delivered || 0 },
     { id: "cancelled", label: "Cancelled", count: data.status_counts?.cancelled || 0 },
     { id: "returned", label: "Returned", count: data.status_counts?.returned || 0 },
