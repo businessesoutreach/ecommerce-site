@@ -1585,10 +1585,22 @@ function Orders() {
                   </div>
                 );
               })}
-            </div>
+                        </div>
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        cancelText="Cancel"
+        variant={confirmModal.variant || "primary"}
+        loading={confirmModal.loading}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal({ isOpen: false })}
+      />
     </div>
   );
 }
@@ -3274,6 +3286,7 @@ function Products() {
   const [activeMenuId, setActiveMenuId] = useState(null);
   const [availableCategories, setAvailableCategories] = useState([]);
   const [availableBrands, setAvailableBrands] = useState([]);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
   useEffect(() => {
     http.get("/admin/categories").then(({ data }) => setAvailableCategories(data.data || [])).catch(() => {});
@@ -6424,6 +6437,7 @@ function Customers() {
   const [searchInput, setSearchInput] = useState("");
   const [selected, setSelected] = useState([]);
   const [viewUser, setViewUser] = useState(null);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
   const load = async () => {
     setLoading(true);
