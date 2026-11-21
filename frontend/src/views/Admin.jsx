@@ -1766,7 +1766,7 @@ function Orders({ initialCodStatus }) {
                 <th className="p-3.5">Customer</th>
                 <th className="p-3.5">Sneakers</th>
                 <th className="p-3.5">Total</th>
-                <th className="p-3.5">Payment & COD</th>
+                <th className="p-3.5">Payment</th>
                 <th className="p-3.5">Status (1-Click)</th>
                 <th className="p-3.5">Date</th>
                 <th className="p-3.5 text-center">Actions</th>
@@ -1798,24 +1798,43 @@ function Orders({ initialCodStatus }) {
                     {fmt(o.total)}
                   </td>
                   <td className="p-3.5">
-                    <div className="flex flex-col gap-1 items-start">
-                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${o.payment_status === 'paid' ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800' :
-                        o.payment_status === 'failed' ? 'bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800' :
-                          'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800'
-                        }`}>
-                        {o.payment_status || 'pending'}
-                      </span>
-                      {o.payment_method === 'COD' && (
-                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border flex items-center gap-1 ${
-                          o.cod_remittance_status === 'remitted'
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800'
-                            : 'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800'
-                        }`}>
-                          <span className={`w-1 h-1 rounded-full ${o.cod_remittance_status === 'remitted' ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
-                          {o.cod_remittance_status === 'remitted' ? '✓ Remitted' : '⏳ COD Pending'}
+                    {(() => {
+                      const isPaid = o.payment_status === 'paid' || o.cod_remittance_status === 'remitted';
+                      if (isPaid) {
+                        return (
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800">
+                            Paid
+                          </span>
+                        );
+                      }
+                      if (o.payment_method === 'COD') {
+                        return (
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800 flex items-center gap-1 w-fit">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                            Pending COD
+                          </span>
+                        );
+                      }
+                      if (o.payment_status === 'failed') {
+                        return (
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800">
+                            Failed
+                          </span>
+                        );
+                      }
+                      if (o.payment_status === 'refunded') {
+                        return (
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border bg-purple-50 text-purple-700 border-purple-300 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800">
+                            Refunded
+                          </span>
+                        );
+                      }
+                      return (
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800">
+                          {o.payment_status || 'Pending'}
                         </span>
-                      )}
-                    </div>
+                      );
+                    })()}
                   </td>
                   <td className="p-3.5" onClick={e => e.stopPropagation()}>
                     <StatusBadgeDropdown
