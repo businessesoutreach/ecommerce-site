@@ -7489,9 +7489,9 @@ function ReturnsAndRefunds({ isDark, initialSubTab = "returns" }) {
         </div>
       )}
 
-      {/* Drawers */}
+      {/* Modals (Solid, Centered, No Glassy Blur) */}
       {viewReturn && (
-        <ReturnDetailsDrawer
+        <ReturnDetailsModal
           returnId={viewReturn.id}
           onClose={() => setViewReturn(null)}
           onUpdate={() => {
@@ -7502,7 +7502,7 @@ function ReturnsAndRefunds({ isDark, initialSubTab = "returns" }) {
       )}
 
       {viewRefund && (
-        <RefundDetailsDrawer
+        <RefundDetailsModal
           refundId={viewRefund}
           onClose={() => setViewRefund(null)}
           onUpdate={() => {
@@ -7515,7 +7515,7 @@ function ReturnsAndRefunds({ isDark, initialSubTab = "returns" }) {
   );
 }
 
-function ReturnDetailsDrawer({ returnId, onClose, onUpdate }) {
+function ReturnDetailsModal({ returnId, onClose, onUpdate }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refundAmount, setRefundAmount] = useState("");
@@ -7524,8 +7524,12 @@ function ReturnDetailsDrawer({ returnId, onClose, onUpdate }) {
 
   useEffect(() => {
     http.get(`/admin/returns/${returnId}`).then((res) => {
-      setData(res.data.data);
-      setRefundAmount(res.data.data.refund_amount > 0 ? res.data.data.refund_amount : res.data.data.order?.total || 0);
+      const d = res.data?.data;
+      setData(d);
+      setRefundAmount(d?.refund_amount > 0 ? d.refund_amount : d?.order?.total || 0);
+      setLoading(false);
+    }).catch(() => {
+      toast.error("Failed to load return details");
       setLoading(false);
     });
   }, [returnId]);
@@ -7538,153 +7542,253 @@ function ReturnDetailsDrawer({ returnId, onClose, onUpdate }) {
       onUpdate();
       onClose();
     } catch (e) {
-      toast.error("Failed to update return");
+      toast.error(e.response?.data?.detail || "Failed to update return");
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
-  if (!data && loading) return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
-      <div className="w-8 h-8 border-4 border-obsidian border-t-transparent rounded-full animate-spin"></div>
-    </div>
-  );
+  if (loading) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75">
+        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-8 flex flex-col items-center gap-3 text-xs font-mono text-gray-500 shadow-2xl">
+          <Loader2 size={24} className="animate-spin text-fire" />
+          Loading return request details...
+        </div>
+      </div>
+    );
+  }
+
   if (!data) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/60" onClick={onClose}>
-      <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "tween", duration: 0.2 }}
-        className="w-full max-w-2xl bg-ink-50 h-full overflow-y-auto flex flex-col shadow-2xl border-l border-ink-200" onClick={e => e.stopPropagation()}>
-
-        <div className="bg-white border-b border-ink-200 p-6 flex justify-between items-start sticky top-0 z-10">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75" onClick={onClose}>
+      <div
+        className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl w-full max-w-xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Modal Header */}
+        <div className="p-5 border-b border-gray-200 dark:border-zinc-800 flex justify-between items-center bg-gray-50 dark:bg-zinc-800/60">
           <div>
-            <h2 className="font-display font-semibold text-2xl ">Return Request</h2>
-            <p className="text-sm font-mono text-ink-500 mt-1">Order {data.order_number}</p>
+            <div className="flex items-center gap-2">
+              <h3 className="font-display font-black text-base text-gray-900 dark:text-zinc-100">
+                Return Request Review
+              </h3>
+              <span className="font-mono text-xs font-bold text-gray-500 dark:text-zinc-400">
+                #{data.id.split('-')[0]}
+              </span>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-zinc-400 font-mono mt-0.5">
+              Order {data.order_number} • {new Date(data.created_at).toLocaleDateString()}
+            </p>
           </div>
-          <button onClick={onClose} className="p-2 text-ink-400 hover:text-fire"><X size={20} /></button>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-900 dark:hover:text-zinc-100 transition-colors cursor-pointer p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700"
+          >
+            <X size={18} />
+          </button>
         </div>
 
-        <div className="p-6 space-y-6 flex-1">
-
-          <div className="bg-white border border-ink-200 p-6 flex items-center justify-between">
-            <span className="font-bold  text-ink-500 text-sm">Status:</span>
-            {data.status === 'pending' && <span className="font-bold  px-3 py-1 bg-yellow-100 text-yellow-700 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-yellow-600"></div> Pending</span>}
-            {data.status === 'approved' && <span className="font-bold  px-3 py-1 bg-blue-100 text-blue-700 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-blue-600"></div> Approved</span>}
-            {data.status === 'rejected' && <span className="font-bold  px-3 py-1 bg-ink-200 text-ink-600 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-ink-500"></div> Rejected</span>}
-            {data.status === 'processing' && <span className="font-bold  px-3 py-1 bg-purple-100 text-purple-700 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-purple-600"></div> Processing</span>}
-            {data.status === 'refunded' && <span className="font-bold  px-3 py-1 bg-green-100 text-green-700 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-green-600"></div> Refunded</span>}
+        {/* Modal Body */}
+        <div className="p-6 overflow-y-auto space-y-4 custom-scrollbar text-xs">
+          {/* Status Row */}
+          <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-zinc-800/50 border border-gray-200 dark:border-zinc-700">
+            <span className="font-bold text-gray-600 dark:text-zinc-400 uppercase tracking-wider text-[10px]">
+              Current Return Status:
+            </span>
+            {data.status === 'pending' && (
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded border bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800 flex items-center gap-1.5 font-mono">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Pending Review
+              </span>
+            )}
+            {data.status === 'approved' && (
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded border bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800 flex items-center gap-1.5 font-mono">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Approved (Awaiting Parcel)
+              </span>
+            )}
+            {data.status === 'processing' && (
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded border bg-purple-50 text-purple-700 border-purple-300 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800 flex items-center gap-1.5 font-mono">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span> Processing in Warehouse
+              </span>
+            )}
+            {data.status === 'refunded' && (
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded border bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800 flex items-center gap-1.5 font-mono">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Refund Completed
+              </span>
+            )}
+            {data.status === 'rejected' && (
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded border bg-gray-100 text-gray-700 border-gray-300 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700 font-mono">
+                Request Rejected
+              </span>
+            )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white border border-ink-200 p-4">
-              <span className="block text-[10px] font-bold text-ink-400  mb-2">Customer</span>
-              <p className="font-bold text-sm">{data.customer_name}</p>
-              <p className="text-xs text-ink-500">{data.order?.email || data.customer_phone}</p>
+          {/* Details 2-Column Grid */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-gray-50 dark:bg-zinc-800/40 p-3.5 rounded-xl border border-gray-200 dark:border-zinc-700/80 space-y-1">
+              <span className="text-[10px] font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider block">
+                Customer Details
+              </span>
+              <p className="font-bold text-gray-900 dark:text-zinc-100 text-sm">{data.customer_name}</p>
+              <p className="font-mono text-gray-500 dark:text-zinc-400 text-xs">{data.customer_phone || data.order?.email || "N/A"}</p>
             </div>
-            <div className="bg-white border border-ink-200 p-4">
-              <span className="block text-[10px] font-bold text-ink-400  mb-2">Product</span>
-              <p className="font-bold text-sm">{data.product_name || "Entire Order"}</p>
-              {data.product_id && <p className="text-xs text-ink-500">Qty: {data.quantity}</p>}
-            </div>
-          </div>
 
-          <div className="bg-white border border-ink-200 p-6">
-            <span className="block text-[10px] font-bold text-ink-400  mb-2">Customer Reason</span>
-            <p className="text-sm font-semibold">{data.reason}</p>
-          </div>
-
-          <div className="bg-white border border-ink-200 p-6 space-y-4">
-            <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500 border-b border-ink-100 pb-2">Return Timeline</h3>
-            <div className="space-y-4 pl-2">
-              <div className="relative pl-6 border-l-2 border-green-500 pb-2">
-                <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white"><Check size={10} /></div>
-                <p className="text-sm font-bold">Return requested</p>
-                <p className="text-xs text-ink-400">{new Date(data.created_at).toLocaleString()}</p>
-              </div>
-
-              <div className={`relative pl-6 border-l-2 pb-2 ${data.status !== 'pending' ? 'border-green-500' : 'border-ink-200'}`}>
-                <div className={`absolute -left-[9px] top-0 w-4 h-4 rounded-full flex items-center justify-center ${data.status !== 'pending' ? 'bg-green-500 text-white' : 'bg-ink-200 text-ink-400'}`}>{data.status !== 'pending' && <Check size={10} />}</div>
-                <p className={`text-sm font-bold ${data.status !== 'pending' ? '' : 'text-ink-400'}`}>Admin decision ({data.status === 'rejected' ? 'Rejected' : 'Approved'})</p>
-              </div>
-
-              {(data.status === 'approved' || data.status === 'processing' || data.status === 'refunded') && (
-                <div className={`relative pl-6 border-l-2 pb-2 ${data.status === 'processing' || data.status === 'refunded' ? 'border-green-500' : 'border-ink-200'}`}>
-                  <div className={`absolute -left-[9px] top-0 w-4 h-4 rounded-full flex items-center justify-center ${data.status === 'processing' || data.status === 'refunded' ? 'bg-green-500 text-white' : 'bg-ink-200 text-ink-400'}`}>{data.status === 'processing' || data.status === 'refunded' ? <Check size={10} /> : null}</div>
-                  <p className={`text-sm font-bold ${data.status === 'processing' || data.status === 'refunded' ? '' : 'text-ink-400'}`}>Product Received (Processing)</p>
-                </div>
-              )}
-
-              {(data.status === 'approved' || data.status === 'processing' || data.status === 'refunded') && (
-                <div className="relative pl-6">
-                  <div className={`absolute -left-[9px] top-0 w-4 h-4 rounded-full flex items-center justify-center ${data.status === 'refunded' ? 'bg-green-500 text-white' : 'bg-ink-200 text-ink-400'}`}>{data.status === 'refunded' && <Check size={10} />}</div>
-                  <p className={`text-sm font-bold ${data.status === 'refunded' ? '' : 'text-ink-400'}`}>Refund Processed</p>
-                </div>
-              )}
+            <div className="bg-gray-50 dark:bg-zinc-800/40 p-3.5 rounded-xl border border-gray-200 dark:border-zinc-700/80 space-y-1">
+              <span className="text-[10px] font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider block">
+                Sneaker / Item
+              </span>
+              <p className="font-bold text-gray-900 dark:text-zinc-100 text-sm line-clamp-1">{data.product_name || "Entire Order"}</p>
+              <p className="font-mono text-gray-500 dark:text-zinc-400 text-xs">Qty: {data.quantity || 1} pair</p>
             </div>
           </div>
 
+          {/* Reason Section */}
+          <div className="bg-gray-50 dark:bg-zinc-800/40 p-4 rounded-xl border border-gray-200 dark:border-zinc-700/80 space-y-1.5">
+            <span className="text-[10px] font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider block">
+              Customer Stated Reason
+            </span>
+            <p className="font-semibold text-gray-900 dark:text-zinc-100 text-xs leading-relaxed">
+              {data.reason || "No customer notes provided."}
+            </p>
+          </div>
+
+          {/* Action Decision Section */}
           {data.status === 'pending' && (
-            <div className="bg-white border border-ink-200 p-6 space-y-4">
-              <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500 border-b border-ink-100 pb-2">Admin Decision</h3>
+            <div className="p-4 rounded-xl border border-gray-200 dark:border-zinc-700 space-y-3 bg-white dark:bg-zinc-850">
+              <h4 className="font-bold text-gray-900 dark:text-zinc-100 uppercase tracking-wider text-[11px]">
+                Admin Decision & Refund Amount
+              </h4>
+
               <div>
-                <label className="block text-xs font-bold text-ink-500  mb-1">Approved Refund Amount</label>
-                <input type="number" value={refundAmount} onChange={e => setRefundAmount(e.target.value)} className="w-full border border-ink-200 px-3 py-2 outline-none focus:border-obsidian" />
+                <label className="text-[10px] font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-1 block">
+                  Refund Payout Amount (Rs)
+                </label>
+                <input
+                  type="number"
+                  value={refundAmount}
+                  onChange={e => setRefundAmount(e.target.value)}
+                  className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs font-mono font-bold bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-fire"
+                />
               </div>
+
               <div>
-                <label className="block text-xs font-bold text-ink-500  mb-1">Admin Note (Sent to customer)</label>
-                <textarea value={adminNote} onChange={e => setAdminNote(e.target.value)} placeholder="Reason for approval/rejection..." className="w-full border border-ink-200 px-3 py-2 outline-none focus:border-obsidian min-h-[80px]"></textarea>
+                <label className="text-[10px] font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-1 block">
+                  Decision Remarks / Customer Note (Optional)
+                </label>
+                <textarea
+                  value={adminNote}
+                  onChange={e => setAdminNote(e.target.value)}
+                  placeholder="e.g. Approved for exchange / defective shoe refund..."
+                  className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg p-2.5 text-xs bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-fire min-h-[60px] resize-none"
+                />
               </div>
-              <div className="flex gap-3 pt-2">
-                <button onClick={() => processUpdate('rejected')} disabled={saving} className="flex-1 px-4 py-3 border border-ink-200 text-ink-600 font-bold  hover:bg-ink-50 disabled:opacity-50">Reject Return</button>
-                <button onClick={() => processUpdate('approved')} disabled={saving} className="flex-1 px-4 py-3 bg-obsidian text-white font-bold  hover:bg-fire disabled:opacity-50 transition-colors">Approve Return</button>
+
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => processUpdate('rejected')}
+                  className="flex-1 py-2.5 px-3 border border-gray-300 dark:border-zinc-700 rounded-lg font-bold text-xs text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  Reject Return
+                </button>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => processUpdate('approved')}
+                  className="flex-1 py-2.5 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  Approve (Await Parcel)
+                </button>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => processUpdate('refunded')}
+                  className="flex-1 py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  Approve & Settle Refund
+                </button>
               </div>
             </div>
           )}
 
           {data.status === 'approved' && (
-            <div className="bg-white border border-ink-200 p-6">
-              <p className="text-sm mb-4">The return has been approved. Waiting for the product to be received back from the customer.</p>
-              <button onClick={() => processUpdate('processing')} disabled={saving} className="w-full px-4 py-3 bg-obsidian text-white font-bold  hover:bg-fire transition-colors disabled:opacity-50">Mark Product Received</button>
+            <div className="p-4 rounded-xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/50 dark:bg-blue-950/20 space-y-3">
+              <p className="text-xs text-blue-900 dark:text-blue-300 font-medium">
+                The return has been approved. Once the customer returns the sneaker package to the warehouse, mark it as received to inspect shoe condition.
+              </p>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => processUpdate('processing')}
+                className="w-full py-2.5 bg-black dark:bg-fire hover:bg-fire text-white rounded-lg font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Mark Sneaker Package Received (Processing)
+              </button>
             </div>
           )}
 
           {data.status === 'processing' && (
-            <div className="bg-white border border-ink-200 p-6 space-y-4">
-              <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500 border-b border-ink-100 pb-2">Process Refund</h3>
-
-              <div className="p-4 bg-ink-50 border border-ink-200 mb-4">
-                <div className="flex justify-between text-sm mb-2"><span className="text-ink-500">Refund Amount:</span><span className="font-mono font-bold">{fmt(refundAmount)}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-ink-500">Refund Method:</span><span className="font-bold ">Original Payment</span></div>
+            <div className="p-4 rounded-xl border border-purple-200 dark:border-purple-900/60 bg-purple-50/50 dark:bg-purple-950/20 space-y-3">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-purple-900 dark:text-purple-300 font-bold">Settlement Amount:</span>
+                <span className="font-mono font-black text-sm text-purple-950 dark:text-purple-200">{fmt(refundAmount)}</span>
               </div>
-
-              <button onClick={() => processUpdate('refunded')} disabled={saving} className="w-full px-4 py-3 bg-green-600 text-white font-bold  hover:bg-green-700 transition-colors disabled:opacity-50">Process Refund</button>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => processUpdate('refunded')}
+                className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                <CheckCircle size={15} /> Complete & Issue Refund to Customer
+              </button>
             </div>
           )}
 
           {data.status === 'refunded' && (
-            <div className="bg-green-50 border border-green-200 p-6 flex items-start gap-4">
-              <CheckCircle size={24} className="text-green-600 mt-1 flex-shrink-0" />
+            <div className="p-4 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 flex items-center gap-3">
+              <CheckCircle size={22} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
               <div>
-                <h4 className="font-bold text-green-800 mb-1 ">Refund Processed</h4>
-                <p className="text-sm text-green-700">Amount: <span className="font-mono">{fmt(data.refund_amount)}</span></p>
-                <p className="text-xs text-green-600 mt-2">The refund has been successfully issued to the customer.</p>
+                <h5 className="font-bold text-emerald-900 dark:text-emerald-200 text-xs">
+                  Refund Successfully Settled
+                </h5>
+                <p className="text-[11px] text-emerald-700 dark:text-emerald-300 font-mono mt-0.5">
+                  Amount: {fmt(data.refund_amount > 0 ? data.refund_amount : data.order?.total || 0)} has been logged into the refund ledger.
+                </p>
               </div>
             </div>
           )}
-
         </div>
-      </motion.div>
+
+        {/* Modal Footer */}
+        <div className="p-4 border-t border-gray-200 dark:border-zinc-800 flex justify-end bg-gray-50 dark:bg-zinc-800/60">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 text-xs font-bold text-gray-700 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-lg transition-colors cursor-pointer"
+          >
+            Close
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
 
-function RefundDetailsDrawer({ refundId, onClose, onUpdate }) {
+function RefundDetailsModal({ refundId, onClose, onUpdate }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     http.get(`/admin/refunds/${refundId}`).then((res) => {
-      setData(res.data.data);
+      setData(res.data?.data);
+      setLoading(false);
+    }).catch(() => {
+      toast.error("Failed to load refund details");
       setLoading(false);
     });
   }, [refundId]);
@@ -7692,12 +7796,15 @@ function RefundDetailsDrawer({ refundId, onClose, onUpdate }) {
   const processRetry = async () => {
     setSaving(true);
     try {
-      await http.patch(`/admin/refunds/${refundId}`, { status: 'completed' }); // mock success retry
-      toast.success("Refund successfully processed");
+      await http.patch(`/admin/refunds/${refundId}`, { status: 'completed' });
+      toast.success("Refund successfully re-processed");
       onUpdate();
       onClose();
-    } catch (e) { toast.error("Failed to process refund"); }
-    setSaving(false);
+    } catch (e) {
+      toast.error("Failed to process refund");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const processCancel = async () => {
@@ -7707,97 +7814,174 @@ function RefundDetailsDrawer({ refundId, onClose, onUpdate }) {
       toast.success("Refund cancelled");
       onUpdate();
       onClose();
-    } catch (e) { toast.error("Failed to cancel refund"); }
-    setSaving(false);
+    } catch (e) {
+      toast.error("Failed to cancel refund");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  if (!data && loading) return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
-      <div className="w-8 h-8 border-4 border-obsidian border-t-transparent rounded-full animate-spin"></div>
-    </div>
-  );
+  if (loading) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75">
+        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-8 flex flex-col items-center gap-3 text-xs font-mono text-gray-500 shadow-2xl">
+          <Loader2 size={24} className="animate-spin text-fire" />
+          Loading refund transaction details...
+        </div>
+      </div>
+    );
+  }
+
   if (!data) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/60" onClick={onClose}>
-      <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "tween", duration: 0.2 }}
-        className="w-full max-w-2xl bg-ink-50 h-full overflow-y-auto flex flex-col shadow-2xl border-l border-ink-200" onClick={e => e.stopPropagation()}>
-
-        <div className="bg-white border-b border-ink-200 p-6 flex justify-between items-start sticky top-0 z-10">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75" onClick={onClose}>
+      <div
+        className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Modal Header */}
+        <div className="p-5 border-b border-gray-200 dark:border-zinc-800 flex justify-between items-center bg-gray-50 dark:bg-zinc-800/60">
           <div>
-            <h2 className="font-mono font-bold text-xl  text-ink-500 mb-1">Refund #{data.id.split('-')[0]}</h2>
-            <div className="flex items-center gap-3">
-              <span className="font-display font-black text-4xl">{fmt(data.amount)}</span>
-              {data.status === 'pending' && <span className="font-bold  px-3 py-1 bg-yellow-100 text-yellow-700">Pending</span>}
-              {data.status === 'processing' && <span className="font-bold  px-3 py-1 bg-purple-100 text-purple-700">Processing</span>}
-              {data.status === 'completed' && <span className="font-bold  px-3 py-1 bg-green-100 text-green-700">Completed</span>}
-              {data.status === 'failed' && <span className="font-bold  px-3 py-1 bg-red-100 text-red-700">Failed</span>}
-              {data.status === 'cancelled' && <span className="font-bold  px-3 py-1 bg-ink-200 text-ink-600">Cancelled</span>}
+            <div className="flex items-center gap-2">
+              <h3 className="font-display font-black text-base text-gray-900 dark:text-zinc-100">
+                Refund Transaction
+              </h3>
+              <span className="font-mono text-xs font-bold text-gray-500 dark:text-zinc-400">
+                #{data.id.split('-')[0]}
+              </span>
             </div>
-            {data.processed_at && <p className="text-xs text-ink-500 font-mono mt-2">Processed {new Date(data.processed_at).toLocaleString()}</p>}
+            <p className="text-xs text-gray-500 dark:text-zinc-400 font-mono mt-0.5">
+              Order {data.order_number} • {new Date(data.created_at).toLocaleDateString()}
+            </p>
           </div>
-          <button onClick={onClose} className="p-2 text-ink-400 hover:text-fire"><X size={20} /></button>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-900 dark:hover:text-zinc-100 transition-colors cursor-pointer p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700"
+          >
+            <X size={18} />
+          </button>
         </div>
 
-        <div className="p-6 space-y-6 flex-1">
+        {/* Modal Body */}
+        <div className="p-6 overflow-y-auto space-y-4 custom-scrollbar text-xs">
+          {/* Amount & Status Card */}
+          <div className="bg-gray-50 dark:bg-zinc-800/50 p-4 rounded-xl border border-gray-200 dark:border-zinc-700 flex justify-between items-center">
+            <div>
+              <span className="text-[10px] font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider block">
+                Total Refund Amount
+              </span>
+              <span className="font-display font-black text-2xl text-gray-900 dark:text-zinc-100 font-mono">
+                {fmt(data.amount)}
+              </span>
+            </div>
 
-          <div className="bg-white border border-ink-200 p-6 grid grid-cols-2 gap-y-4">
             <div>
-              <span className="block text-[10px] font-bold text-ink-400  mb-1">Customer</span>
-              <p className="font-bold text-sm">{data.customer_name}</p>
-              <p className="text-xs text-ink-500">{data.order?.email}</p>
-            </div>
-            <div>
-              <span className="block text-[10px] font-bold text-ink-400  mb-1">Order</span>
-              <p className="font-bold font-mono text-sm">{data.order_number}</p>
-            </div>
-            <div>
-              <span className="block text-[10px] font-bold text-ink-400  mb-1">Refund Reason</span>
-              <p className="text-sm">{data.reason}</p>
-            </div>
-            <div>
-              <span className="block text-[10px] font-bold text-ink-400  mb-1">Payment Method</span>
-              <p className="font-bold  text-sm">{data.method}</p>
+              {data.status === 'completed' && (
+                <span className="text-[10px] font-bold px-2.5 py-1 rounded border bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800 flex items-center gap-1.5 font-mono">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Completed
+                </span>
+              )}
+              {data.status === 'pending' && (
+                <span className="text-[10px] font-bold px-2.5 py-1 rounded border bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800 flex items-center gap-1.5 font-mono">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Pending
+                </span>
+              )}
+              {data.status === 'processing' && (
+                <span className="text-[10px] font-bold px-2.5 py-1 rounded border bg-purple-50 text-purple-700 border-purple-300 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800 flex items-center gap-1.5 font-mono">
+                  Processing
+                </span>
+              )}
+              {data.status === 'failed' && (
+                <span className="text-[10px] font-bold px-2.5 py-1 rounded border bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800 font-mono">
+                  Failed
+                </span>
+              )}
+              {data.status === 'cancelled' && (
+                <span className="text-[10px] font-bold px-2.5 py-1 rounded border bg-gray-100 text-gray-700 border-gray-300 dark:bg-zinc-800 dark:text-zinc-300 font-mono">
+                  Cancelled
+                </span>
+              )}
             </div>
           </div>
 
-          <div className="bg-white border border-ink-200 p-6 space-y-4">
-            <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500 border-b border-ink-100 pb-2">Refund Breakdown</h3>
-            <div className="space-y-2 font-mono text-sm">
-              <div className="flex justify-between text-ink-500"><span>Original Order Total</span><span>{fmt(data.order?.total || 0)}</span></div>
-              <div className="flex justify-between text-ink-500"><span>Previously Refunded</span><span>{fmt(data.previously_refunded || 0)}</span></div>
-              <div className="flex justify-between font-bold text-fire text-base pt-2 border-t border-ink-100"><span>Current Refund</span><span>-{fmt(data.amount)}</span></div>
+          {/* Details Grid */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-gray-50 dark:bg-zinc-800/40 p-3.5 rounded-xl border border-gray-200 dark:border-zinc-700/80 space-y-1">
+              <span className="text-[10px] font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider block">
+                Customer
+              </span>
+              <p className="font-bold text-gray-900 dark:text-zinc-100 text-sm">{data.customer_name}</p>
+              <p className="font-mono text-gray-500 dark:text-zinc-400 text-xs">{data.order?.email || "N/A"}</p>
+            </div>
+
+            <div className="bg-gray-50 dark:bg-zinc-800/40 p-3.5 rounded-xl border border-gray-200 dark:border-zinc-700/80 space-y-1">
+              <span className="text-[10px] font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider block">
+                Payout Channel
+              </span>
+              <p className="font-bold text-gray-900 dark:text-zinc-100 text-sm uppercase font-mono">{data.method}</p>
+              <p className="font-mono text-gray-500 dark:text-zinc-400 text-xs">
+                Ref: {data.external_ref || "Internal Settled"}
+              </p>
             </div>
           </div>
 
-          <div className="bg-white border border-ink-200 p-6 space-y-4">
-            <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500 border-b border-ink-100 pb-2">Payment Information</h3>
-            <div className="space-y-2 text-sm font-mono">
-              <div className="flex justify-between text-ink-500"><span>Provider</span><span className="">{data.method === 'card' ? 'Stripe' : data.method}</span></div>
-              <div className="flex justify-between text-ink-500"><span>Original Transaction</span><span>{data.order?.payment_session_id || '—'}</span></div>
-              <div className="flex justify-between text-ink-500"><span>Refund Transaction</span><span>{data.external_ref || '—'}</span></div>
-            </div>
-            {data.failure_reason && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm">
-                <strong>Failure Reason:</strong> {data.failure_reason}
-              </div>
-            )}
+          {/* Reason */}
+          <div className="bg-gray-50 dark:bg-zinc-800/40 p-3.5 rounded-xl border border-gray-200 dark:border-zinc-700/80 space-y-1">
+            <span className="text-[10px] font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider block">
+              Refund Reason
+            </span>
+            <p className="font-semibold text-gray-900 dark:text-zinc-100 text-xs">
+              {data.reason || "Return claim settlement"}
+            </p>
           </div>
 
-          {(data.status === 'pending' || data.status === 'failed') && (
-            <div className="flex gap-3 pt-4">
-              <button onClick={processCancel} disabled={saving} className="flex-1 px-4 py-3 border border-ink-200 text-ink-600 font-bold  hover:bg-ink-50 disabled:opacity-50">Cancel</button>
-              <button onClick={processRetry} disabled={saving} className="flex-[2] px-4 py-3 bg-obsidian text-white font-bold  hover:bg-fire disabled:opacity-50 transition-colors">
-                {data.status === 'failed' ? 'Retry Refund' : 'Process Refund'}
-              </button>
+          {data.failure_reason && (
+            <div className="p-3.5 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 text-xs">
+              <strong>Failure Detail:</strong> {data.failure_reason}
             </div>
           )}
 
+          {(data.status === 'pending' || data.status === 'failed') && (
+            <div className="flex gap-2.5 pt-2">
+              <button
+                type="button"
+                disabled={saving}
+                onClick={processCancel}
+                className="flex-1 py-2 px-3 border border-gray-300 dark:border-zinc-700 rounded-lg font-bold text-xs text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Cancel Refund
+              </button>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={processRetry}
+                className="flex-1 py-2 px-3 bg-black dark:bg-fire hover:bg-fire text-white rounded-lg font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {data.status === 'failed' ? "Retry Payout" : "Process Payout"}
+              </button>
+            </div>
+          )}
         </div>
-      </motion.div>
+
+        {/* Modal Footer */}
+        <div className="p-4 border-t border-gray-200 dark:border-zinc-800 flex justify-end bg-gray-50 dark:bg-zinc-800/60">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 text-xs font-bold text-gray-700 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-lg transition-colors cursor-pointer"
+          >
+            Close
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
+
+
 
 
 function Cms({ setTab }) {
