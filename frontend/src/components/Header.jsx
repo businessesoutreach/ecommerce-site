@@ -23,27 +23,7 @@ const COLLECTIONS = [
   { label: "Slides & Slip-Ons", to: "/collections/slides", desc: "Easy casual comfort" },
 ];
 
-function AnnouncementBar() {
-  const { settings } = useStore();
-  const [show, setShow] = useState(true);
-  if (!show || !settings?.announcement_active) return null;
-  const text = settings.announcement_text || "";
-  return (
-    <div className="bg-obsidian text-white overflow-hidden relative">
-      <div className="max-w-[1400px] mx-auto flex items-center">
-        <div className="flex-1 overflow-hidden py-2">
-          <div className="marquee whitespace-nowrap flex">
-            <span className="font-mono text-[11px] tracking-[0.18em] font-semibold px-4">{text}</span>
-            <span className="font-mono text-[11px] tracking-[0.18em] font-semibold px-4">{text}</span>
-          </div>
-        </div>
-        <button onClick={() => setShow(false)} className="px-3 text-white/70 hover:text-white shrink-0">
-          <X size={14} />
-        </button>
-      </div>
-    </div>
-  );
-}
+
 
 function SearchOverlay({ open, onClose }) {
   const [q, setQ] = useState("");
@@ -129,7 +109,6 @@ export default function Header() {
   return (
     <>
       <div className="sticky top-0 z-40">
-        <AnnouncementBar />
         <motion.header
           animate={{ paddingTop: scrolled ? 8 : 14, paddingBottom: scrolled ? 8 : 14 }}
           className={`bg-white/90 backdrop-blur-md border-b transition-shadow ${scrolled ? "border-ink-200 shadow-sm" : "border-transparent"}`}

@@ -483,7 +483,6 @@ export default function Admin() {
   const CMS_SUB_ITEMS = [
     { id: "cms_homepage", label: "Homepage Layout", icon: Home },
     { id: "cms_hero", label: "Hero Slides", icon: ImageIcon },
-    { id: "cms_announcement", label: "Announcement Bar", icon: Megaphone },
     { id: "cms_product_sections", label: "Product Sections", icon: Layers },
     { id: "cms_testimonials", label: "Testimonials", icon: Star },
   ];
@@ -711,7 +710,6 @@ export default function Admin() {
             <HomepageCMS setActiveTab={(sub) => setTab(`cms_${sub}`)} setMainTab={setTab} />
           )}
           {tab === "cms_hero" && <HeroSlidesCMS />}
-          {tab === "cms_announcement" && <StoreSettings />}
           {tab === "cms_product_sections" && <ProductSectionsCMS />}
           {tab === "cms_testimonials" && <TestimonialsCMS isDark={isDark} />}
 
@@ -8886,57 +8884,7 @@ function CustomerDetailPage({ userId, onBack, onUpdate }) {
   );
 }
 
-function StoreSettings() {
-  const [f, setF] = useState({ flash_sale_active: false, flash_sale_end_time: "" });
-  const [saving, setSaving] = useState(false);
-  useEffect(() => {
-    http.get("/settings").then(({ data }) => {
-      const s = data.data;
-      setF({
-        flash_sale_active: s.flash_sale_active || false,
-        flash_sale_end_time: s.flash_sale_end_time ? new Date(s.flash_sale_end_time).toISOString().slice(0, 16) : ""
-      });
-    });
-  }, []);
 
-  const save = async () => {
-    setSaving(true);
-    try {
-      await http.patch("/admin/settings", {
-        flash_sale_active: f.flash_sale_active,
-        flash_sale_end_time: f.flash_sale_end_time ? new Date(f.flash_sale_end_time).toISOString() : null
-      });
-      toast.success("Settings updated");
-    } catch { toast.error("Failed to save settings"); }
-    setSaving(false);
-  };
-
-  return (
-    <div>
-      <h1 className="font-display tracking-tight mb-6">Global Settings</h1>
-      <div className="bg-white border border-ink-200 p-6 max-w-2xl">
-        <h3 className="font-display mb-4 text-fire">Flash Sale Setup</h3>
-        <div className="space-y-4">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={f.flash_sale_active} onChange={(e) => setF({ ...f, flash_sale_active: e.target.checked })} className="accent-fire w-4 h-4" />
-            <span className="font-bold">Enable Global Flash Sale Timer</span>
-          </label>
-          {f.flash_sale_active && (
-            <div>
-              <label className="block text-xs font-mono  tracking-widest text-ink-400 mb-1.5">End Time</label>
-              <input type="datetime-local" value={f.flash_sale_end_time} onChange={(e) => setF({ ...f, flash_sale_end_time: e.target.value })} className="border border-ink-200 px-4 py-2 outline-none focus:border-obsidian" />
-            </div>
-          )}
-        </div>
-      </div>
-      <div className="bg-ink-50 border-t border-ink-200 p-8 flex justify-end sticky bottom-0 z-10">
-        <button onClick={save} disabled={saving} className="bg-obsidian text-white font-bold  px-6 py-2.5 hover:bg-fire transition-colors disabled:opacity-70 disabled:cursor-wait flex items-center gap-2">
-          {saving ? <Loader2 size={16} className="animate-spin" /> : null} Save Settings
-        </button>
-      </div>
-    </div>
-  );
-}
 
 function CategoriesManager() {
   const [cats, setCats] = useState([]);
