@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import HomepageCMS from './cms/HomepageCMS';
 import HeroSlidesCMS from './cms/HeroSlidesCMS';
 import CategoriesCMS from './cms/CategoriesCMS';
+import BrandsCMS from './cms/BrandsCMS';
 import ProductSectionsCMS from './cms/ProductSectionsCMS';
 import PromoBannersCMS from './cms/PromoBannersCMS';
 import FlashSaleCMS from './cms/FlashSaleCMS';
@@ -91,6 +92,8 @@ export default function Admin() {
       category: "Marketing & CMS",
       items: [
         ["cms", "Hero & CMS", ImageIcon],
+        ["categories", "Categories", Tag],
+        ["brands", "Brands", Box],
         ["coupons", "Coupons", Ticket],
         ["bundles", "Bundles", Tag],
         ["reviews", "Reviews", Star],
@@ -267,6 +270,8 @@ export default function Admin() {
           {tab === "reviews" && <Reviews />}
           {tab === "customers" && <Customers />}
           {tab === "bundles" && <BundlesManager />}
+          {tab === "categories" && <CategoriesCMS />}
+          {tab === "brands" && <BrandsCMS />}
           {tab === "cms" && <Cms setTab={setTab} />}
           {tab === "profitability" && <ProfitabilityAnalytics />}
           {tab === "audit_logs" && <AuditLogs />}
@@ -3250,6 +3255,13 @@ function Products() {
   const [searchInput, setSearchInput] = useState("");
   const [selected, setSelected] = useState([]);
   const [activeMenuId, setActiveMenuId] = useState(null);
+  const [availableCategories, setAvailableCategories] = useState([]);
+  const [availableBrands, setAvailableBrands] = useState([]);
+
+  useEffect(() => {
+    http.get("/admin/categories").then(({ data }) => setAvailableCategories(data.data || [])).catch(() => {});
+    http.get("/admin/brands").then(({ data }) => setAvailableBrands(data.data || [])).catch(() => {});
+  }, []);
 
   const load = async () => {
     setLoading(true);
@@ -3461,15 +3473,22 @@ function Products() {
           <select
             value={query.category}
             onChange={(e) => setQuery({ ...query, category: e.target.value, page: 1 })}
-            className="bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 px-3 py-2 text-xs rounded-xl text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-fire"
+            className="bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 px-3 py-2 text-xs rounded-xl text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-fire capitalize"
           >
             <option value="all">Category: All</option>
-            <option value="retro">Retro</option>
-            <option value="streetwear">Streetwear</option>
-            <option value="runners">Runners</option>
-            <option value="court">Court</option>
-            <option value="lifestyle">Lifestyle</option>
-            <option value="slides">Slides</option>
+            {availableCategories.map(c => (
+              <option key={c.id} value={c.slug}>{c.name}</option>
+            ))}
+          </select>
+          <select
+            value={query.brand}
+            onChange={(e) => setQuery({ ...query, brand: e.target.value, page: 1 })}
+            className="bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 px-3 py-2 text-xs rounded-xl text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-fire capitalize"
+          >
+            <option value="all">Brand: All</option>
+            {availableBrands.map(b => (
+              <option key={b.id} value={b.slug}>{b.name}</option>
+            ))}
           </select>
           <select
             value={query.status}
@@ -3755,6 +3774,56 @@ function ProductDetailPage({ productId, initialProduct, isNew = false, onBack, o
   const [urlInput, setUrlInput] = useState("");
   const [customSizeInput, setCustomSizeInput] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [availableCategories, setAvailableCategories] = useState([]);
+  const [availableBrands, setAvailableBrands] = useState([]);
+  const [showQuickAddCat, setShowQuickAddCat] = useState(false);
+  const [showQuickAddBrand, setShowQuickAddBrand] = useState(false);
+  const [quickCatName, setQuickCatName] = useState("");
+  const [quickBrandName, setQuickBrandName] = useState("");
+  const [quickSaving, setQuickSaving] = useState(false);
+
+  useEffect(() => {
+    http.get("/admin/categories").then(({ data }) => setAvailableCategories(data.data || [])).catch(() => {});
+    http.get("/admin/brands").then(({ data }) => setAvailableBrands(data.data || [])).catch(() => {});
+  }, []);
+
+  const handleQuickAddCategory = async (e) => {
+    e.preventDefault();
+    if (!quickCatName.trim()) return toast.error("Category name required");
+    setQuickSaving(true);
+    try {
+      const { data } = await http.post("/admin/categories", { name: quickCatName.trim() });
+      const newCat = data.data;
+      setAvailableCategories(prev => [...prev, newCat]);
+      setForm(prev => ({ ...prev, category_slug: newCat.slug }));
+      setQuickCatName("");
+      setShowQuickAddCat(false);
+      toast.success(`Category "${newCat.name}" added and selected`);
+    } catch (err) {
+      toast.error("Failed to add category");
+    } finally {
+      setQuickSaving(false);
+    }
+  };
+
+  const handleQuickAddBrand = async (e) => {
+    e.preventDefault();
+    if (!quickBrandName.trim()) return toast.error("Brand name required");
+    setQuickSaving(true);
+    try {
+      const { data } = await http.post("/admin/brands", { name: quickBrandName.trim() });
+      const newBrand = data.data;
+      setAvailableBrands(prev => [...prev, newBrand]);
+      setForm(prev => ({ ...prev, brand_slug: newBrand.slug }));
+      setQuickBrandName("");
+      setShowQuickAddBrand(false);
+      toast.success(`Brand "${newBrand.name}" added and selected`);
+    } catch (err) {
+      toast.error("Failed to add brand");
+    } finally {
+      setQuickSaving(false);
+    }
+  };
 
   const defaultSizes = [
     { size: "38", stock: 5 },
@@ -4563,46 +4632,117 @@ function ProductDetailPage({ productId, initialProduct, isNew = false, onBack, o
 
           {/* Section 2: Taxonomy & Drop Classification */}
           <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-4">
-            <h2 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 border-b border-gray-100 dark:border-zinc-800 pb-3 flex items-center gap-2">
-              <Tag size={16} className="text-fire" /> Category & Silhouette Brand
+            <h2 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 border-b border-gray-100 dark:border-zinc-800 pb-3 flex items-center justify-between">
+              <span className="flex items-center gap-2"><Tag size={16} className="text-fire" /> Category & Silhouette Brand</span>
+              <span className="text-[10px] text-gray-400">Dynamic & Configurable</span>
             </h2>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
+              {/* Category Field with Quick-Add */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1">
-                  Category
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-gray-700 dark:text-zinc-300">
+                    Category *
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowQuickAddCat(!showQuickAddCat)}
+                    className="text-[11px] font-bold text-fire hover:underline cursor-pointer flex items-center gap-1"
+                  >
+                    {showQuickAddCat ? "Cancel" : "+ Quick Add Category"}
+                  </button>
+                </div>
+
+                {showQuickAddCat && (
+                  <div className="mb-2 p-2.5 bg-fire/5 dark:bg-fire/10 border border-fire/20 rounded-xl flex gap-2 animate-in fade-in duration-100">
+                    <input
+                      type="text"
+                      placeholder="New category name (e.g. Skateboarding)..."
+                      value={quickCatName}
+                      onChange={(e) => setQuickCatName(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleQuickAddCategory(e))}
+                      className="flex-1 px-3 py-1.5 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg text-xs text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-fire"
+                    />
+                    <button
+                      type="button"
+                      disabled={quickSaving}
+                      onClick={handleQuickAddCategory}
+                      className="px-3 py-1.5 bg-fire hover:bg-fire-hover text-white text-xs font-bold rounded-lg transition-colors shadow-sm shrink-0 flex items-center gap-1"
+                    >
+                      {quickSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
+                      Save
+                    </button>
+                  </div>
+                )}
+
                 <select
                   value={form.category_slug}
                   onChange={(e) => setForm({ ...form, category_slug: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs font-bold text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-fire capitalize cursor-pointer"
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs font-bold text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-fire capitalize cursor-pointer"
                 >
-                  <option value="retro">Retro & Classics</option>
-                  <option value="streetwear">Streetwear</option>
-                  <option value="runners">Runners</option>
-                  <option value="court">Basketball & Court</option>
-                  <option value="lifestyle">Lifestyle</option>
-                  <option value="slides">Slides & Comfort</option>
+                  {availableCategories.length === 0 ? (
+                    <option value="retro">Retro & Classics</option>
+                  ) : (
+                    availableCategories.map(c => (
+                      <option key={c.id} value={c.slug} className="bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100">
+                        {c.name}
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
 
+              {/* Brand Field with Quick-Add */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1">
-                  Brand / Lineage
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-gray-700 dark:text-zinc-300">
+                    Brand / Manufacturer *
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowQuickAddBrand(!showQuickAddBrand)}
+                    className="text-[11px] font-bold text-fire hover:underline cursor-pointer flex items-center gap-1"
+                  >
+                    {showQuickAddBrand ? "Cancel" : "+ Quick Add Brand"}
+                  </button>
+                </div>
+
+                {showQuickAddBrand && (
+                  <div className="mb-2 p-2.5 bg-fire/5 dark:bg-fire/10 border border-fire/20 rounded-xl flex gap-2 animate-in fade-in duration-100">
+                    <input
+                      type="text"
+                      placeholder="New brand name (e.g. Puma, Vans, Bape)..."
+                      value={quickBrandName}
+                      onChange={(e) => setQuickBrandName(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleQuickAddBrand(e))}
+                      className="flex-1 px-3 py-1.5 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg text-xs text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-fire"
+                    />
+                    <button
+                      type="button"
+                      disabled={quickSaving}
+                      onClick={handleQuickAddBrand}
+                      className="px-3 py-1.5 bg-fire hover:bg-fire-hover text-white text-xs font-bold rounded-lg transition-colors shadow-sm shrink-0 flex items-center gap-1"
+                    >
+                      {quickSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
+                      Save
+                    </button>
+                  </div>
+                )}
+
                 <select
                   value={form.brand_slug}
                   onChange={(e) => setForm({ ...form, brand_slug: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs font-bold text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-fire capitalize cursor-pointer"
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs font-bold text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-fire capitalize cursor-pointer"
                 >
-                  <option value="airvault">AirVault</option>
-                  <option value="terrace-co">Terrace Co</option>
-                  <option value="cloudstride">CloudStride</option>
-                  <option value="oasis">Oasis</option>
-                  <option value="jordan">Jordan Brand</option>
-                  <option value="nike">Nike</option>
-                  <option value="adidas">Adidas</option>
-                  <option value="new-balance">New Balance</option>
+                  {availableBrands.length === 0 ? (
+                    <option value="airvault">AirVault</option>
+                  ) : (
+                    availableBrands.map(b => (
+                      <option key={b.id} value={b.slug} className="bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100">
+                        {b.name}
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
             </div>
@@ -6132,6 +6272,7 @@ function Cms({ setTab }) {
     { id: 'announcement', label: 'Announcement Bar', icon: Megaphone },
     { id: 'hero', label: 'Hero Slides', icon: ImageIcon },
     { id: 'categories', label: 'Categories', icon: Tag },
+    { id: 'brands', label: 'Brands', icon: Box },
     { id: 'product_sections', label: 'Product Sections', icon: Layers },
     { id: 'promo', label: 'Promo Banners', icon: Ticket },
     { id: 'flash_sale', label: 'Flash Sale', icon: Zap },
@@ -6146,6 +6287,7 @@ function Cms({ setTab }) {
       case 'announcement': return <StoreSettings />; // We can reuse StoreSettings or create a new one later
       case 'hero': return <HeroSlidesCMS />;
       case 'categories': return <CategoriesCMS />;
+      case 'brands': return <BrandsCMS />;
       case 'product_sections': return <ProductSectionsCMS />;
       case 'promo': return <PromoBannersCMS />;
       case 'flash_sale': return <FlashSaleCMS />;

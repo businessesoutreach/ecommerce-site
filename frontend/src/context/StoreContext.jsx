@@ -24,6 +24,8 @@ export function StoreProvider({ children }) {
   const [wishlist, setWishlist] = useState({ ids: [], items: [] });
   const [cartOpen, setCartOpen] = useState(false);
   const [cartBump, setCartBump] = useState(0);
+  const [categories, setCategories] = useState([]);
+  const [brands, setBrands] = useState([]);
 
   const loadCart = useCallback(async () => {
     try {
@@ -39,8 +41,24 @@ export function StoreProvider({ children }) {
     } catch (e) {}
   }, []);
 
+  const refreshCategories = useCallback(async () => {
+    try {
+      const { data } = await http.get("/categories");
+      setCategories(data.data || []);
+    } catch (e) {}
+  }, []);
+
+  const refreshBrands = useCallback(async () => {
+    try {
+      const { data } = await http.get("/brands");
+      setBrands(data.data || []);
+    } catch (e) {}
+  }, []);
+
   useEffect(() => {
     http.get("/settings").then(({ data }) => setSettings(data.data)).catch(() => {});
+    refreshCategories();
+    refreshBrands();
     const h = window.location.hash;
     if (h && h.includes("session_id=")) {
       const sid = h.split("session_id=")[1].split("&")[0];
@@ -152,6 +170,7 @@ export function StoreProvider({ children }) {
     <StoreCtx.Provider
       value={{
         settings, user, cart, wishlist, cartOpen, setCartOpen, cartBump,
+        categories, brands, refreshCategories, refreshBrands,
         addToCart, updateQty, removeItem, toggleWishlist, loadCart,
         login, register, logout, updateUser,
       }}

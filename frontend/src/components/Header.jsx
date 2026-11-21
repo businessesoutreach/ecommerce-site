@@ -99,7 +99,7 @@ function SearchOverlay({ open, onClose }) {
 }
 
 export default function Header() {
-  const { cart, wishlist, setCartOpen, cartBump, user } = useStore();
+  const { cart, wishlist, setCartOpen, cartBump, user, categories: storeCats } = useStore();
   const [scrolled, setScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -107,6 +107,14 @@ export default function Header() {
   const [mobileCollectionsOpen, setMobileCollectionsOpen] = useState(true);
   const [mounted, setMounted] = useState(false);
   const loc = useLocation();
+
+  const collectionsList = (storeCats && storeCats.length > 0)
+    ? storeCats.map(c => ({
+        label: c.name,
+        to: `/collections/${c.slug}`,
+        desc: c.description || "Everyday silhouettes & drops"
+      }))
+    : COLLECTIONS;
 
   useEffect(() => {
     setMounted(true);
@@ -192,7 +200,7 @@ export default function Header() {
                         </span>
                       </div>
                       <div className="space-y-0.5">
-                        {COLLECTIONS.map((c) => (
+                        {collectionsList.map((c) => (
                           <Link
                             key={c.to}
                             to={c.to}
@@ -354,7 +362,7 @@ export default function Header() {
                   </button>
                   {mobileCollectionsOpen && (
                     <div className="pl-3 pt-2.5 space-y-2">
-                      {COLLECTIONS.map((c) => (
+                      {collectionsList.map((c) => (
                         <Link
                           key={c.to}
                           to={c.to}

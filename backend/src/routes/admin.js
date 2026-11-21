@@ -978,6 +978,53 @@ router.delete('/categories/:id', async (req, res) => {
     }
 });
 
+// ===================== BRANDS =====================
+router.get('/brands', async (req, res) => {
+    try {
+        const items = await prisma.brand.findMany({ orderBy: { name: 'asc' } });
+        res.json({ success: true, data: items });
+    } catch (err) {
+        res.status(500).json({ detail: err.message });
+    }
+});
+
+router.post('/brands', async (req, res) => {
+    try {
+        const doc = { ...req.body, id: uuidv4() };
+        doc.slug = doc.slug || (doc.name || 'brand').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        let slug = doc.slug;
+        let suffix = 1;
+        while (await prisma.brand.findUnique({ where: { slug } })) {
+            slug = `${doc.slug}-${suffix++}`;
+        }
+        doc.slug = slug;
+        const b = await prisma.brand.create({ data: doc });
+        res.json({ success: true, data: b });
+    } catch (err) {
+        res.status(500).json({ detail: err.message });
+    }
+});
+
+router.patch('/brands/:id', async (req, res) => {
+    try {
+        const doc = { ...req.body };
+        delete doc.id;
+        const b = await prisma.brand.update({ where: { id: req.params.id }, data: doc });
+        res.json({ success: true, data: b });
+    } catch (err) {
+        res.status(500).json({ detail: err.message });
+    }
+});
+
+router.delete('/brands/:id', async (req, res) => {
+    try {
+        await prisma.brand.delete({ where: { id: req.params.id } });
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ detail: err.message });
+    }
+});
+
 
 // ===================== PRODUCT BUNDLES =====================
 router.get('/bundles', async (req, res) => {
