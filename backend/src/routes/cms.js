@@ -32,6 +32,7 @@ router.get('/homepage-sections', async (req, res) => {
         if (cached) return res.json({ success: true, data: cached });
 
         let sections = await prisma.homepageSection.findMany({
+            where: { type: { not: 'promotional_banner' } },
             orderBy: { sort_order: 'asc' }
         });
 
@@ -42,13 +43,14 @@ router.get('/homepage-sections', async (req, res) => {
                 { type: 'categories', is_active: true, sort_order: 2 },
                 { type: 'new_arrivals', is_active: true, sort_order: 3 },
                 { type: 'best_sellers', is_active: true, sort_order: 4 },
-                { type: 'promotional_banner', is_active: true, sort_order: 5 },
-                { type: 'trending', is_active: false, sort_order: 6 },
-                { type: 'flash_sale', is_active: true, sort_order: 7 },
-                { type: 'testimonials', is_active: true, sort_order: 8 }
+                { type: 'trending', is_active: false, sort_order: 5 },
+                { type: 'testimonials', is_active: true, sort_order: 6 }
             ];
             await prisma.homepageSection.createMany({ data: defaults });
-            sections = await prisma.homepageSection.findMany({ orderBy: { sort_order: 'asc' } });
+            sections = await prisma.homepageSection.findMany({
+                where: { type: { not: 'promotional_banner' } },
+                orderBy: { sort_order: 'asc' }
+            });
         }
         setCache('homepage-sections', sections);
         res.json({ success: true, data: sections });

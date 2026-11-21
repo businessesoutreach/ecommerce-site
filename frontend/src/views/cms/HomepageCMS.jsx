@@ -11,7 +11,7 @@ export default function HomepageCMS({ setActiveTab, setMainTab }) {
   const load = async () => {
     try {
       const res = await http.get('/admin/cms/homepage-sections');
-      setSections(res.data.data);
+      setSections((res.data.data || []).filter(s => s.type !== 'promotional_banner'));
     } catch (err) {
       toast.error('Failed to load sections');
     }

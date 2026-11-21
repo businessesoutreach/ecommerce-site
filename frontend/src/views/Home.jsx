@@ -180,10 +180,6 @@ export default function Home({ initialData }) {
       case 'testimonials':
         return <ReviewsSection key={section.id} />;
 
-      case 'promotional_banner':
-        // Placeholder for promo banner if implemented on frontend
-        return null;
-
       default:
         return null;
     }

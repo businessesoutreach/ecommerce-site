@@ -59,6 +59,7 @@ router.get('/homepage', async (req, res) => {
                 where: { id: 'singleton' }
             }),
             prisma.homepageSection.findMany({
+                where: { type: { not: 'promotional_banner' } },
                 orderBy: { sort_order: 'asc' }
             })
         ]);
