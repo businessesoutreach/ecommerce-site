@@ -469,13 +469,32 @@ export default function Admin() {
     setSearchParams(next);
   };
 
+  const isCmsTab = tab === "cms" || tab.startsWith("cms_");
+  const [cmsExpanded, setCmsExpanded] = useState(() => isCmsTab);
+
+  useEffect(() => {
+    if (isCmsTab) setCmsExpanded(true);
+  }, [tab]);
+
   useEffect(() => {
     if (!user) navigate("/login");
     else if (user.role !== "admin" && user.role !== "staff") { toast.error("Admin access only"); navigate("/"); }
-    else if (user.role === "staff" && ["overview", "refunds", "coupons", "cms", "audit_logs"].includes(tab)) setTab("orders");
+    else if (user.role === "staff" && (["overview", "refunds", "coupons", "audit_logs"].includes(tab) || isCmsTab)) setTab("orders");
   }, [user, tab]);
 
   if (!user || (user.role !== "admin" && user.role !== "staff")) return null;
+
+  const CMS_SUB_ITEMS = [
+    { id: "cms_homepage", label: "Homepage Layout", icon: Home },
+    { id: "cms_hero", label: "Hero Slides", icon: ImageIcon },
+    { id: "cms_announcement", label: "Announcement Bar", icon: Megaphone },
+    { id: "cms_product_sections", label: "Product Sections", icon: Layers },
+    { id: "cms_promo", label: "Promo Banners", icon: Ticket },
+    { id: "cms_flash_sale", label: "Flash Sale", icon: Zap },
+    { id: "cms_testimonials", label: "Testimonials", icon: Star },
+    { id: "cms_pages", label: "Custom Pages", icon: FileText },
+    { id: "cms_seo", label: "SEO Settings", icon: SearchIcon },
+  ];
 
   const NAV_SECTIONS = [
     {
@@ -518,110 +537,172 @@ export default function Admin() {
 
   return (
     <div className={`min-h-screen flex ${isDark ? 'dark bg-zinc-950 text-zinc-100' : 'bg-gray-50 text-gray-900'} transition-colors duration-200`} data-testid="admin-dashboard">
-      {tab !== "cms" && (
-        <aside className="w-16 lg:w-60 bg-white dark:bg-zinc-900 border-r border-gray-200 dark:border-zinc-800 h-screen sticky top-0 flex flex-col shrink-0 z-20 transition-colors">
-          {/* Streamlined compact sidebar header to avoid excessive vertical padding */}
-          <div className="h-14 px-3.5 lg:px-4 border-b border-gray-200 dark:border-zinc-800 shrink-0 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="font-display font-black text-base text-gray-900 dark:text-white tracking-tight hidden lg:block">
-                SOLEKICKS<span className="text-fire">.</span>
-              </span>
-              <span className="lg:hidden font-display font-black text-fire text-center block w-full text-base">S.</span>
-              <span className="hidden lg:inline text-[9px] font-mono font-bold bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 px-1.5 py-0.5 rounded border border-gray-200 dark:border-zinc-700 shadow-2xs">
-                ADMIN
-              </span>
-            </div>
+      <aside className="w-16 lg:w-60 bg-white dark:bg-zinc-900 border-r border-gray-200 dark:border-zinc-800 h-screen sticky top-0 flex flex-col shrink-0 z-20 transition-colors">
+        {/* Streamlined compact sidebar header to avoid excessive vertical padding */}
+        <div className="h-14 px-3.5 lg:px-4 border-b border-gray-200 dark:border-zinc-800 shrink-0 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="font-display font-black text-base text-gray-900 dark:text-white tracking-tight hidden lg:block">
+              SOLEKICKS<span className="text-fire">.</span>
+            </span>
+            <span className="lg:hidden font-display font-black text-fire text-center block w-full text-base">S.</span>
+            <span className="hidden lg:inline text-[9px] font-mono font-bold bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 px-1.5 py-0.5 rounded border border-gray-200 dark:border-zinc-700 shadow-2xs">
+              ADMIN
+            </span>
           </div>
+        </div>
 
-          <nav className="flex-1 p-2 lg:p-2.5 space-y-3 overflow-y-auto custom-scrollbar">
-            {filteredSections.map(sec => (
-              <div key={sec.category} className="space-y-0.5">
-                <div className="hidden lg:block px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-gray-400 dark:text-zinc-500">
-                  {sec.category}
-                </div>
-                <div className="lg:hidden h-px bg-gray-200 dark:bg-zinc-800 my-1"></div>
-                {sec.items.map(([k, l, I]) => {
-                  const isActive = tab === k;
-                  return (
-                    <button
-                      key={k}
-                      onClick={() => setTab(k)}
-                      data-testid={`admin-nav-${k}`}
-                      className={`w-full flex items-center justify-center lg:justify-start gap-2.5 px-3 py-2 rounded-lg font-bold text-xs transition-all ${isActive
-                        ? "bg-fire/10 dark:bg-fire/20 text-fire border border-fire/20 shadow-2xs"
-                        : "text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 hover:bg-gray-100/70 dark:hover:bg-zinc-800/60 border border-transparent"
-                        }`}
-                      title={l}
-                    >
-                      <I size={15} />
-                      <span className="hidden lg:block truncate">{l}</span>
-                    </button>
-                  );
-                })}
+        <nav className="flex-1 p-2 lg:p-2.5 space-y-3 overflow-y-auto custom-scrollbar">
+          {filteredSections.map(sec => (
+            <div key={sec.category} className="space-y-0.5">
+              <div className="hidden lg:block px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-gray-400 dark:text-zinc-500">
+                {sec.category}
               </div>
-            ))}
-          </nav>
+              <div className="lg:hidden h-px bg-gray-200 dark:bg-zinc-800 my-1"></div>
+              {sec.items.map(([k, l, I]) => {
+                if (k === "cms") {
+                  const isParentActive = isCmsTab;
+                  return (
+                    <div key={k} className="space-y-0.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCmsExpanded(!cmsExpanded);
+                          if (!isCmsTab) setTab("cms_homepage");
+                        }}
+                        data-testid={`admin-nav-${k}`}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-lg font-bold text-xs transition-all cursor-pointer ${
+                          isParentActive
+                            ? "bg-fire/10 dark:bg-fire/20 text-fire border border-fire/20 shadow-2xs"
+                            : "text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 hover:bg-gray-100/70 dark:hover:bg-zinc-800/60 border border-transparent"
+                        }`}
+                        title={l}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <I size={15} className="shrink-0" />
+                          <span className="hidden lg:block truncate">{l}</span>
+                        </div>
+                        <ChevronDown
+                          size={13}
+                          className={`hidden lg:block transition-transform duration-200 shrink-0 ${
+                            cmsExpanded ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
 
-          <div className="p-2.5 border-t border-gray-200 dark:border-zinc-800 shrink-0">
-            <button
-              onClick={() => { logout(); navigate("/"); }}
-              className="w-full flex items-center justify-center lg:justify-start gap-2.5 px-3 py-2 rounded-lg text-gray-500 dark:text-zinc-400 hover:text-fire hover:bg-rose-50 dark:hover:bg-rose-950/30 font-bold text-xs transition-colors"
-            >
-              <LogOut size={15} />
-              <span className="hidden lg:block">Logout</span>
-            </button>
-          </div>
-        </aside>
-      )}
+                      {/* Collapsible Dropdown Submenu */}
+                      {cmsExpanded && (
+                        <div className="hidden lg:block ml-3 pl-2.5 border-l-2 border-gray-200 dark:border-zinc-800 space-y-0.5 pt-0.5 pb-1 animate-in fade-in slide-in-from-top-1 duration-150">
+                          {CMS_SUB_ITEMS.map(sub => {
+                            const SubIcon = sub.icon;
+                            const isSubActive = tab === sub.id || (tab === "cms" && sub.id === "cms_homepage");
+                            return (
+                              <button
+                                key={sub.id}
+                                type="button"
+                                onClick={() => setTab(sub.id)}
+                                className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[11px] font-semibold transition-colors text-left cursor-pointer ${
+                                  isSubActive
+                                    ? "bg-fire text-white font-bold shadow-2xs"
+                                    : "text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 hover:bg-gray-100 dark:hover:bg-zinc-800/50"
+                                }`}
+                              >
+                                <SubIcon size={12} className="shrink-0" />
+                                <span className="truncate">{sub.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                const isActive = tab === k;
+                return (
+                  <button
+                    key={k}
+                    onClick={() => setTab(k)}
+                    data-testid={`admin-nav-${k}`}
+                    className={`w-full flex items-center justify-center lg:justify-start gap-2.5 px-3 py-2 rounded-lg font-bold text-xs transition-all ${isActive
+                      ? "bg-fire/10 dark:bg-fire/20 text-fire border border-fire/20 shadow-2xs"
+                      : "text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 hover:bg-gray-100/70 dark:hover:bg-zinc-800/60 border border-transparent"
+                      }`}
+                    title={l}
+                  >
+                    <I size={15} />
+                    <span className="hidden lg:block truncate">{l}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </nav>
+
+        <div className="p-2.5 border-t border-gray-200 dark:border-zinc-800 shrink-0">
+          <button
+            onClick={() => { logout(); navigate("/"); }}
+            className="w-full flex items-center justify-center lg:justify-start gap-2.5 px-3 py-2 rounded-lg text-gray-500 dark:text-zinc-400 hover:text-fire hover:bg-rose-50 dark:hover:bg-rose-950/30 font-bold text-xs transition-colors"
+          >
+            <LogOut size={15} />
+            <span className="hidden lg:block">Logout</span>
+          </button>
+        </div>
+      </aside>
 
       {/* Main Content Area with Enterprise Sticky Top Navigation Bar */}
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
-        {tab !== "cms" && (
-          <>
-            <header className="h-14 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 sticky top-0 z-30 px-4 lg:px-8 flex items-center justify-between shrink-0 transition-colors">
-              {/* Left: Breadcrumbs & Module Title */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-gray-400 dark:text-zinc-500">Admin</span>
+        <header className="h-14 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 sticky top-0 z-30 px-4 lg:px-8 flex items-center justify-between shrink-0 transition-colors">
+          {/* Left: Breadcrumbs & Module Title */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-gray-400 dark:text-zinc-500">Admin</span>
+            <span className="text-xs text-gray-300 dark:text-zinc-700">/</span>
+            {isCmsTab ? (
+              <>
+                <span className="text-xs font-bold text-gray-500 dark:text-zinc-400">Storefront CMS</span>
                 <span className="text-xs text-gray-300 dark:text-zinc-700">/</span>
                 <span className="text-xs font-black text-gray-900 dark:text-zinc-100 uppercase tracking-wide">
-                  {tab.replace(/_/g, " ")}
+                  {tab === "cms" || tab === "cms_homepage" ? "Homepage Layout" : tab.replace("cms_", "").replace(/_/g, " ")}
                 </span>
-              </div>
+              </>
+            ) : (
+              <span className="text-xs font-black text-gray-900 dark:text-zinc-100 uppercase tracking-wide">
+                {tab.replace(/_/g, " ")}
+              </span>
+            )}
+          </div>
 
-              {/* Right: Search Bar Trigger beside Dark Mode Toggle */}
-              <div className="flex items-center gap-2 sm:gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setSearchModalOpen(true)}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-zinc-800/80 hover:bg-gray-200 dark:hover:bg-zinc-700/80 border border-gray-200 dark:border-zinc-700/70 rounded-xl text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 transition-all cursor-pointer shadow-2xs"
-                  title="Search SoleKicks (Ctrl+K)"
-                >
-                  <Search size={14} className="text-gray-400 dark:text-zinc-400" />
-                  <span className="hidden sm:inline font-medium">Search...</span>
-                  <kbd className="hidden md:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-mono font-bold text-gray-400 dark:text-zinc-500 bg-white dark:bg-zinc-700 rounded border border-gray-200 dark:border-zinc-600">
-                    Ctrl K
-                  </kbd>
-                </button>
+          {/* Right: Search Bar Trigger beside Dark Mode Toggle */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            <button
+              type="button"
+              onClick={() => setSearchModalOpen(true)}
+              className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-zinc-800/80 hover:bg-gray-200 dark:hover:bg-zinc-700/80 border border-gray-200 dark:border-zinc-700/70 rounded-xl text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 transition-all cursor-pointer shadow-2xs"
+              title="Search SoleKicks (Ctrl+K)"
+            >
+              <Search size={14} className="text-gray-400 dark:text-zinc-400" />
+              <span className="hidden sm:inline font-medium">Search...</span>
+              <kbd className="hidden md:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-mono font-bold text-gray-400 dark:text-zinc-500 bg-white dark:bg-zinc-700 rounded border border-gray-200 dark:border-zinc-600">
+                Ctrl K
+              </kbd>
+            </button>
 
-                <button
-                  onClick={() => setIsDark(!isDark)}
-                  className="p-2 rounded-xl text-gray-600 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 border border-gray-200 dark:border-zinc-700 transition-colors cursor-pointer"
-                  title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
-                >
-                  {isDark ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} className="text-gray-700 dark:text-zinc-300" />}
-                </button>
-              </div>
-            </header>
+            <button
+              onClick={() => setIsDark(!isDark)}
+              className="p-2 rounded-xl text-gray-600 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 border border-gray-200 dark:border-zinc-700 transition-colors cursor-pointer"
+              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {isDark ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} className="text-gray-700 dark:text-zinc-300" />}
+            </button>
+          </div>
+        </header>
 
-            <AdminSearchModal
-              isOpen={searchModalOpen}
-              onClose={() => setSearchModalOpen(false)}
-              activeTab={tab}
-            />
-          </>
-        )}
+        <AdminSearchModal
+          isOpen={searchModalOpen}
+          onClose={() => setSearchModalOpen(false)}
+          activeTab={tab}
+        />
 
-        <main className={`flex-1 ${tab === 'cms' ? 'h-full' : 'p-4 lg:p-8 min-w-0'}`}>
+        <main className="p-4 lg:p-8 flex-1 min-w-0">
           {tab === "overview" && <Overview setTab={setTab} isDark={isDark} />}
           {tab === "orders" && <Orders />}
           {tab === "cod" && <Orders initialCodStatus="pending" />}
@@ -635,7 +716,20 @@ export default function Admin() {
           {tab === "bundles" && <BundlesManager isDark={isDark} />}
           {tab === "categories" && <CategoriesCMS />}
           {tab === "brands" && <BrandsCMS />}
-          {tab === "cms" && <Cms setTab={setTab} isDark={isDark} />}
+
+          {/* Direct CMS Sub-Views in main dashboard */}
+          {(tab === "cms" || tab === "cms_homepage") && (
+            <HomepageCMS setActiveTab={(sub) => setTab(`cms_${sub}`)} setMainTab={setTab} />
+          )}
+          {tab === "cms_hero" && <HeroSlidesCMS />}
+          {tab === "cms_announcement" && <StoreSettings />}
+          {tab === "cms_product_sections" && <ProductSectionsCMS />}
+          {tab === "cms_promo" && <PromoBannersCMS />}
+          {tab === "cms_flash_sale" && <FlashSaleCMS />}
+          {tab === "cms_testimonials" && <TestimonialsCMS />}
+          {tab === "cms_pages" && <PagesCMS />}
+          {tab === "cms_seo" && <SeoCMS />}
+
           {tab === "profitability" && <ProfitabilityAnalytics />}
           {tab === "audit_logs" && <AuditLogs isDark={isDark} />}
         </main>
@@ -8031,79 +8125,7 @@ function RefundDetailsModal({ refundId, onClose, onUpdate }) {
 
 
 
-function Cms({ setTab, isDark }) {
-  const [activeTab, setActiveTab] = useState('homepage');
 
-  const CMS_TABS = [
-    { id: 'homepage', label: 'Homepage Layout', icon: Home },
-    { id: 'announcement', label: 'Announcement Bar', icon: Megaphone },
-    { id: 'hero', label: 'Hero Slides', icon: ImageIcon },
-    { id: 'product_sections', label: 'Product Sections', icon: Layers },
-    { id: 'promo', label: 'Promo Banners', icon: Ticket },
-    { id: 'flash_sale', label: 'Flash Sale', icon: Zap },
-    { id: 'testimonials', label: 'Testimonials', icon: Star },
-    { id: 'pages', label: 'Pages', icon: FileText },
-    { id: 'seo', label: 'SEO Settings', icon: SearchIcon },
-  ];
-
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'homepage': return <HomepageCMS setActiveTab={setActiveTab} setMainTab={setTab} />;
-      case 'announcement': return <StoreSettings />;
-      case 'hero': return <HeroSlidesCMS />;
-      case 'product_sections': return <ProductSectionsCMS />;
-      case 'promo': return <PromoBannersCMS />;
-      case 'flash_sale': return <FlashSaleCMS />;
-      case 'testimonials': return <TestimonialsCMS />;
-      case 'pages': return <PagesCMS />;
-      case 'seo': return <SeoCMS />;
-      default: return <HomepageCMS setActiveTab={setActiveTab} setMainTab={setTab} />;
-    }
-  };
-
-  return (
-    <div className="flex min-h-[calc(100vh-80px)] w-full rounded-2xl border border-gray-200 dark:border-zinc-800 overflow-hidden shadow-sm bg-white dark:bg-zinc-900">
-      {/* CMS Sidebar */}
-      <div className="w-64 bg-gray-50 dark:bg-zinc-900/80 border-r border-gray-200 dark:border-zinc-800 overflow-y-auto flex flex-col p-4 shrink-0">
-        <div className="mb-4">
-          <h2 className="font-display font-black text-sm text-gray-900 dark:text-zinc-100 tracking-tight">
-            Storefront CMS
-          </h2>
-          <p className="text-[11px] text-gray-500 dark:text-zinc-400 font-medium mt-0.5">
-            Configure visual storefront sections
-          </p>
-        </div>
-
-        <nav className="space-y-1">
-          {CMS_TABS.map(tab => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer text-left ${
-                  isActive
-                    ? 'bg-black text-white dark:bg-fire dark:text-white shadow-2xs font-black'
-                    : 'text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 hover:bg-gray-100 dark:hover:bg-zinc-800'
-                }`}
-              >
-                <Icon size={15} className="shrink-0" />
-                <span className="truncate">{tab.label}</span>
-              </button>
-            );
-          })}
-        </nav>
-      </div>
-
-      {/* CMS Main Content Area */}
-      <div className="flex-1 p-6 md:p-8 overflow-y-auto bg-white dark:bg-zinc-900 custom-scrollbar">
-        {renderContent()}
-      </div>
-    </div>
-  );
-}
 
 
 function Customers() {
