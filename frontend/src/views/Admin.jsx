@@ -74,6 +74,8 @@ export default function Admin() {
         ["overview", "Overview", LayoutDashboard],
         ["orders", "Orders", ShoppingCart],
         ["products", "Products", Package],
+        ["categories", "Categories", Tag],
+        ["brands", "Brands", Box],
         ["customers", "Customers", Users],
         ["profitability", "Analytics", TrendingUp],
       ]
@@ -92,8 +94,6 @@ export default function Admin() {
       category: "Marketing & CMS",
       items: [
         ["cms", "Hero & CMS", ImageIcon],
-        ["categories", "Categories", Tag],
-        ["brands", "Brands", Box],
         ["coupons", "Coupons", Ticket],
         ["bundles", "Bundles", Tag],
         ["reviews", "Reviews", Star],
