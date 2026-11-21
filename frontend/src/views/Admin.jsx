@@ -3240,14 +3240,16 @@ function ShippingLabel({ order }) {
 }
 
 function Products() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const productId = searchParams.get("productId");
+  const action = searchParams.get("action");
+
   const [data, setData] = useState({ products: [], pagination: {}, stats: {} });
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState({ page: 1, limit: 25, search: "", status: "all", stock: "all", category: "all", brand: "all", price: "all" });
   const [searchInput, setSearchInput] = useState("");
   const [selected, setSelected] = useState([]);
-  const [viewProduct, setViewProduct] = useState(null);
-  const [showForm, setShowForm] = useState(false);
-  const [editing, setEditing] = useState(null);
+  const [activeMenuId, setActiveMenuId] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -3262,6 +3264,15 @@ function Products() {
   };
 
   useEffect(() => { load(); }, [query]);
+
+  // Click outside to close action menu
+  useEffect(() => {
+    const handleOutside = () => setActiveMenuId(null);
+    if (activeMenuId) {
+      window.addEventListener("click", handleOutside);
+      return () => window.removeEventListener("click", handleOutside);
+    }
+  }, [activeMenuId]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -3287,7 +3298,7 @@ function Products() {
     if (!window.confirm(`Are you sure you want to ${action} ${selected.length} products?`)) return;
     try {
       await http.patch("/admin/products/bulk", { productIds: selected, action, value });
-      toast.success(`Bulk action completed`);
+      toast.success(`Bulk action completed successfully`);
       setSelected([]);
       load();
     } catch (e) { toast.error("Action failed"); }
@@ -3295,484 +3306,1408 @@ function Products() {
 
   const duplicate = async (id) => {
     try {
-      await http.post(`/admin/products/${id}/duplicate`);
-      toast.success("Product duplicated (Draft)");
+      const res = await http.post(`/admin/products/${id}/duplicate`);
+      toast.success("Product duplicated as Draft");
       load();
+      if (res.data?.data?.id) {
+        openProduct(res.data.data.id);
+      }
     } catch (e) { toast.error("Duplication failed"); }
   };
   
   const del = async (id) => {
-    if (!window.confirm("Delete product?")) return;
+    if (!window.confirm("Permanently delete this product drop? This action cannot be undone.")) return;
     try {
       await http.patch("/admin/products/bulk", { productIds: [id], action: 'delete' });
-      toast.success("Deleted");
+      toast.success("Product deleted successfully");
       load();
     } catch (e) { toast.error("Delete failed"); }
   };
 
   const exportCSV = () => {
     if (!data.products.length) return toast.error("No products to export");
-    const headers = ["ID", "Name", "SKU", "Category", "Price", "Stock", "Status"];
+    const headers = ["ID", "Name", "SKU", "Category", "Brand", "Price", "Cost", "Stock", "Status"];
     const rows = data.products.map(p => [
-      p.id, `"${p.name}"`, p.slug, p.category_slug, p.base_price, 
+      p.id, `"${p.name}"`, p.slug, p.category_slug, p.brand_slug || "", p.base_price, p.cost_price || 0,
       p.sizes?.reduce((a,b)=>a+b.stock,0) || 0, p.status
     ]);
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\\n");
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
     const link = document.createElement("a");
     link.href = encodeURI(csvContent);
     link.download = `products_export_${Date.now()}.csv`;
     link.click();
   };
 
+  const closeProduct = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("action");
+    next.delete("productId");
+    setSearchParams(next);
+  };
+
+  const openNewProduct = () => {
+    const next = new URLSearchParams(searchParams);
+    next.set("action", "new");
+    next.delete("productId");
+    setSearchParams(next);
+  };
+
+  const openProduct = (id) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("productId", id);
+    next.delete("action");
+    setSearchParams(next);
+  };
+
+  // FULL PAGE VIEW: Create New Product
+  if (action === "new") {
+    return (
+      <ProductDetailPage
+        isNew={true}
+        onBack={closeProduct}
+        onSaved={(created) => {
+          load();
+          if (created?.id) {
+            openProduct(created.id);
+          } else {
+            closeProduct();
+          }
+        }}
+      />
+    );
+  }
+
+  // FULL PAGE VIEW: View & Edit Product
+  if (productId) {
+    const existing = data.products?.find(p => p.id === productId || p.slug === productId);
+    return (
+      <ProductDetailPage
+        productId={productId}
+        initialProduct={existing}
+        onBack={closeProduct}
+        onSaved={load}
+        onDelete={() => {
+          closeProduct();
+          load();
+        }}
+      />
+    );
+  }
+
   const STATS = [
-    { label: "Total", count: data.stats?.total || 0, color: "text-obsidian" },
-    { label: "Active", count: data.stats?.active || 0, color: "text-green-600" },
-    { label: "Low Stock", count: data.stats?.low_stock || 0, color: "text-yellow-600" },
-    { label: "Out Stock", count: data.stats?.out_of_stock || 0, color: "text-fire" }
+    { label: "Total Catalog", count: data.stats?.total || 0, color: "text-gray-900 dark:text-zinc-100", sub: "All sneakers & drops" },
+    { label: "Active Drops", count: data.stats?.active || 0, color: "text-emerald-600 dark:text-emerald-400", sub: "Live on storefront" },
+    { label: "Low Stock Alert", count: data.stats?.low_stock || 0, color: "text-amber-600 dark:text-amber-400", sub: "5 or fewer pairs left" },
+    { label: "Out of Stock", count: data.stats?.out_of_stock || 0, color: "text-fire", sub: "Needs urgent restock" }
   ];
 
   return (
-    <div>
-      <div className="flex justify-between items-start mb-6">
+    <div className="space-y-6 animate-in fade-in duration-150">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="font-display tracking-tight text-2xl font-semibold ">Products</h1>
-          <p className="text-sm text-ink-500">Manage your product catalog</p>
+          <h1 className="font-display tracking-tight text-2xl font-black text-gray-900 dark:text-zinc-100 flex items-center gap-3">
+            Products & Inventory
+            <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-fire/10 text-fire border border-fire/20">
+              {data.stats?.total || 0} Drops
+            </span>
+          </h1>
+          <p className="text-xs text-gray-500 dark:text-zinc-400 mt-1">
+            Manage your high-heat footwear drops, pricing, sizes matrix, and storefront status.
+          </p>
         </div>
-        <div className="flex gap-2">
-          <button onClick={exportCSV} className="px-3 py-1.5 text-xs font-bold  border border-ink-200 bg-white hover:bg-obsidian hover:text-white transition-colors flex items-center gap-2"><Download size={14}/> Export</button>
-          <button onClick={() => { setEditing(null); setShowForm(true); }} className="px-3 py-1.5 text-xs font-bold  bg-obsidian text-white hover:bg-fire transition-colors">+ Add Product</button>
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={exportCSV}
+            className="px-3.5 py-2 text-xs font-bold rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-700 dark:text-zinc-200 hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors flex items-center gap-2 shadow-sm"
+          >
+            <Download size={14}/> Export CSV
+          </button>
+          <button
+            onClick={openNewProduct}
+            className="px-4 py-2 text-xs font-black uppercase tracking-wider rounded-xl bg-fire hover:bg-fire-hover text-white transition-all shadow-sm hover:shadow-fire/20 flex items-center gap-2"
+          >
+            <Plus size={16} /> Add Product
+          </button>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      {/* KPI Stats Ribbon */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {STATS.map(s => (
-          <div key={s.label} className="bg-white p-4 border border-ink-200 flex flex-col justify-between">
-            <span className="text-xs font-bold text-ink-400  tracking-wider">{s.label}</span>
-            <span className={`text-2xl font-mono font-black mt-2 ${s.color}`}>{s.count}</span>
+          <div key={s.label} className="bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm flex flex-col justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-zinc-400">{s.label}</span>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className={`text-2xl font-mono font-black ${s.color}`}>{s.count}</span>
+            </div>
+            <span className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1">{s.sub}</span>
           </div>
         ))}
       </div>
 
-      {/* Filters */}
-      <div className="bg-white p-4 border border-ink-200 mb-6 flex flex-col lg:flex-row gap-4 items-center">
+      {/* Search & Filter Toolbar */}
+      <div className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm flex flex-col lg:flex-row gap-3 items-center">
         <form onSubmit={handleSearch} className="flex-1 relative w-full">
-          <SearchIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
-          <input type="text" placeholder="Search products, SKU..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className="w-full pl-9 pr-4 py-2 border border-ink-200 text-sm focus:border-obsidian focus:outline-none rounded-none" />
+          <SearchIcon size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-500" />
+          <input
+            type="text"
+            placeholder="Search sneaker by name, SKU, or category..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-500 focus:outline-none focus:border-fire transition-colors"
+          />
         </form>
-        <div className="flex flex-wrap gap-2 w-full lg:w-auto">
-          <select value={query.category} onChange={(e) => setQuery({ ...query, category: e.target.value, page: 1 })} className="border border-ink-200 px-3 py-2 text-sm focus:outline-none rounded-none bg-white">
+        <div className="flex flex-wrap gap-2 w-full lg:w-auto items-center">
+          <select
+            value={query.category}
+            onChange={(e) => setQuery({ ...query, category: e.target.value, page: 1 })}
+            className="bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 px-3 py-2 text-xs rounded-xl text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-fire"
+          >
             <option value="all">Category: All</option>
             <option value="retro">Retro</option>
             <option value="streetwear">Streetwear</option>
             <option value="runners">Runners</option>
+            <option value="court">Court</option>
+            <option value="lifestyle">Lifestyle</option>
             <option value="slides">Slides</option>
           </select>
-          <select value={query.status} onChange={(e) => setQuery({ ...query, status: e.target.value, page: 1 })} className="border border-ink-200 px-3 py-2 text-sm focus:outline-none rounded-none bg-white">
+          <select
+            value={query.status}
+            onChange={(e) => setQuery({ ...query, status: e.target.value, page: 1 })}
+            className="bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 px-3 py-2 text-xs rounded-xl text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-fire"
+          >
             <option value="all">Status: All</option>
             <option value="active">Active</option>
             <option value="draft">Draft</option>
             <option value="archived">Archived</option>
           </select>
-          <select value={query.stock} onChange={(e) => setQuery({ ...query, stock: e.target.value, page: 1 })} className="border border-ink-200 px-3 py-2 text-sm focus:outline-none rounded-none bg-white">
+          <select
+            value={query.stock}
+            onChange={(e) => setQuery({ ...query, stock: e.target.value, page: 1 })}
+            className="bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 px-3 py-2 text-xs rounded-xl text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-fire"
+          >
             <option value="all">Stock: All</option>
-            <option value="in_stock">In Stock</option>
-            <option value="low_stock">Low Stock</option>
-            <option value="out_of_stock">Out of Stock</option>
+            <option value="in_stock">In Stock (5+ pairs)</option>
+            <option value="low_stock">Low Stock (1-5)</option>
+            <option value="out_of_stock">Out of Stock (0)</option>
           </select>
-          <select value={query.price} onChange={(e) => setQuery({ ...query, price: e.target.value, page: 1 })} className="border border-ink-200 px-3 py-2 text-sm focus:outline-none rounded-none bg-white">
+          <select
+            value={query.price}
+            onChange={(e) => setQuery({ ...query, price: e.target.value, page: 1 })}
+            className="bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 px-3 py-2 text-xs rounded-xl text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-fire"
+          >
             <option value="all">Price: All</option>
-            <option value="under_50">Under 50</option>
-            <option value="50_100">50 - 100</option>
-            <option value="100_500">100 - 500</option>
+            <option value="under_50">Under $50</option>
+            <option value="50_100">$50 - $100</option>
+            <option value="100_500">$100 - $500</option>
           </select>
-          <button onClick={resetFilters} className="text-sm font-bold text-ink-500 hover:text-fire  px-3 py-2">Reset</button>
+          <button
+            onClick={resetFilters}
+            className="text-xs font-bold text-gray-500 dark:text-zinc-400 hover:text-fire px-3 py-2 rounded-xl transition-colors"
+          >
+            Reset
+          </button>
         </div>
       </div>
 
-      {/* Bulk Actions */}
+      {/* Sticky Bulk Action Bar */}
       {selected.length > 0 && (
-        <div className="bg-obsidian text-white p-3 flex justify-between items-center mb-4 sticky top-0 z-10 shadow-lg">
-          <span className="font-bold text-sm">{selected.length} products selected</span>
+        <div className="bg-gray-900 dark:bg-zinc-800 text-white p-3.5 px-5 rounded-2xl flex justify-between items-center shadow-xl border border-gray-800 dark:border-zinc-700 sticky top-20 z-20 animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-fire animate-pulse"></span>
+            <span className="font-bold text-xs">{selected.length} products selected</span>
+          </div>
           <div className="flex gap-2">
-            <button onClick={() => bulkUpdate('status', 'active')} className="px-3 py-1.5 text-xs font-bold  bg-white/10 hover:bg-green-600 transition-colors">Activate</button>
-            <button onClick={() => bulkUpdate('status', 'draft')} className="px-3 py-1.5 text-xs font-bold  bg-white/10 hover:bg-yellow-600 transition-colors">Deactivate</button>
-            <button onClick={() => bulkUpdate('delete')} className="px-3 py-1.5 text-xs font-bold  bg-white/10 hover:bg-fire transition-colors">Delete</button>
+            <button
+              onClick={() => bulkUpdate('status', 'active')}
+              className="px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 transition-colors"
+            >
+              Set Active
+            </button>
+            <button
+              onClick={() => bulkUpdate('status', 'draft')}
+              className="px-3 py-1.5 text-xs font-bold rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 transition-colors"
+            >
+              Set Draft
+            </button>
+            <button
+              onClick={() => bulkUpdate('delete')}
+              className="px-3 py-1.5 text-xs font-bold rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 transition-colors"
+            >
+              Delete Selected
+            </button>
           </div>
         </div>
       )}
 
-      {/* Table */}
-      <div className="bg-white border border-ink-200 overflow-x-auto min-h-[400px]">
-        {loading ? <div className="p-10 flex justify-center"><div className="w-6 h-6 border-2 border-obsidian border-t-transparent rounded-full animate-spin"></div></div> : (
-          <table className="w-full text-sm text-left">
-            <thead className="bg-ink-100 font-mono text-[10px]  text-ink-500">
-              <tr>
-                <th className="p-3 w-10"><input type="checkbox" checked={data.products?.length > 0 && selected.length === data.products?.length} onChange={selectAll} className="accent-obsidian" /></th>
-                <th className="p-3">Product</th>
-                <th className="p-3">SKU</th>
-                <th className="p-3">Category</th>
-                <th className="p-3">Price</th>
-                <th className="p-3 text-center">Stock</th>
-                <th className="p-3">Status</th>
-                <th className="p-3 text-center">⋮</th>
-              </tr>
-            </thead>
-            <tbody>
-              {!data.products || data.products.length === 0 ? <tr><td colSpan="8" className="p-10 text-center text-ink-400">No products found.</td></tr> : data.products.map(p => {
-                const stock = p.sizes?.reduce((a,b)=>a+b.stock,0) || 0;
-                return (
-                  <tr key={p.id} className="border-b border-ink-100 last:border-0 hover:bg-ink-50 cursor-pointer" onClick={() => setViewProduct(p)}>
-                    <td className="p-3" onClick={e => e.stopPropagation()}><input type="checkbox" checked={selected.includes(p.id)} onChange={() => toggleSelect(p.id)} className="accent-obsidian" /></td>
-                    <td className="p-3 flex items-center gap-3">
-                      <img src={p.images?.[0] || 'https://via.placeholder.com/50'} className="w-10 h-10 object-cover border border-ink-200" alt=""/>
-                      <span className="font-bold">{p.name}</span>
-                    </td>
-                    <td className="p-3 font-mono text-xs text-ink-500">{p.slug}</td>
-                    <td className="p-3 capitalize">{p.category_slug}</td>
-                    <td className="p-3 font-mono font-bold">{fmt(p.base_price)}</td>
-                    <td className="p-3 text-center">
-                      <span className={`font-mono font-bold ${stock === 0 ? 'text-fire' : stock < 10 ? 'text-yellow-600' : 'text-obsidian'}`}>{stock}</span>
-                    </td>
-                    <td className="p-3">
-                      <span className={`text-[10px] font-bold  tracking-wider px-2 py-0.5 ${p.status==='active'?'bg-green-100 text-green-700':p.status==='draft'?'bg-yellow-100 text-yellow-700':'bg-ink-100 text-ink-500'}`}>{p.status}</span>
-                    </td>
-                    <td className="p-3 text-center relative group" onClick={e => e.stopPropagation()}>
-                      <button className="p-1 text-ink-400 hover:text-obsidian"><MoreVertical size={16}/></button>
-                      <div className="absolute right-0 top-full mt-1 w-40 bg-white border border-ink-200 shadow-xl hidden group-hover:block z-20 text-left">
-                        <button onClick={() => setViewProduct(p)} className="w-full px-4 py-2 text-xs hover:bg-ink-100 text-left flex items-center gap-2"><Eye size={14}/> View Product</button>
-                        <button onClick={() => { setEditing(p); setShowForm(true); }} className="w-full px-4 py-2 text-xs hover:bg-ink-100 text-left flex items-center gap-2"><Edit size={14}/> Edit Product</button>
-                        <button onClick={() => duplicate(p.id)} className="w-full px-4 py-2 text-xs hover:bg-ink-100 text-left flex items-center gap-2"><Copy size={14}/> Duplicate</button>
-                        <button onClick={() => bulkUpdate('status', p.status === 'active' ? 'draft' : 'active')} className="w-full px-4 py-2 text-xs hover:bg-ink-100 text-left flex items-center gap-2"><Activity size={14}/> {p.status === 'active' ? 'Deactivate' : 'Activate'}</button>
-                        <button onClick={() => del(p.id)} className="w-full px-4 py-2 text-xs hover:bg-fire hover:text-white text-fire text-left flex items-center gap-2 border-t border-ink-100"><Trash2 size={14}/> Delete</button>
-                      </div>
+      {/* Main Table */}
+      <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm">
+        {loading ? (
+          <div className="p-16 flex flex-col items-center justify-center gap-3">
+            <Loader2 size={32} className="animate-spin text-fire" />
+            <p className="text-xs font-bold text-gray-500 dark:text-zinc-400">Loading sneaker inventory...</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs text-left">
+              <thead className="bg-gray-50/80 dark:bg-zinc-800/60 font-mono text-[10px] uppercase tracking-wider text-gray-500 dark:text-zinc-400 border-b border-gray-200 dark:border-zinc-800">
+                <tr>
+                  <th className="p-3.5 pl-5 w-12">
+                    <input
+                      type="checkbox"
+                      checked={data.products?.length > 0 && selected.length === data.products?.length}
+                      onChange={selectAll}
+                      className="accent-fire rounded"
+                    />
+                  </th>
+                  <th className="p-3.5">Sneaker Product</th>
+                  <th className="p-3.5">SKU / Handle</th>
+                  <th className="p-3.5">Category & Brand</th>
+                  <th className="p-3.5">Retail Price</th>
+                  <th className="p-3.5 text-center">Stock Depth</th>
+                  <th className="p-3.5">Status</th>
+                  <th className="p-3.5 pr-5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-zinc-800/60">
+                {!data.products || data.products.length === 0 ? (
+                  <tr>
+                    <td colSpan="8" className="p-12 text-center text-gray-400 dark:text-zinc-500">
+                      <Package size={32} className="mx-auto mb-2 opacity-40" />
+                      <p className="font-bold text-sm">No products found</p>
+                      <p className="text-xs mt-1">Try resetting search filters or click "+ Add Product" to create one.</p>
                     </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                ) : (
+                  data.products.map(p => {
+                    const stock = p.sizes?.reduce((a,b)=>a+b.stock,0) || 0;
+                    return (
+                      <tr
+                        key={p.id}
+                        onClick={() => openProduct(p.id)}
+                        className="hover:bg-gray-50/80 dark:hover:bg-zinc-800/40 transition-colors cursor-pointer group"
+                      >
+                        <td className="p-3.5 pl-5" onClick={e => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={selected.includes(p.id)}
+                            onChange={() => toggleSelect(p.id)}
+                            className="accent-fire rounded"
+                          />
+                        </td>
+                        <td className="p-3.5">
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={p.images?.[0] || 'https://via.placeholder.com/80?text=Sneaker'}
+                              className="w-12 h-12 object-cover rounded-xl border border-gray-200 dark:border-zinc-700 shrink-0 bg-gray-100 dark:bg-zinc-800"
+                              alt=""
+                            />
+                            <div className="min-w-0">
+                              <span className="font-bold text-sm text-gray-900 dark:text-zinc-100 block truncate group-hover:text-fire transition-colors">
+                                {p.name}
+                              </span>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                {p.is_new_arrival && <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-fire/10 text-fire">New</span>}
+                                {p.is_best_seller && <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400">Hot</span>}
+                                {p.is_flash_sale && <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-600 dark:text-purple-400">Sale</span>}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-3.5 font-mono text-xs text-gray-500 dark:text-zinc-400">
+                          {p.slug}
+                        </td>
+                        <td className="p-3.5">
+                          <span className="font-bold capitalize text-gray-900 dark:text-zinc-200 block">
+                            {p.category_slug}
+                          </span>
+                          <span className="text-[11px] text-gray-400 dark:text-zinc-500 capitalize">
+                            {p.brand_slug || "AirVault"}
+                          </span>
+                        </td>
+                        <td className="p-3.5 font-mono font-black text-sm text-gray-900 dark:text-zinc-100">
+                          {fmt(p.base_price)}
+                          {p.compare_at_price && (
+                            <span className="block text-[10px] text-gray-400 line-through font-normal">
+                              {fmt(p.compare_at_price)}
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-3.5 text-center">
+                          <span className={`font-mono font-bold px-2 py-0.5 rounded-full text-xs ${
+                            stock === 0
+                              ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900'
+                              : stock <= 5
+                              ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900'
+                              : 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900'
+                          }`}>
+                            {stock} {stock === 1 ? 'pair' : 'pairs'}
+                          </span>
+                        </td>
+                        <td className="p-3.5">
+                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                            p.status === 'active'
+                              ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900'
+                              : p.status === 'draft'
+                              ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900'
+                              : 'bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 border-gray-200 dark:border-zinc-700'
+                          }`}>
+                            {p.status}
+                          </span>
+                        </td>
+                        <td className="p-3.5 pr-5 text-right relative" onClick={e => e.stopPropagation()}>
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => openProduct(p.id)}
+                              className="px-2.5 py-1.5 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-800 dark:text-zinc-200 font-bold text-xs rounded-lg transition-colors flex items-center gap-1"
+                            >
+                              <Edit size={13} /> Edit
+                            </button>
+                            <div className="relative">
+                              <button
+                                onClick={() => setActiveMenuId(activeMenuId === p.id ? null : p.id)}
+                                className="p-1.5 text-gray-400 hover:text-gray-900 dark:hover:text-zinc-100 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800"
+                              >
+                                <MoreVertical size={16}/>
+                              </button>
+                              {activeMenuId === p.id && (
+                                <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 shadow-xl rounded-xl py-1.5 z-30 text-left animate-in fade-in duration-100">
+                                  <button
+                                    onClick={() => { setActiveMenuId(null); openProduct(p.id); }}
+                                    className="w-full px-3.5 py-2 text-xs font-bold text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-700 flex items-center gap-2"
+                                  >
+                                    <Eye size={14}/> View & Edit Details
+                                  </button>
+                                  <button
+                                    onClick={() => { setActiveMenuId(null); duplicate(p.id); }}
+                                    className="w-full px-3.5 py-2 text-xs font-bold text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-700 flex items-center gap-2"
+                                  >
+                                    <Copy size={14}/> Duplicate (Draft)
+                                  </button>
+                                  <a
+                                    href={`/product/${p.slug}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="w-full px-3.5 py-2 text-xs font-bold text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-700 flex items-center gap-2"
+                                  >
+                                    <ExternalLink size={14}/> View on Store
+                                  </a>
+                                  <hr className="my-1 border-gray-100 dark:border-zinc-700" />
+                                  <button
+                                    onClick={() => { setActiveMenuId(null); del(p.id); }}
+                                    className="w-full px-3.5 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2"
+                                  >
+                                    <Trash2 size={14}/> Delete Drop
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
-      {/* Pagination */}
+      {/* Pagination Footer */}
       {data.pagination?.totalPages > 1 && (
-        <div className="flex justify-between items-center mt-6">
-          <div className="text-sm text-ink-500">Showing page {data.pagination.page} of {data.pagination.totalPages} ({data.pagination.totalCount} products)</div>
-          <div className="flex gap-1">
-            <button disabled={query.page === 1} onClick={() => setQuery({...query, page: query.page - 1})} className="px-3 py-1.5 border border-ink-200 bg-white hover:bg-ink-50 disabled:opacity-50 text-sm font-bold">Prev</button>
-            <button disabled={query.page === data.pagination.totalPages} onClick={() => setQuery({...query, page: query.page + 1})} className="px-3 py-1.5 border border-ink-200 bg-white hover:bg-ink-50 disabled:opacity-50 text-sm font-bold">Next</button>
+        <div className="flex justify-between items-center px-1">
+          <div className="text-xs text-gray-500 dark:text-zinc-400">
+            Showing page {data.pagination.page} of {data.pagination.totalPages} ({data.pagination.totalCount} products)
+          </div>
+          <div className="flex gap-1.5">
+            <button
+              disabled={query.page === 1}
+              onClick={() => setQuery({...query, page: query.page - 1})}
+              className="px-3.5 py-1.5 border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-800 dark:text-zinc-200 hover:bg-gray-50 dark:hover:bg-zinc-700 disabled:opacity-40 text-xs font-bold rounded-lg transition-colors shadow-sm"
+            >
+              Previous
+            </button>
+            <button
+              disabled={query.page === data.pagination.totalPages}
+              onClick={() => setQuery({...query, page: query.page + 1})}
+              className="px-3.5 py-1.5 border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-800 dark:text-zinc-200 hover:bg-gray-50 dark:hover:bg-zinc-700 disabled:opacity-40 text-xs font-bold rounded-lg transition-colors shadow-sm"
+            >
+              Next
+            </button>
           </div>
         </div>
       )}
-
-      {showForm && <ProductForm product={editing} onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); load(); }} />}
-      {viewProduct && <ProductDetailsDrawer product={viewProduct} onClose={() => setViewProduct(null)} onEdit={() => { setViewProduct(null); setEditing(viewProduct); setShowForm(true); }} onUpdate={load} />}
     </div>
   );
 }
 
 
-function ProductDetailsDrawer({ product, onClose, onEdit, onUpdate }) {
-  const stock = product.sizes?.reduce((a,b)=>a+b.stock,0) || 0;
+/* =========================================================================
+   DEDICATED FULL-PAGE COMPONENT: ProductDetailPage (View, Edit & Add Drop)
+   Enterprise-grade sneaker product workbench. NO MODALS.
+   ========================================================================= */
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-obsidian/30 backdrop-blur-sm p-4 md:p-6 lg:p-10" onClick={onClose}>
-      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.2 }}
-        className="w-[95vw] h-[95vh] bg-ink-100 overflow-y-auto flex flex-col shadow-2xl rounded-xl" onClick={e => e.stopPropagation()}>
-        
-        <div className="bg-white border-b border-ink-200 p-6 flex justify-between items-start sticky top-0 z-10">
-          <div>
-            <h2 className="font-display font-semibold text-2xl flex items-center gap-3">
-              {product.name}
-              <span className={`text-[10px] font-bold  tracking-wider px-2 py-1 align-middle ${product.status==='active'?'bg-green-100 text-green-700':'bg-yellow-100 text-yellow-700'}`}>{product.status}</span>
-            </h2>
-          </div>
-          <div className="flex gap-2 items-center">
-            <button onClick={onEdit} className="px-3 py-1.5 border border-ink-200 hover:bg-ink-100 text-xs font-bold  flex items-center gap-2"><Edit size={14}/> Edit</button>
-            <button onClick={onClose} className="p-2 text-ink-400 hover:text-fire"><X size={20}/></button>
-          </div>
-        </div>
+function ProductDetailPage({ productId, initialProduct, isNew = false, onBack, onSaved, onDelete }) {
+  const [loading, setLoading] = useState(!isNew);
+  const [saving, setSaving] = useState(false);
+  const [activePhotoIdx, setActivePhotoIdx] = useState(0);
+  const [urlInput, setUrlInput] = useState("");
+  const [customSizeInput, setCustomSizeInput] = useState("");
+  const [uploading, setUploading] = useState(false);
 
-        <div className="p-6 space-y-6 flex-1">
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-white border border-ink-200 p-6">
-              <img src={product.images?.[0] || 'https://via.placeholder.com/400'} className="w-full aspect-square object-cover border border-ink-200 mb-4" alt=""/>
-              <div className="grid grid-cols-4 gap-2">
-                {product.images?.slice(1, 5).map((img, i) => (
-                  <img key={i} src={img} className="w-full aspect-square object-cover border border-ink-200" alt=""/>
-                ))}
-              </div>
-            </div>
+  const defaultSizes = [
+    { size: "38", stock: 5 },
+    { size: "39", stock: 10 },
+    { size: "40", stock: 15 },
+    { size: "41", stock: 20 },
+    { size: "42", stock: 20 },
+    { size: "43", stock: 15 },
+    { size: "44", stock: 10 },
+    { size: "45", stock: 8 },
+    { size: "46", stock: 4 },
+    { size: "47", stock: 2 },
+  ];
 
-            <div className="space-y-6">
-              <div className="bg-white border border-ink-200 p-6 space-y-4">
-                <h3 className="font-display font-semibold mb-2  text-sm tracking-wider text-ink-500">Product Information</h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div><span className="text-ink-500 block text-xs">SKU</span><span className="font-mono">{product.slug}</span></div>
-                  <div><span className="text-ink-500 block text-xs">Category</span><span className="capitalize">{product.category_slug}</span></div>
-                  <div><span className="text-ink-500 block text-xs">Brand</span><span className="capitalize">{product.brand_slug}</span></div>
-                  <div><span className="text-ink-500 block text-xs">Stock</span><span className="font-mono">{stock}</span></div>
-                </div>
-                <hr className="border-ink-100 my-4"/>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div><span className="text-ink-500 block text-xs">Price</span><span className="font-mono text-lg font-bold">{fmt(product.base_price)}</span></div>
-                  {product.compare_at_price && <div><span className="text-ink-500 block text-xs">Compare At</span><span className="font-mono line-through">{fmt(product.compare_at_price)}</span></div>}
-                </div>
-              </div>
-              
-              <div className="bg-white border border-ink-200 p-6">
-                 <h3 className="font-display font-semibold mb-4  text-sm tracking-wider text-ink-500">Variants (Size / Stock)</h3>
-                 <table className="w-full text-sm">
-                   <thead className="bg-ink-50"><tr><th className="p-2 text-left text-xs  text-ink-500">Size</th><th className="p-2 text-right text-xs  text-ink-500">Stock</th></tr></thead>
-                   <tbody>
-                     {product.sizes?.map((s,i) => (
-                       <tr key={i} className="border-t border-ink-100">
-                         <td className="p-2 font-mono">EU {s.size}</td>
-                         <td className="p-2 text-right font-mono font-bold">{s.stock}</td>
-                       </tr>
-                     ))}
-                   </tbody>
-                 </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-    </div>
-  );
-}
+  const [form, setForm] = useState({
+    name: initialProduct?.name || "",
+    slug: initialProduct?.slug || "",
+    category_slug: initialProduct?.category_slug || "retro",
+    brand_slug: initialProduct?.brand_slug || "airvault",
+    base_price: initialProduct?.base_price ?? "",
+    cost_price: initialProduct?.cost_price ?? "",
+    compare_at_price: initialProduct?.compare_at_price ?? "",
+    flash_sale_price: initialProduct?.flash_sale_price ?? "",
+    description: initialProduct?.description || "",
+    status: initialProduct?.status || "active",
+    is_new_arrival: initialProduct?.is_new_arrival ?? true,
+    is_best_seller: initialProduct?.is_best_seller ?? false,
+    is_flash_sale: initialProduct?.is_flash_sale ?? false,
+    is_featured: initialProduct?.is_featured ?? false,
+  });
 
+  const [images, setImages] = useState(initialProduct?.images?.filter(Boolean) || []);
+  const [sizes, setSizes] = useState(initialProduct?.sizes?.length ? initialProduct.sizes : defaultSizes);
 
-function MultiImageInput({ images, onChange }) {
-  const [busy, setBusy] = useState(false);
-  const [url, setUrl] = useState("");
-  const dragIdx = useRef(null);
-  const addFiles = async (e) => {
+  // Fetch full details if editing existing product
+  useEffect(() => {
+    if (isNew || !productId) return;
+    let mounted = true;
+    const fetchProduct = async () => {
+      try {
+        const res = await http.get(`/admin/products/${productId}`);
+        if (mounted && res.data?.data) {
+          const p = res.data.data;
+          setForm({
+            name: p.name || "",
+            slug: p.slug || "",
+            category_slug: p.category_slug || "retro",
+            brand_slug: p.brand_slug || "airvault",
+            base_price: p.base_price ?? "",
+            cost_price: p.cost_price ?? "",
+            compare_at_price: p.compare_at_price ?? "",
+            flash_sale_price: p.flash_sale_price ?? "",
+            description: p.description || "",
+            status: p.status || "active",
+            is_new_arrival: !!p.is_new_arrival,
+            is_best_seller: !!p.is_best_seller,
+            is_flash_sale: !!p.is_flash_sale,
+            is_featured: !!p.is_featured,
+          });
+          if (p.images && p.images.length > 0) {
+            setImages(p.images.filter(Boolean));
+          }
+          if (p.sizes && p.sizes.length > 0) {
+            setSizes(p.sizes);
+          }
+        }
+      } catch (e) {
+        toast.error("Could not fetch latest product details");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+    fetchProduct();
+    return () => { mounted = false; };
+  }, [productId, isNew]);
+
+  // Derived financial & inventory metrics
+  const totalStock = sizes.reduce((acc, s) => acc + (Number(s.stock) || 0), 0);
+  const inStockSizesCount = sizes.filter(s => (Number(s.stock) || 0) > 0).length;
+  const basePriceNum = Number(form.base_price) || 0;
+  const costPriceNum = Number(form.cost_price) || 0;
+  const comparePriceNum = Number(form.compare_at_price) || 0;
+  const grossProfit = basePriceNum - costPriceNum;
+  const marginPct = basePriceNum > 0 ? Math.round((grossProfit / basePriceNum) * 100) : 0;
+  const discountPct = comparePriceNum > basePriceNum ? Math.round(((comparePriceNum - basePriceNum) / comparePriceNum) * 100) : 0;
+
+  // Handle Photo Upload
+  const handleUploadFiles = async (e) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
-    setBusy(true);
+    setUploading(true);
     try {
       const urls = [];
-      for (const file of files) urls.push(await uploadImage(file));
-      onChange([...images, ...urls]);
-      toast.success(`${urls.length} photo(s) added`);
-    } catch { toast.error("Upload failed"); }
-    setBusy(false);
-    e.target.value = "";
-  };
-  const addUrl = () => { if (url.trim()) { onChange([...images, url.trim()]); setUrl(""); } };
-  const remove = (i) => onChange(images.filter((_, idx) => idx !== i));
-  const reorder = (from, to) => {
-    if (from === to || from == null) return;
-    const next = [...images];
-    const [moved] = next.splice(from, 1);
-    next.splice(to, 0, moved);
-    onChange(next);
-  };
-  return (
-    <div data-testid="admin-product-gallery">
-      <div className="flex items-center justify-between mb-2">
-        <label className="font-display text-xs tracking-wide text-ink-500">Product Gallery <span className="text-ink-400 normal-case font-normal">· drag to reorder · first = cover</span></label>
-        <label data-testid="admin-product-gallery-upload" className="flex items-center gap-1.5 bg-obsidian text-white text-xs font-bold  px-3 py-2 rounded-none cursor-pointer hover:bg-fire transition-colors">
-          <Upload size={14} /> {busy ? "Uploading…" : "Upload"}
-          <input type="file" accept="image/*" multiple onChange={addFiles} className="hidden" />
-        </label>
-      </div>
-      {images.length > 0 ? (
-        <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 mb-2">
-          {images.map((im, i) => (
-            <div
-              key={`${im}-${i}`}
-              draggable
-              onDragStart={() => { dragIdx.current = i; }}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={() => { reorder(dragIdx.current, i); dragIdx.current = null; }}
-              data-testid={`admin-gallery-thumb-${i}`}
-              className="relative group aspect-square rounded-none overflow-hidden border-2 border-ink-200 cursor-grab active:cursor-grabbing"
-            >
-              <img src={im} alt="" className="h-full w-full object-cover pointer-events-none" />
-              {i === 0 && <span className="absolute top-0.5 left-0.5 bg-fire text-white text-[8px] font-bold  px-1 rounded">Cover</span>}
-              <button type="button" onClick={() => remove(i)} data-testid={`admin-gallery-remove-${i}`} className="absolute top-0.5 right-0.5 h-5 w-5 grid place-items-center rounded-none bg-obsidian/80 text-white sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"><X size={11} /></button>
-              <span className="absolute bottom-0.5 right-1 text-white text-[9px] font-mono font-bold drop-shadow">{i + 1}</span>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="text-ink-400 text-xs mb-2 border border-dashed border-ink-200 rounded-none py-4 text-center">No photos yet — upload or paste a URL below.</p>
-      )}
-      <div className="flex gap-2">
-        <input value={url} onChange={(e) => setUrl(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addUrl())} placeholder="Paste image URL…" className="flex-1 border border-ink-200 rounded-none px-4 py-2 outline-none focus:border-obsidian text-sm" />
-        <button type="button" onClick={addUrl} className="border border-ink-200 text-xs font-bold  px-3 rounded-none hover:border-obsidian">Add</button>
-      </div>
-    </div>
-  );
-}
-
-function ProductForm({ product, onClose, onSaved }) {
-  const isEdit = !!product?.id;
-  const [f, setF] = useState({
-    name: product?.name || "", category_slug: product?.category_slug || "retro",
-    brand_slug: product?.brand_slug || "airvault", base_price: product?.base_price || "",
-    cost_price: product?.cost_price || "",
-    compare_at_price: product?.compare_at_price || "", flash_sale_price: product?.flash_sale_price || "",
-    description: product?.description || "",
-    is_new_arrival: product?.is_new_arrival ?? true, is_best_seller: product?.is_best_seller ?? false,
-    is_flash_sale: product?.is_flash_sale ?? false, is_featured: product?.is_featured ?? false,
-    status: product?.status || "active",
-  });
-  const [images, setImages] = useState(product?.images?.filter(Boolean) || []);
-  
-  const defaultSizes = ["39", "40", "41", "42", "43", "44", "45"].map(s => ({ size: s, stock: 5 }));
-  const [sizes, setSizes] = useState(product?.sizes?.map(s => ({ id: s.id, size: s.size, stock: s.stock })) || defaultSizes);
-  
-  const [saving, setSaving] = useState(false);
-  const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
-  
-  const save = async (statusOverride = null) => {
-    if (!f.name || !f.base_price) return toast.error("Name and price required");
-    if (images.length === 0) return toast.error("Add at least one photo");
-    setSaving(true);
-    const payload = {
-      name: f.name, category_slug: f.category_slug, brand_slug: f.brand_slug,
-      base_price: Number(f.base_price), cost_price: f.cost_price ? Number(f.cost_price) : 0, 
-      compare_at_price: f.compare_at_price ? Number(f.compare_at_price) : null,
-      flash_sale_price: f.flash_sale_price ? Number(f.flash_sale_price) : null,
-      description: f.description || f.name, images, hover_image: images[1] || images[0],
-      sizes,
-      is_new_arrival: f.is_new_arrival, is_best_seller: f.is_best_seller, is_flash_sale: f.is_flash_sale, is_featured: f.is_featured,
-      status: statusOverride || f.status,
-    };
-    try {
-      if (isEdit) {
-        await http.patch(`/admin/products/${product.id}`, payload);
-        toast.success("Product updated");
-      } else {
-        payload.slug = f.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now().toString(36).slice(-4);
-        await http.post("/admin/products", payload);
-        toast.success("Product added");
+      for (const file of files) {
+        const url = await uploadImage(file);
+        if (url) urls.push(url);
       }
-      onSaved();
-    } catch (e) { toast.error(e.response?.data?.detail || "Save failed"); }
-    setSaving(false);
+      setImages(prev => [...prev, ...urls]);
+      toast.success(`Added ${urls.length} photo(s)`);
+    } catch {
+      toast.error("Photo upload failed");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
   };
 
+  const handleAddUrl = () => {
+    if (!urlInput.trim()) return;
+    setImages(prev => [...prev, urlInput.trim()]);
+    setUrlInput("");
+    toast.success("Image URL added");
+  };
+
+  const handleRemovePhoto = (idx) => {
+    setImages(prev => prev.filter((_, i) => i !== idx));
+    if (activePhotoIdx >= idx && activePhotoIdx > 0) {
+      setActivePhotoIdx(activePhotoIdx - 1);
+    }
+  };
+
+  const handleSetCover = (idx) => {
+    if (idx === 0) return;
+    const next = [...images];
+    const [selected] = next.splice(idx, 1);
+    next.unshift(selected);
+    setImages(next);
+    setActivePhotoIdx(0);
+    toast.success("Set as primary cover image");
+  };
+
+  // Size matrix helpers
+  const updateSizeStock = (idx, delta) => {
+    setSizes(prev => {
+      const next = [...prev];
+      const cur = Number(next[idx].stock) || 0;
+      next[idx] = { ...next[idx], stock: Math.max(0, cur + delta) };
+      return next;
+    });
+  };
+
+  const setDirectSizeStock = (idx, val) => {
+    setSizes(prev => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], stock: Math.max(0, parseInt(val) || 0) };
+      return next;
+    });
+  };
+
+  const batchStockAdjust = (amount) => {
+    setSizes(prev => prev.map(s => ({ ...s, stock: Math.max(0, (Number(s.stock) || 0) + amount) })));
+    toast.success(`Adjusted all sizes by ${amount > 0 ? '+' : ''}${amount}`);
+  };
+
+  const handleAddCustomSize = (e) => {
+    e.preventDefault();
+    if (!customSizeInput.trim()) return;
+    const clean = customSizeInput.trim().toUpperCase();
+    if (sizes.some(s => s.size === clean)) {
+      return toast.error(`Size ${clean} already exists`);
+    }
+    setSizes(prev => [...prev, { size: clean, stock: 5 }]);
+    setCustomSizeInput("");
+    toast.success(`Added size EU ${clean}`);
+  };
+
+  // Save product (Draft or Active)
+  const handleSave = async (statusOverride = null) => {
+    if (!form.name.trim()) return toast.error("Please enter product name");
+    if (!form.base_price || Number(form.base_price) <= 0) return toast.error("Please specify a valid base price");
+    if (images.length === 0) return toast.error("Please add at least one sneaker photo");
+
+    setSaving(true);
+    const finalStatus = statusOverride || form.status;
+    
+    // Auto-generate slug if empty
+    let cleanSlug = form.slug.trim() || form.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+    const payload = {
+      name: form.name.trim(),
+      slug: cleanSlug,
+      category_slug: form.category_slug,
+      brand_slug: form.brand_slug,
+      base_price: Number(form.base_price),
+      cost_price: form.cost_price ? Number(form.cost_price) : 0,
+      compare_at_price: form.compare_at_price ? Number(form.compare_at_price) : null,
+      flash_sale_price: form.flash_sale_price ? Number(form.flash_sale_price) : null,
+      description: form.description || form.name,
+      images: images,
+      hover_image: images[1] || images[0],
+      sizes: sizes.map(s => ({
+        ...(s.id ? { id: s.id } : {}),
+        size: String(s.size),
+        stock: Math.max(0, parseInt(s.stock) || 0)
+      })),
+      is_new_arrival: !!form.is_new_arrival,
+      is_best_seller: !!form.is_best_seller,
+      is_flash_sale: !!form.is_flash_sale,
+      is_featured: !!form.is_featured,
+      status: finalStatus,
+    };
+
+    try {
+      if (isNew) {
+        payload.slug = cleanSlug + "-" + Date.now().toString(36).slice(-4);
+        const res = await http.post("/admin/products", payload);
+        toast.success("Sneaker drop published successfully!");
+        onSaved(res.data?.data);
+      } else {
+        const res = await http.patch(`/admin/products/${productId}`, payload);
+        toast.success("Sneaker drop updated successfully!");
+        onSaved(res.data?.data);
+      }
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "Failed to save product drop");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDuplicate = async () => {
+    if (isNew || !productId) return;
+    try {
+      const res = await http.post(`/admin/products/${productId}/duplicate`);
+      toast.success("Duplicated product as draft!");
+      onSaved(res.data?.data);
+    } catch (e) {
+      toast.error("Duplication failed");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (isNew || !productId) return;
+    if (!window.confirm("Permanently delete this product drop? This action cannot be undone.")) return;
+    try {
+      await http.patch("/admin/products/bulk", { productIds: [productId], action: 'delete' });
+      toast.success("Product deleted");
+      if (onDelete) onDelete();
+      else onBack();
+    } catch (e) {
+      toast.error("Failed to delete product");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="pb-10 max-w-6xl mx-auto space-y-6">
+        <div className="flex items-center gap-3">
+          <button onClick={onBack} className="inline-flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-800 dark:text-zinc-200 font-bold text-xs rounded-lg border border-gray-300 dark:border-zinc-700 shadow-sm transition-colors">
+            <ArrowLeft size={16} /> Back to Products
+          </button>
+          <span className="text-gray-400">/</span>
+          <span className="text-xs font-mono font-bold text-gray-500">Loading Product...</span>
+        </div>
+        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-12 shadow-sm flex flex-col items-center justify-center min-h-[350px] gap-3">
+          <Loader2 size={32} className="animate-spin text-fire" />
+          <p className="text-sm font-bold text-gray-700 dark:text-zinc-300">Loading sneaker drop specifications...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const primaryPhoto = images[activePhotoIdx] || images[0] || "https://via.placeholder.com/600x600?text=Sneaker+Photo";
+
   return (
-    <div className="fixed inset-0 bg-obsidian/80 backdrop-blur-sm z-50 flex justify-center items-center p-4 md:p-8" onClick={onClose}>
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} onClick={(e) => e.stopPropagation()} 
-        className="bg-ink-50 w-full max-w-5xl h-[95vh] flex flex-col shadow-2xl rounded-xl overflow-hidden">
-        
-        {/* Header */}
-        <div className="bg-white border-b border-ink-200 p-6 flex justify-between items-center shrink-0">
-          <h2 className="font-display font-semibold text-2xl  tracking-tight">{isEdit ? "Edit Product" : "Add Product"}</h2>
-          <button onClick={onClose} className="p-2 text-ink-400 hover:text-fire hover:bg-fire/10 rounded-full transition-colors"><X size={20} /></button>
+    <div className="pb-12 max-w-6xl mx-auto space-y-6 animate-in fade-in duration-150">
+      
+      {/* Top Header & Breadcrumb Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-3 flex-wrap">
+          <button
+            onClick={onBack}
+            className="inline-flex items-center gap-2 px-3.5 py-2 bg-white dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-900 dark:text-zinc-100 font-bold text-xs rounded-xl border border-gray-300 dark:border-zinc-700 shadow-sm transition-all hover:-translate-x-0.5"
+          >
+            <ArrowLeft size={16} /> Back to Products
+          </button>
+          <span className="text-gray-300 dark:text-zinc-700 text-sm hidden sm:inline">/</span>
+          <span className="text-xs font-mono font-bold text-gray-500 dark:text-zinc-400 hidden sm:inline">Products</span>
+          <span className="text-gray-300 dark:text-zinc-700 text-sm hidden sm:inline">/</span>
+          <span className="text-xs font-bold capitalize text-fire hidden sm:inline">{form.category_slug}</span>
+          <span className="text-gray-300 dark:text-zinc-700 text-sm hidden sm:inline">/</span>
+          <span className="text-xs font-mono font-black text-gray-900 dark:text-zinc-100 hidden sm:inline truncate max-w-[220px]">
+            {isNew ? "New Drop" : (form.name || "Untitled")}
+          </span>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="md:col-span-2 space-y-6">
-              
-              {/* Basic Info */}
-              <div className="bg-white border border-ink-200 p-6 space-y-4">
-                <h3 className="font-display font-semibold flex items-center gap-2 mb-4  text-sm tracking-wider text-ink-500">Basic Information</h3>
-                <div>
-                  <label className="block text-xs font-bold text-ink-500  mb-1">Product Name</label>
-                  <input placeholder="e.g. Nike Air Max 270" value={f.name} onChange={set("name")} className="w-full border border-ink-200 rounded-none px-4 py-2.5 outline-none focus:border-obsidian font-bold" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-ink-500  mb-1">Description</label>
-                  <textarea placeholder="Product description..." value={f.description} onChange={set("description")} rows={4} className="w-full border border-ink-200 rounded-none px-4 py-2.5 outline-none focus:border-obsidian" />
-                </div>
-              </div>
+        {/* Action Controls */}
+        <div className="flex items-center gap-2.5 flex-wrap">
+          {/* Status selector */}
+          <div className="flex items-center gap-2 bg-white dark:bg-zinc-800/80 p-1 pl-3 pr-2 rounded-xl border border-gray-200 dark:border-zinc-700 shadow-sm">
+            <span className={`w-2 h-2 rounded-full ${form.status === 'active' ? 'bg-emerald-500' : form.status === 'draft' ? 'bg-amber-500' : 'bg-gray-400'}`}></span>
+            <select
+              value={form.status}
+              onChange={(e) => setForm({ ...form, status: e.target.value })}
+              className="bg-transparent text-xs font-bold uppercase tracking-wider text-gray-900 dark:text-zinc-100 focus:outline-none cursor-pointer"
+            >
+              <option value="active" className="bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100">Active</option>
+              <option value="draft" className="bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100">Draft</option>
+              <option value="archived" className="bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100">Archived</option>
+            </select>
+          </div>
 
-              {/* Images */}
-              <div className="bg-white border border-ink-200 p-6">
-                <MultiImageInput images={images} onChange={setImages} />
-              </div>
+          {!isNew && (
+            <>
+              <a
+                href={`/product/${form.slug}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-800 dark:text-zinc-200 font-bold text-xs rounded-xl border border-gray-200 dark:border-zinc-700 shadow-sm transition-colors"
+              >
+                <ExternalLink size={14} /> Storefront
+              </a>
+              <button
+                type="button"
+                onClick={handleDuplicate}
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-800 dark:text-zinc-200 font-bold text-xs rounded-xl border border-gray-200 dark:border-zinc-700 shadow-sm transition-colors"
+              >
+                <Copy size={14} /> Duplicate
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 font-bold text-xs rounded-xl border border-rose-200 dark:border-rose-900 shadow-sm transition-colors"
+              >
+                <Trash2 size={14} /> Delete
+              </button>
+            </>
+          )}
 
-              {/* Variants / Inventory */}
-              <div className="bg-white border border-ink-200 p-6 space-y-4">
-                <h3 className="font-display font-semibold flex items-center gap-2 mb-4  text-sm tracking-wider text-ink-500">Inventory (Sizes)</h3>
-                <div className="grid grid-cols-4 md:grid-cols-7 gap-3">
-                  {sizes.map((s, i) => (
-                    <div key={i} className="text-center border border-ink-100 p-2 bg-ink-50">
-                      <div className="text-[10px] font-bold text-ink-500  mb-2 bg-ink-200 px-1 py-0.5 inline-block">EU {s.size}</div>
-                      <input type="number" min="0" value={s.stock} onChange={(e) => {
-                        const next = [...sizes];
-                        next[i] = { ...next[i], stock: Number(e.target.value) };
-                        setSizes(next);
-                      }} className="w-full border border-ink-200 rounded-none px-1 py-1 text-center outline-none focus:border-obsidian text-sm font-mono font-bold bg-white" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
+          <button
+            type="button"
+            onClick={() => handleSave('draft')}
+            disabled={saving}
+            className="px-4 py-2 bg-white dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-900 dark:text-zinc-100 font-bold text-xs rounded-xl border border-gray-300 dark:border-zinc-700 shadow-sm transition-colors"
+          >
+            Save Draft
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSave(form.status === 'draft' ? 'active' : form.status)}
+            disabled={saving}
+            className="px-5 py-2 bg-fire hover:bg-fire-hover text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-sm hover:shadow-fire/20 transition-all flex items-center gap-2"
+          >
+            {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+            {isNew ? "Publish Drop" : "Save Changes"}
+          </button>
+        </div>
+      </div>
+
+      {/* High Impact 4-Metric Commercial Ribbon */}
+      <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+        <div>
+          <span className="text-gray-500 dark:text-zinc-400 font-bold uppercase text-[10px] tracking-wider block">Retail Selling Price</span>
+          <div className="flex items-baseline gap-1.5 mt-1">
+            <span className="font-mono text-xl font-black text-gray-900 dark:text-zinc-100">
+              {fmt(basePriceNum)}
+            </span>
+            {comparePriceNum > basePriceNum && (
+              <span className="font-mono text-[11px] text-gray-400 line-through">
+                {fmt(comparePriceNum)}
+              </span>
+            )}
+          </div>
+          <span className={`text-[10px] font-bold mt-0.5 inline-block ${grossProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+            Margin: {fmt(grossProfit)} ({marginPct}%)
+          </span>
+        </div>
+
+        <div>
+          <span className="text-gray-500 dark:text-zinc-400 font-bold uppercase text-[10px] tracking-wider block">Inventory Health</span>
+          <div className="flex items-baseline gap-1.5 mt-1">
+            <span className="font-mono text-xl font-black text-gray-900 dark:text-zinc-100">
+              {totalStock}
+            </span>
+            <span className="text-xs font-bold text-gray-500 dark:text-zinc-400">pairs in stock</span>
+          </div>
+          <span className={`text-[10px] font-bold mt-0.5 inline-block ${
+            totalStock === 0 ? 'text-rose-600 dark:text-rose-400' : totalStock <= 10 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'
+          }`}>
+            {inStockSizesCount} of {sizes.length} sizes available
+          </span>
+        </div>
+
+        <div>
+          <span className="text-gray-500 dark:text-zinc-400 font-bold uppercase text-[10px] tracking-wider block">Merchandising Flags</span>
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {form.is_new_arrival && <span className="bg-fire/10 text-fire font-black text-[9px] px-2 py-0.5 rounded-md uppercase">New Drop</span>}
+            {form.is_best_seller && <span className="bg-amber-500/10 text-amber-600 dark:text-amber-400 font-black text-[9px] px-2 py-0.5 rounded-md uppercase">Best Seller</span>}
+            {form.is_flash_sale && <span className="bg-purple-500/10 text-purple-600 dark:text-purple-400 font-black text-[9px] px-2 py-0.5 rounded-md uppercase">Flash Sale</span>}
+            {form.is_featured && <span className="bg-blue-500/10 text-blue-600 dark:text-blue-400 font-black text-[9px] px-2 py-0.5 rounded-md uppercase">Featured</span>}
+            {!form.is_new_arrival && !form.is_best_seller && !form.is_flash_sale && !form.is_featured && (
+              <span className="text-gray-400 dark:text-zinc-500 text-[11px] font-medium">Standard Drop</span>
+            )}
+          </div>
+        </div>
+
+        <div>
+          <span className="text-gray-500 dark:text-zinc-400 font-bold uppercase text-[10px] tracking-wider block">Classification</span>
+          <div className="mt-1">
+            <span className="font-bold text-gray-900 dark:text-zinc-100 capitalize block text-sm">
+              {form.category_slug} / {form.brand_slug}
+            </span>
+            <span className="text-[10px] font-mono text-gray-400 dark:text-zinc-500">
+              SKU: {form.slug || 'auto-generated'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Two-Column Workbench Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        {/* Left Column (7 cols): Merchandising Assets & Inventory Sizing */}
+        <div className="lg:col-span-7 space-y-6">
+
+          {/* Section 1: Sneaker Photo Gallery */}
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-100 dark:border-zinc-800 pb-3">
+              <h2 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-2">
+                <ImageIcon size={16} className="text-fire" /> Sneaker Photo Gallery ({images.length} photos)
+              </h2>
+              <span className="text-[10px] text-gray-400 dark:text-zinc-500">
+                First photo is Cover · Tap thumbnail to preview
+              </span>
             </div>
 
-            <div className="space-y-6">
-              {/* Organization */}
-              <div className="bg-white border border-ink-200 p-6 space-y-4">
-                <h3 className="font-display font-semibold flex items-center gap-2 mb-4  text-sm tracking-wider text-ink-500">Organization</h3>
-                <div>
-                  <label className="block text-xs font-bold text-ink-500  mb-1">Category</label>
-                  <select value={f.category_slug} onChange={set("category_slug")} className="w-full border border-ink-200 rounded-none px-4 py-2.5 bg-white capitalize"><option value="retro">Retro</option><option value="streetwear">Streetwear</option><option value="runners">Runners</option><option value="slides">Slides</option></select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-ink-500  mb-1">Brand</label>
-                  <select value={f.brand_slug} onChange={set("brand_slug")} className="w-full border border-ink-200 rounded-none px-4 py-2.5 bg-white capitalize"><option value="airvault">AirVault</option><option value="terrace-co">Terrace Co</option><option value="cloudstride">CloudStride</option><option value="oasis">Oasis</option></select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-ink-500  mb-1">Status</label>
-                  <select value={f.status} onChange={set("status")} className="w-full border border-ink-200 rounded-none px-4 py-2.5 bg-white capitalize font-bold text-obsidian"><option value="active">Active</option><option value="draft">Draft</option><option value="archived">Archived</option></select>
-                </div>
+            {/* Primary Hero Preview */}
+            <div className="relative aspect-[16/10] bg-gray-50 dark:bg-zinc-800 rounded-xl overflow-hidden border border-gray-200 dark:border-zinc-700 group">
+              <img
+                src={primaryPhoto}
+                alt="Product Preview"
+                className="w-full h-full object-cover object-center"
+              />
+              <div className="absolute top-3 left-3 flex gap-2">
+                {activePhotoIdx === 0 ? (
+                  <span className="px-2.5 py-1 bg-fire text-white text-[10px] font-black uppercase tracking-wider rounded-lg shadow-sm">
+                    Storefront Cover
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleSetCover(activePhotoIdx)}
+                    className="px-2.5 py-1 bg-black/70 hover:bg-fire text-white text-[10px] font-bold uppercase tracking-wider rounded-lg shadow-sm transition-colors"
+                  >
+                    Make Cover
+                  </button>
+                )}
+                <span className="px-2 py-1 bg-black/60 text-white font-mono text-[10px] rounded-lg">
+                  Photo {activePhotoIdx + 1} of {images.length || 1}
+                </span>
               </div>
 
-              {/* Pricing */}
-              <div className="bg-white border border-ink-200 p-6 space-y-4">
-                <h3 className="font-display font-semibold flex items-center gap-2 mb-4  text-sm tracking-wider text-ink-500">Pricing</h3>
-                <div>
-                  <label className="block text-xs font-bold text-ink-500  mb-1">Base Price</label>
-                  <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 font-mono">$</span><input type="number" value={f.base_price} onChange={set("base_price")} className="w-full pl-7 pr-4 py-2.5 border border-ink-200 outline-none focus:border-obsidian font-mono font-bold" /></div>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-ink-500  mb-1">Compare At Price</label>
-                  <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 font-mono">$</span><input type="number" value={f.compare_at_price} onChange={set("compare_at_price")} className="w-full pl-7 pr-4 py-2.5 border border-ink-200 outline-none focus:border-obsidian font-mono" /></div>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-ink-500  mb-1">Cost Price (COGS)</label>
-                  <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400 font-mono">$</span><input type="number" value={f.cost_price} onChange={set("cost_price")} className="w-full pl-7 pr-4 py-2.5 border border-ink-200 outline-none focus:border-obsidian font-mono" /></div>
-                </div>
-              </div>
+              {images.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => handleRemovePhoto(activePhotoIdx)}
+                  className="absolute top-3 right-3 p-1.5 bg-rose-600/90 hover:bg-rose-600 text-white rounded-lg shadow-sm transition-colors"
+                  title="Remove this photo"
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
+            </div>
 
-              {/* Tags/Flags */}
-              <div className="bg-white border border-ink-200 p-6 space-y-3">
-                <h3 className="font-display font-semibold flex items-center gap-2 mb-4  text-sm tracking-wider text-ink-500">Storefront Tags</h3>
-                {[["is_new_arrival", "New Arrival"], ["is_best_seller", "Best Seller"], ["is_flash_sale", "Flash Sale"], ["is_featured", "Featured"]].map(([k, l]) => (
-                  <label key={k} className="flex items-center gap-3 cursor-pointer"><input type="checkbox" checked={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.checked })} className="accent-obsidian w-4 h-4" /> <span className="text-sm font-bold">{l}</span></label>
+            {/* Thumbnail Carousel */}
+            {images.length > 0 && (
+              <div className="grid grid-cols-5 sm:grid-cols-6 gap-2">
+                {images.map((img, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => setActivePhotoIdx(idx)}
+                    className={`relative aspect-square rounded-xl overflow-hidden border-2 cursor-pointer transition-all group ${
+                      activePhotoIdx === idx
+                        ? 'border-fire ring-2 ring-fire/20 scale-105'
+                        : 'border-gray-200 dark:border-zinc-700 opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    <img src={img} alt="" className="w-full h-full object-cover" />
+                    {idx === 0 && (
+                      <span className="absolute bottom-1 left-1 bg-fire text-white text-[8px] font-black uppercase px-1 rounded">
+                        Cover
+                      </span>
+                    )}
+                  </div>
                 ))}
               </div>
+            )}
+
+            {/* Photo Ingestion: Upload File or Paste URL */}
+            <div className="pt-2 border-t border-gray-100 dark:border-zinc-800 space-y-3">
+              <div className="flex flex-col sm:flex-row gap-2">
+                {/* Upload Button */}
+                <label className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-900 dark:bg-zinc-800 hover:bg-fire text-white text-xs font-bold rounded-xl cursor-pointer transition-colors shadow-sm shrink-0">
+                  {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                  <span>{uploading ? "Uploading..." : "Upload Photos"}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleUploadFiles}
+                    className="hidden"
+                  />
+                </label>
+
+                {/* URL Input */}
+                <div className="flex-1 flex gap-2">
+                  <input
+                    type="url"
+                    placeholder="Or paste direct image URL (https://...)..."
+                    value={urlInput}
+                    onChange={(e) => setUrlInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddUrl())}
+                    className="flex-1 px-3 py-2 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-500 focus:outline-none focus:border-fire"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddUrl}
+                    className="px-3 py-2 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-800 dark:text-zinc-200 text-xs font-bold rounded-xl border border-gray-200 dark:border-zinc-700 transition-colors"
+                  >
+                    Add URL
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
+
+          {/* Section 2: Sneaker Details & Copy */}
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-4">
+            <h2 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 border-b border-gray-100 dark:border-zinc-800 pb-3 flex items-center gap-2">
+              <FileText size={16} className="text-fire" /> Sneaker Identity & Story
+            </h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1">
+                  Product Name *
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Air Jordan 4 Retro 'White Oreo'"
+                  value={form.name}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setForm(prev => ({
+                      ...prev,
+                      name: val,
+                      ...(isNew ? { slug: val.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") } : {})
+                    }));
+                  }}
+                  className="w-full px-4 py-2.5 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl text-sm font-bold text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-500 focus:outline-none focus:border-fire"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1 flex items-center justify-between">
+                  <span>URL Handle / Slug *</span>
+                  <span className="text-[10px] text-gray-400">Public link: /product/{form.slug || 'handle'}</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 font-mono text-xs">/</span>
+                  <input
+                    type="text"
+                    placeholder="air-jordan-4-retro-white-oreo"
+                    value={form.slug}
+                    onChange={(e) => setForm({ ...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, "") })}
+                    className="w-full pl-7 pr-4 py-2 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl font-mono text-xs text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-fire"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1">
+                  Product Description & Materials
+                </label>
+                <textarea
+                  rows={4}
+                  placeholder="Describe the silhouette story, premium tumbled leather, colorway nuances, air cushioning technology, and package inclusions..."
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  className="w-full p-4 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs leading-relaxed text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-500 focus:outline-none focus:border-fire"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Section 3: Sizing Bench & Inventory Matrix */}
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 dark:border-zinc-800 pb-3 gap-2">
+              <div>
+                <h2 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-2">
+                  <Package size={16} className="text-fire" /> Sizing Bench & Real-Time Stock
+                </h2>
+                <p className="text-[11px] text-gray-400 mt-0.5">
+                  Total {totalStock} pairs allocated across {sizes.length} EU sneaker sizes
+                </p>
+              </div>
+
+              {/* Quick Batch Restock */}
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => batchStockAdjust(5)}
+                  className="px-2 py-1 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 text-[10px] font-bold rounded-lg border border-gray-200 dark:border-zinc-700"
+                >
+                  +5 All
+                </button>
+                <button
+                  type="button"
+                  onClick={() => batchStockAdjust(10)}
+                  className="px-2 py-1 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 text-[10px] font-bold rounded-lg border border-gray-200 dark:border-zinc-700"
+                >
+                  +10 All
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSizes(prev => prev.map(s => ({ ...s, stock: 0 })))}
+                  className="px-2 py-1 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 text-[10px] font-bold rounded-lg border border-rose-200 dark:border-rose-900"
+                >
+                  Zero All
+                </button>
+              </div>
+            </div>
+
+            {/* Sizing Matrix Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              {sizes.map((s, idx) => {
+                const stockVal = Number(s.stock) || 0;
+                return (
+                  <div
+                    key={s.id || idx}
+                    className={`p-3 rounded-xl border text-center transition-all ${
+                      stockVal === 0
+                        ? 'bg-rose-50/40 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50'
+                        : stockVal <= 3
+                        ? 'bg-amber-50/40 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50'
+                        : 'bg-gray-50/80 dark:bg-zinc-800/50 border-gray-200 dark:border-zinc-700'
+                    }`}
+                  >
+                    <span className="font-mono font-black text-xs text-gray-900 dark:text-zinc-100 block">
+                      EU {s.size}
+                    </span>
+                    <span className={`text-[9px] font-bold uppercase tracking-wider block mt-0.5 ${
+                      stockVal === 0 ? 'text-rose-600' : stockVal <= 3 ? 'text-amber-600' : 'text-emerald-600'
+                    }`}>
+                      {stockVal === 0 ? 'Sold Out' : stockVal <= 3 ? 'Low Stock' : 'In Stock'}
+                    </span>
+
+                    {/* Stepper & input */}
+                    <div className="mt-2 flex items-center justify-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => updateSizeStock(idx, -1)}
+                        className="w-6 h-6 rounded-md bg-white dark:bg-zinc-700 border border-gray-200 dark:border-zinc-600 text-gray-700 dark:text-zinc-200 font-bold text-xs hover:bg-gray-100"
+                      >
+                        -
+                      </button>
+                      <input
+                        type="number"
+                        min="0"
+                        value={s.stock}
+                        onChange={(e) => setDirectSizeStock(idx, e.target.value)}
+                        className="w-12 h-6 text-center font-mono font-bold text-xs bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-md focus:outline-none focus:border-fire text-gray-900 dark:text-zinc-100"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => updateSizeStock(idx, 1)}
+                        className="w-6 h-6 rounded-md bg-white dark:bg-zinc-700 border border-gray-200 dark:border-zinc-600 text-gray-700 dark:text-zinc-200 font-bold text-xs hover:bg-gray-100"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Add Custom Size Variant */}
+            <form onSubmit={handleAddCustomSize} className="flex items-center gap-2 pt-2 border-t border-gray-100 dark:border-zinc-800">
+              <input
+                type="text"
+                placeholder="Add custom size (e.g. 48, 42.5, 37.5)..."
+                value={customSizeInput}
+                onChange={(e) => setCustomSizeInput(e.target.value)}
+                className="w-56 px-3 py-1.5 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-zinc-100 placeholder-gray-400 focus:outline-none focus:border-fire"
+              />
+              <button
+                type="submit"
+                className="px-3 py-1.5 bg-gray-900 dark:bg-zinc-800 hover:bg-fire text-white text-xs font-bold rounded-xl transition-colors"
+              >
+                + Add Variant
+              </button>
+            </form>
+          </div>
+
         </div>
 
-        {/* Footer Actions */}
-        <div className="bg-ink-50 border-t border-ink-200 px-8 py-5 flex items-center justify-between sticky bottom-0 z-10">
-          <button onClick={onClose} className="text-ink-500 font-bold  text-xs hover:text-obsidian transition-colors">Cancel</button>
-          <div className="flex gap-3">
-            <button onClick={() => save('draft')} disabled={saving} className="px-6 py-3 border border-obsidian font-bold  text-xs hover:bg-ink-100 transition-colors disabled:opacity-70 disabled:cursor-wait text-obsidian flex items-center gap-2">
-              {saving ? <Loader2 size={14} className="animate-spin" /> : null} Save Draft
-            </button>
-            <button onClick={() => save('active')} disabled={saving} className="px-6 py-3 bg-obsidian text-white font-bold  text-xs hover:bg-fire transition-colors disabled:opacity-70 disabled:cursor-wait flex items-center gap-2">
-              {saving ? <Loader2 size={14} className="animate-spin" /> : null} Publish Product
-            </button>
+        {/* Right Column (5 cols): Commercial Pricing, Taxonomy & Live Storefront Preview */}
+        <div className="lg:col-span-5 space-y-6">
+
+          {/* Section 1: Commercial Pricing & Margins */}
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-4">
+            <h2 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 border-b border-gray-100 dark:border-zinc-800 pb-3 flex items-center gap-2">
+              <DollarSign size={16} className="text-fire" /> Commercial Pricing & COGS
+            </h2>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1">
+                  Retail Selling Price (Base) *
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 font-mono text-xs">$</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="220"
+                    value={form.base_price}
+                    onChange={(e) => setForm({ ...form, base_price: e.target.value })}
+                    className="w-full pl-8 pr-4 py-2 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl font-mono font-black text-sm text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-fire"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-gray-600 dark:text-zinc-400 mb-1">
+                    Compare-At (MSRP)
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-mono text-xs">$</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="280"
+                      value={form.compare_at_price}
+                      onChange={(e) => setForm({ ...form, compare_at_price: e.target.value })}
+                      className="w-full pl-7 pr-3 py-2 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl font-mono text-xs text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-fire"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-gray-600 dark:text-zinc-400 mb-1">
+                    Cost Price (COGS)
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-mono text-xs">$</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="110"
+                      value={form.cost_price}
+                      onChange={(e) => setForm({ ...form, cost_price: e.target.value })}
+                      className="w-full pl-7 pr-3 py-2 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl font-mono text-xs text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-fire"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-gray-600 dark:text-zinc-400 mb-1">
+                  Flash Sale Price (Optional)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 font-mono text-xs">$</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="185"
+                    value={form.flash_sale_price}
+                    onChange={(e) => setForm({ ...form, flash_sale_price: e.target.value })}
+                    className="w-full pl-8 pr-4 py-2 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl font-mono text-xs text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-fire"
+                  />
+                </div>
+              </div>
+
+              {/* Profit & Margin Calculator */}
+              <div className="bg-gray-50 dark:bg-zinc-800/60 p-3 rounded-xl border border-gray-200 dark:border-zinc-700/60 text-xs space-y-1.5">
+                <div className="flex justify-between">
+                  <span className="text-gray-500 dark:text-zinc-400">Gross Profit / Pair:</span>
+                  <span className={`font-mono font-bold ${grossProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600'}`}>
+                    {fmt(grossProfit)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500 dark:text-zinc-400">Profit Margin:</span>
+                  <span className={`font-mono font-bold ${marginPct >= 30 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600'}`}>
+                    {marginPct}%
+                  </span>
+                </div>
+                {discountPct > 0 && (
+                  <div className="flex justify-between border-t border-gray-200 dark:border-zinc-700 pt-1">
+                    <span className="text-gray-500 dark:text-zinc-400">Customer Discount:</span>
+                    <span className="font-mono font-bold text-fire">
+                      {discountPct}% OFF
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
+
+          {/* Section 2: Taxonomy & Drop Classification */}
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-4">
+            <h2 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 border-b border-gray-100 dark:border-zinc-800 pb-3 flex items-center gap-2">
+              <Tag size={16} className="text-fire" /> Category & Silhouette Brand
+            </h2>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1">
+                  Category
+                </label>
+                <select
+                  value={form.category_slug}
+                  onChange={(e) => setForm({ ...form, category_slug: e.target.value })}
+                  className="w-full px-3.5 py-2 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs font-bold text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-fire capitalize cursor-pointer"
+                >
+                  <option value="retro">Retro & Classics</option>
+                  <option value="streetwear">Streetwear</option>
+                  <option value="runners">Runners</option>
+                  <option value="court">Basketball & Court</option>
+                  <option value="lifestyle">Lifestyle</option>
+                  <option value="slides">Slides & Comfort</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1">
+                  Brand / Lineage
+                </label>
+                <select
+                  value={form.brand_slug}
+                  onChange={(e) => setForm({ ...form, brand_slug: e.target.value })}
+                  className="w-full px-3.5 py-2 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs font-bold text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-fire capitalize cursor-pointer"
+                >
+                  <option value="airvault">AirVault</option>
+                  <option value="terrace-co">Terrace Co</option>
+                  <option value="cloudstride">CloudStride</option>
+                  <option value="oasis">Oasis</option>
+                  <option value="jordan">Jordan Brand</option>
+                  <option value="nike">Nike</option>
+                  <option value="adidas">Adidas</option>
+                  <option value="new-balance">New Balance</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 3: Storefront Merchandising Flags */}
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-3">
+            <h2 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 border-b border-gray-100 dark:border-zinc-800 pb-3 flex items-center gap-2">
+              <Zap size={16} className="text-fire" /> Storefront Merchandising Badges
+            </h2>
+
+            <div className="space-y-2.5">
+              {[
+                { key: "is_new_arrival", label: "New Arrival Drop", desc: "Highlights sneaker in New Releases feed", badge: "NEW", color: "text-fire bg-fire/10" },
+                { key: "is_best_seller", label: "Best Seller", desc: "Appears in Trending and Top-Seller filters", badge: "HOT", color: "text-amber-600 bg-amber-500/10" },
+                { key: "is_flash_sale", label: "Flash Sale Drop", desc: "Activates flash countdown timer banner", badge: "SALE", color: "text-purple-600 bg-purple-500/10" },
+                { key: "is_featured", label: "Featured Showcase", desc: "Pinned in hero collections and landing page", badge: "FEATURED", color: "text-blue-600 bg-blue-500/10" }
+              ].map(item => (
+                <label
+                  key={item.key}
+                  className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-zinc-800/60 cursor-pointer border border-transparent hover:border-gray-200 dark:hover:border-zinc-700 transition-colors"
+                >
+                  <input
+                    type="checkbox"
+                    checked={!!form[item.key]}
+                    onChange={(e) => setForm({ ...form, [item.key]: e.target.checked })}
+                    className="accent-fire w-4 h-4 mt-0.5 rounded cursor-pointer"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-gray-900 dark:text-zinc-100">{item.label}</span>
+                      <span className={`text-[9px] font-black uppercase px-1.5 py-0.2 rounded ${item.color}`}>
+                        {item.badge}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-0.5">{item.desc}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Section 4: Live Storefront Card Preview */}
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-3">
+            <h2 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 border-b border-gray-100 dark:border-zinc-800 pb-3 flex items-center justify-between">
+              <span className="flex items-center gap-2"><Eye size={16} className="text-fire" /> Storefront Card Preview</span>
+              <span className="text-[10px] font-mono text-gray-400">Live Customer View</span>
+            </h2>
+
+            {/* Simulated Sneaker Card */}
+            <div className="w-full max-w-[280px] mx-auto bg-white dark:bg-zinc-800 rounded-2xl overflow-hidden border border-gray-200 dark:border-zinc-700 shadow-lg">
+              <div className="relative aspect-square bg-gray-100 dark:bg-zinc-900 overflow-hidden">
+                <img
+                  src={images[0] || "https://via.placeholder.com/400x400?text=Sneaker"}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute top-2.5 left-2.5 flex flex-col gap-1">
+                  {form.is_new_arrival && (
+                    <span className="px-2 py-0.5 bg-fire text-white text-[9px] font-black uppercase tracking-wider rounded-md">
+                      New
+                    </span>
+                  )}
+                  {discountPct > 0 && (
+                    <span className="px-2 py-0.5 bg-black text-white text-[9px] font-black uppercase tracking-wider rounded-md">
+                      -{discountPct}%
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-4 space-y-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-zinc-400 capitalize">
+                  {form.brand_slug} · {form.category_slug}
+                </span>
+                <p className="font-display font-bold text-xs text-gray-900 dark:text-zinc-100 line-clamp-1">
+                  {form.name || "Untitled Sneaker Drop"}
+                </p>
+                <div className="flex items-baseline gap-2 pt-1">
+                  <span className="font-mono text-sm font-black text-gray-900 dark:text-zinc-100">
+                    {fmt(basePriceNum)}
+                  </span>
+                  {comparePriceNum > basePriceNum && (
+                    <span className="font-mono text-xs text-gray-400 line-through">
+                      {fmt(comparePriceNum)}
+                    </span>
+                  )}
+                </div>
+                <div className="pt-2 border-t border-gray-100 dark:border-zinc-700 flex justify-between items-center text-[10px]">
+                  <span className="font-mono text-gray-500 dark:text-zinc-400">
+                    {totalStock > 0 ? `${totalStock} in stock` : <span className="text-rose-500 font-bold">Sold Out</span>}
+                  </span>
+                  <span className="font-bold text-fire uppercase text-[9px]">View Drop →</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
-      </motion.div>
+
+      </div>
+
     </div>
   );
 }
-
 
 
 function Coupons() {

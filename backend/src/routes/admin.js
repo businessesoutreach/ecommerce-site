@@ -401,6 +401,30 @@ router.get('/products', async (req, res) => {
     }
 });
 
+router.get('/products/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const product = await prisma.product.findFirst({
+            where: {
+                OR: [
+                    { id },
+                    { slug: id }
+                ]
+            },
+            include: {
+                sizes: { orderBy: { size: 'asc' } },
+                reviews: { take: 5, orderBy: { created_at: 'desc' } }
+            }
+        });
+        if (!product) {
+            return res.status(404).json({ detail: "Product not found" });
+        }
+        res.json({ success: true, data: product });
+    } catch (err) {
+        res.status(500).json({ detail: err.message });
+    }
+});
+
 router.patch('/products/bulk', async (req, res) => {
     try {
         const { productIds, action, value } = req.body;
