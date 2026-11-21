@@ -236,11 +236,10 @@ function AdminSearchModal({ isOpen, onClose, activeTab }) {
               key={f.id}
               type="button"
               onClick={() => setActiveFilter(f.id)}
-              className={`px-3 py-1 rounded-lg font-bold text-xs transition-all cursor-pointer shrink-0 ${
-                activeFilter === f.id
+              className={`px-3 py-1 rounded-lg font-bold text-xs transition-all cursor-pointer shrink-0 ${activeFilter === f.id
                   ? "bg-fire text-white shadow-xs"
                   : "bg-white dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-700 border border-gray-200 dark:border-zinc-700"
-              }`}
+                }`}
             >
               {f.label}
             </button>
@@ -340,9 +339,8 @@ function AdminSearchModal({ isOpen, onClose, activeTab }) {
                     <div className="min-w-0">
                       <div className="font-mono font-bold text-xs text-gray-900 dark:text-zinc-100 group-hover:text-fire transition-colors flex items-center gap-2">
                         <span>#{o.order_number}</span>
-                        <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${
-                          o.status === 'delivered' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
-                        }`}>
+                        <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${o.status === 'delivered' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
+                          }`}>
                           {o.status}
                         </span>
                       </div>
@@ -589,45 +587,45 @@ export default function Admin() {
         {tab !== "cms" && (
           <>
             <header className="h-14 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 sticky top-0 z-30 px-4 lg:px-8 flex items-center justify-between shrink-0 transition-colors">
-            {/* Left: Breadcrumbs & Module Title */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-gray-400 dark:text-zinc-500">Admin</span>
-              <span className="text-xs text-gray-300 dark:text-zinc-700">/</span>
-              <span className="text-xs font-black text-gray-900 dark:text-zinc-100 uppercase tracking-wide">
-                {tab.replace(/_/g, " ")}
-              </span>
-            </div>
+              {/* Left: Breadcrumbs & Module Title */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-gray-400 dark:text-zinc-500">Admin</span>
+                <span className="text-xs text-gray-300 dark:text-zinc-700">/</span>
+                <span className="text-xs font-black text-gray-900 dark:text-zinc-100 uppercase tracking-wide">
+                  {tab.replace(/_/g, " ")}
+                </span>
+              </div>
 
-            {/* Right: Search Bar Trigger beside Dark Mode Toggle */}
-            <div className="flex items-center gap-2 sm:gap-2.5">
-              <button
-                type="button"
-                onClick={() => setSearchModalOpen(true)}
-                className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-zinc-800/80 hover:bg-gray-200 dark:hover:bg-zinc-700/80 border border-gray-200 dark:border-zinc-700/70 rounded-xl text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 transition-all cursor-pointer shadow-2xs"
-                title="Search SoleKicks (Ctrl+K)"
-              >
-                <Search size={14} className="text-gray-400 dark:text-zinc-400" />
-                <span className="hidden sm:inline font-medium">Search...</span>
-                <kbd className="hidden md:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-mono font-bold text-gray-400 dark:text-zinc-500 bg-white dark:bg-zinc-700 rounded border border-gray-200 dark:border-zinc-600">
-                  Ctrl K
-                </kbd>
-              </button>
+              {/* Right: Search Bar Trigger beside Dark Mode Toggle */}
+              <div className="flex items-center gap-2 sm:gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setSearchModalOpen(true)}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-zinc-800/80 hover:bg-gray-200 dark:hover:bg-zinc-700/80 border border-gray-200 dark:border-zinc-700/70 rounded-xl text-xs text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 transition-all cursor-pointer shadow-2xs"
+                  title="Search SoleKicks (Ctrl+K)"
+                >
+                  <Search size={14} className="text-gray-400 dark:text-zinc-400" />
+                  <span className="hidden sm:inline font-medium">Search...</span>
+                  <kbd className="hidden md:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-mono font-bold text-gray-400 dark:text-zinc-500 bg-white dark:bg-zinc-700 rounded border border-gray-200 dark:border-zinc-600">
+                    Ctrl K
+                  </kbd>
+                </button>
 
-              <button
-                onClick={() => setIsDark(!isDark)}
-                className="p-2 rounded-xl text-gray-600 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 border border-gray-200 dark:border-zinc-700 transition-colors cursor-pointer"
-                title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
-              >
-                {isDark ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} className="text-gray-700 dark:text-zinc-300" />}
-              </button>
-            </div>
-          </header>
+                <button
+                  onClick={() => setIsDark(!isDark)}
+                  className="p-2 rounded-xl text-gray-600 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 border border-gray-200 dark:border-zinc-700 transition-colors cursor-pointer"
+                  title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                >
+                  {isDark ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} className="text-gray-700 dark:text-zinc-300" />}
+                </button>
+              </div>
+            </header>
 
-          <AdminSearchModal
-            isOpen={searchModalOpen}
-            onClose={() => setSearchModalOpen(false)}
-            activeTab={tab}
-          />
+            <AdminSearchModal
+              isOpen={searchModalOpen}
+              onClose={() => setSearchModalOpen(false)}
+              activeTab={tab}
+            />
           </>
         )}
 
@@ -3709,13 +3707,12 @@ function QuickStockModal({ product, onClose, onUpdated, isDark }) {
                 <span className="font-mono text-[10px] uppercase font-bold text-gray-400 dark:text-zinc-500">
                   {product.brand_slug || "AirVault"} • {product.category_slug}
                 </span>
-                <span className={`inline-flex items-center gap-1 font-mono font-bold px-2 py-0.5 rounded-full text-[10px] ${
-                  totalPairs === 0
+                <span className={`inline-flex items-center gap-1 font-mono font-bold px-2 py-0.5 rounded-full text-[10px] ${totalPairs === 0
                     ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900'
                     : totalPairs <= 5
                       ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900'
                       : 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900'
-                }`}>
+                  }`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${totalPairs === 0 ? 'bg-rose-500' : totalPairs <= 5 ? 'bg-amber-500' : 'bg-emerald-500'}`} />
                   {totalPairs} {totalPairs === 1 ? 'pair' : 'pairs'}
                 </span>
@@ -3787,25 +3784,23 @@ function QuickStockModal({ product, onClose, onUpdated, isDark }) {
                 return (
                   <div
                     key={s.id}
-                    className={`p-3 rounded-xl border flex flex-col justify-between gap-2 transition-colors ${
-                      isOos
+                    className={`p-3 rounded-xl border flex flex-col justify-between gap-2 transition-colors ${isOos
                         ? "bg-rose-50/40 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50"
                         : isLow
                           ? "bg-amber-50/40 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50"
                           : "bg-gray-50/60 dark:bg-zinc-800/40 border-gray-200 dark:border-zinc-700/60"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-mono font-bold text-xs text-gray-900 dark:text-white">
                         Size {s.size}
                       </span>
-                      <span className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded ${
-                        isOos
+                      <span className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded ${isOos
                           ? "bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300"
                           : isLow
                             ? "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300"
                             : "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300"
-                      }`}>
+                        }`}>
                         {isOos ? "OOS" : isLow ? "Low" : "In Stock"}
                       </span>
                     </div>
@@ -4137,11 +4132,10 @@ function Products({ isDark, initialStockFilter }) {
                 else if (s.filterKey === 'out_of_stock') setQuery(prev => ({ ...prev, stock: 'out_of_stock', status: 'all', page: 1 }));
               }}
               title={`Click to filter by ${s.label}`}
-              className={`bg-white dark:bg-zinc-900 p-5 rounded-2xl border transition-all cursor-pointer shadow-sm flex flex-col justify-between hover:border-fire/50 hover:shadow-md ${
-                isActiveFilter
+              className={`bg-white dark:bg-zinc-900 p-5 rounded-2xl border transition-all cursor-pointer shadow-sm flex flex-col justify-between hover:border-fire/50 hover:shadow-md ${isActiveFilter
                   ? 'border-fire ring-2 ring-fire/20 dark:ring-fire/30'
                   : 'border-gray-200 dark:border-zinc-800'
-              }`}
+                }`}
             >
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-zinc-400">{s.label}</span>
@@ -4359,13 +4353,12 @@ function Products({ isDark, initialStockFilter }) {
                               setQuickStockProduct(p);
                             }}
                             title="Click to quickly adjust stock quantities across sizes"
-                            className={`inline-flex items-center justify-center gap-1.5 font-mono font-bold px-3 py-1 rounded-full text-xs whitespace-nowrap shadow-xs hover:scale-105 active:scale-95 transition-all cursor-pointer group/stock ${
-                              stock === 0
+                            className={`inline-flex items-center justify-center gap-1.5 font-mono font-bold px-3 py-1 rounded-full text-xs whitespace-nowrap shadow-xs hover:scale-105 active:scale-95 transition-all cursor-pointer group/stock ${stock === 0
                                 ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 hover:bg-rose-100 dark:hover:bg-rose-900/40'
                                 : stock <= 5
                                   ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900 hover:bg-amber-100 dark:hover:bg-amber-900/40'
                                   : 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'
-                            }`}
+                              }`}
                           >
                             <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${stock === 0 ? 'bg-rose-500' : stock <= 5 ? 'bg-amber-500' : 'bg-emerald-500'}`} />
                             <span>{stock} {stock === 1 ? 'pair' : 'pairs'}</span>
@@ -4399,19 +4392,19 @@ function Products({ isDark, initialStockFilter }) {
                                 onClick={() => { setActiveMenuId(null); openProduct(p.id); }}
                                 className="w-full px-3.5 py-2 text-xs font-bold text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center gap-2 transition-colors cursor-pointer"
                               >
-                                <Eye size={14} className="text-gray-400"/> View & Edit Details
+                                <Eye size={14} className="text-gray-400" /> View & Edit Details
                               </button>
                               <button
                                 onClick={() => { setActiveMenuId(null); setQuickStockProduct(p); }}
                                 className="w-full px-3.5 py-2 text-xs font-bold text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center gap-2 transition-colors cursor-pointer"
                               >
-                                <Layers size={14} className="text-gray-400"/> Adjust Stock
+                                <Layers size={14} className="text-gray-400" /> Adjust Stock
                               </button>
                               <button
                                 onClick={() => { setActiveMenuId(null); duplicate(p.id); }}
                                 className="w-full px-3.5 py-2 text-xs font-bold text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center gap-2 transition-colors cursor-pointer"
                               >
-                                <Copy size={14} className="text-gray-400"/> Duplicate (Draft)
+                                <Copy size={14} className="text-gray-400" /> Duplicate (Draft)
                               </button>
                               <a
                                 href={`/product/${p.slug}`}
@@ -4419,14 +4412,14 @@ function Products({ isDark, initialStockFilter }) {
                                 rel="noreferrer"
                                 className="w-full px-3.5 py-2 text-xs font-bold text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center gap-2 transition-colors"
                               >
-                                <ExternalLink size={14} className="text-gray-400"/> View on Store
+                                <ExternalLink size={14} className="text-gray-400" /> View on Store
                               </a>
                               <hr className="my-1 border-gray-100 dark:border-zinc-800" />
                               <button
                                 onClick={() => { setActiveMenuId(null); del(p.id); }}
                                 className="w-full px-3.5 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 transition-colors cursor-pointer"
                               >
-                                <Trash2 size={14}/> Delete Drop
+                                <Trash2 size={14} /> Delete Drop
                               </button>
                             </TableActionDropdown>
                           </div>
@@ -6063,22 +6056,20 @@ function CreateCouponForm({ onClose, onCreated, isDark }) {
                   <button
                     type="button"
                     onClick={() => setF({ ...f, type: 'percentage' })}
-                    className={`flex-1 py-2 text-xs font-bold rounded-lg border transition-colors ${
-                      f.type === 'percentage'
+                    className={`flex-1 py-2 text-xs font-bold rounded-lg border transition-colors ${f.type === 'percentage'
                         ? 'bg-obsidian text-white border-obsidian dark:bg-white dark:text-black dark:border-white'
                         : 'bg-white dark:bg-zinc-900 text-gray-700 dark:text-zinc-300 border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800'
-                    }`}
+                      }`}
                   >
                     Percentage (%)
                   </button>
                   <button
                     type="button"
                     onClick={() => setF({ ...f, type: 'flat' })}
-                    className={`flex-1 py-2 text-xs font-bold rounded-lg border transition-colors ${
-                      f.type === 'flat'
+                    className={`flex-1 py-2 text-xs font-bold rounded-lg border transition-colors ${f.type === 'flat'
                         ? 'bg-obsidian text-white border-obsidian dark:bg-white dark:text-black dark:border-white'
                         : 'bg-white dark:bg-zinc-900 text-gray-700 dark:text-zinc-300 border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800'
-                    }`}
+                      }`}
                   >
                     Fixed (Rs)
                   </button>
@@ -6438,21 +6429,19 @@ function Reviews({ isDark }) {
             <div className="flex gap-1 bg-gray-100 dark:bg-zinc-800 p-1 rounded-lg">
               <button
                 onClick={() => setChartMode('count')}
-                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${
-                  chartMode === 'count'
+                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${chartMode === 'count'
                     ? 'bg-white dark:bg-zinc-900 text-gray-900 dark:text-white shadow-sm'
                     : 'text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white'
-                }`}
+                  }`}
               >
                 Volume
               </button>
               <button
                 onClick={() => setChartMode('avgRating')}
-                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${
-                  chartMode === 'avgRating'
+                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${chartMode === 'avgRating'
                     ? 'bg-white dark:bg-zinc-900 text-gray-900 dark:text-white shadow-sm'
                     : 'text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white'
-                }`}
+                  }`}
               >
                 Avg Rating
               </button>
@@ -6502,16 +6491,14 @@ function Reviews({ isDark }) {
                 <button
                   key={tabItem.id}
                   onClick={() => { setStatus(tabItem.id); setPage(1); }}
-                  className={`whitespace-nowrap px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                    active
+                  className={`whitespace-nowrap px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${active
                       ? 'bg-obsidian text-white dark:bg-white dark:text-black shadow-sm'
                       : 'text-gray-600 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-zinc-100'
-                  }`}
+                    }`}
                 >
                   <span>{tabItem.label}</span>
-                  <span className={`ml-2 text-[10px] font-mono px-1.5 py-0.5 rounded-full ${
-                    active ? 'bg-white/20 dark:bg-black/20 text-white dark:text-black' : 'bg-gray-200 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400'
-                  }`}>
+                  <span className={`ml-2 text-[10px] font-mono px-1.5 py-0.5 rounded-full ${active ? 'bg-white/20 dark:bg-black/20 text-white dark:text-black' : 'bg-gray-200 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400'
+                    }`}>
                     {count || 0}
                   </span>
                 </button>
@@ -6638,15 +6625,14 @@ function Reviews({ isDark }) {
 
                     {/* Status Badge */}
                     <td className="py-3.5 px-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
-                        r.status === 'approved'
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${r.status === 'approved'
                           ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/40'
                           : r.status === 'pending'
-                          ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border-amber-200 dark:border-amber-800/40'
-                          : r.status === 'reported'
-                          ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border-rose-200 dark:border-rose-800/40'
-                          : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700'
-                      }`}>
+                            ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border-amber-200 dark:border-amber-800/40'
+                            : r.status === 'reported'
+                              ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border-rose-200 dark:border-rose-800/40'
+                              : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700'
+                        }`}>
                         {r.status === 'reported' ? 'Flagged Spam' : r.status}
                       </span>
                     </td>
@@ -6779,15 +6765,14 @@ function Reviews({ isDark }) {
                       {new Date(viewReview.created_at).toLocaleString()}
                     </div>
                   </div>
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
-                    viewReview.status === 'approved'
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${viewReview.status === 'approved'
                       ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/40'
                       : viewReview.status === 'pending'
-                      ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border-amber-200 dark:border-amber-800/40'
-                      : viewReview.status === 'reported'
-                      ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border-rose-200 dark:border-rose-800/40'
-                      : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700'
-                  }`}>
+                        ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border-amber-200 dark:border-amber-800/40'
+                        : viewReview.status === 'reported'
+                          ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border-rose-200 dark:border-rose-800/40'
+                          : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700'
+                    }`}>
                     {viewReview.status}
                   </span>
                 </div>
@@ -8103,8 +8088,8 @@ function CustomerDetailPage({ userId, onBack, onUpdate }) {
             type="button"
             onClick={toggleBlockStatus}
             className={`inline-flex items-center gap-1.5 px-3.5 py-2 font-bold text-xs rounded-xl border shadow-xs transition-colors cursor-pointer ${user.is_blocked
-                ? "bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
-                : "bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900"
+              ? "bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
+              : "bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900"
               }`}
           >
             <Trash2 size={14} /> {user.is_blocked ? "Unblock Account" : "Block Customer"}
@@ -8355,12 +8340,12 @@ function CustomerDetailPage({ userId, onBack, onUpdate }) {
                       </td>
                       <td className="py-3 font-sans">
                         <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border ${o.status === 'delivered'
-                            ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900'
-                            : o.status === 'shipped' || o.status === 'out_for_delivery'
-                              ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-900'
-                              : o.status === 'cancelled' || o.status === 'returned'
-                                ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900'
-                                : 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900'
+                          ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900'
+                          : o.status === 'shipped' || o.status === 'out_for_delivery'
+                            ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-900'
+                            : o.status === 'cancelled' || o.status === 'returned'
+                              ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900'
+                              : 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900'
                           }`}>
                           {o.status}
                         </span>
@@ -8873,16 +8858,14 @@ function AuditLogs({ isDark }) {
               <button
                 key={tab.id}
                 onClick={() => setActiveType(tab.id)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap transition-all ${
-                  active
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg whitespace-nowrap transition-all ${active
                     ? "bg-obsidian text-white dark:bg-white dark:text-black shadow-sm font-semibold"
                     : "text-gray-600 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-zinc-100"
-                }`}
+                  }`}
               >
                 <span>{tab.label}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                  active ? "bg-white/20 text-white dark:bg-black/20 dark:text-black font-mono" : "bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 font-mono"
-                }`}>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${active ? "bg-white/20 text-white dark:bg-black/20 dark:text-black font-mono" : "bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 font-mono"
+                  }`}>
                   {count}
                 </span>
               </button>
@@ -9264,9 +9247,9 @@ function AnalyticsChartTooltip({ active, payload, label }) {
           const formattedVal = isOrders ? `${entry.value} orders` : fmt(entry.value);
           const name = entry.name || (
             entry.dataKey === "revenue" ? "Gross Revenue" :
-            entry.dataKey === "profit" ? "Net Profit" :
-            entry.dataKey === "cogs" ? "COGS Basis" :
-            entry.dataKey === "orders" ? "Orders Volume" : entry.dataKey
+              entry.dataKey === "profit" ? "Net Profit" :
+                entry.dataKey === "cogs" ? "COGS Basis" :
+                  entry.dataKey === "orders" ? "Orders Volume" : entry.dataKey
           );
           const dotColor = entry.color || entry.stroke || entry.fill || "#FF3B30";
           return (
@@ -9906,91 +9889,91 @@ function ProfitabilityAnalytics() {
       </div>
 
       {/* Two-Column Lower Grid: Regional Demand & Top Products Unit Economics */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-          {/* Left Column (5 cols): Geographic Breakdown (Top Cities & Provinces) */}
-          <div className="lg:col-span-5 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-zinc-800 pb-3">
-              <h3 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-2">
-                <MapPin size={15} className="text-fire" />
-                Geographic Order Volume & Cities
-              </h3>
-              <span className="text-[10px] text-gray-400">Delivery destinations</span>
-            </div>
-
-            <div className="space-y-3">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">Top Demand Cities</span>
-              {cities.length === 0 ? (
-                <p className="text-xs text-gray-400 py-4 text-center">No city data available</p>
-              ) : (
-                cities.map(c => (
-                  <div key={c.city} className="flex items-center justify-between text-xs p-2 rounded-xl bg-gray-50 dark:bg-zinc-800/40">
-                    <div className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-fire" />
-                      <span className="font-bold text-gray-800 dark:text-zinc-200">{c.city}</span>
-                    </div>
-                    <span className="font-mono font-bold text-gray-900 dark:text-zinc-100">{fmt(c.revenue)}</span>
-                  </div>
-                ))
-              )}
-
-              {provinces.length > 0 && (
-                <div className="pt-3 border-t border-gray-100 dark:border-zinc-800 space-y-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">Provinces</span>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    {provinces.map(p => (
-                      <div key={p.province} className="p-2 bg-gray-50 dark:bg-zinc-800/40 rounded-xl">
-                        <span className="text-[10px] text-gray-400 block">{p.province}</span>
-                        <span className="font-mono font-bold text-gray-900 dark:text-zinc-100">{fmt(p.revenue)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+        {/* Left Column (5 cols): Geographic Breakdown (Top Cities & Provinces) */}
+        <div className="lg:col-span-5 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-gray-100 dark:border-zinc-800 pb-3">
+            <h3 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-2">
+              <MapPin size={15} className="text-fire" />
+              Geographic Order Volume & Cities
+            </h3>
+            <span className="text-[10px] text-gray-400">Delivery destinations</span>
           </div>
 
-          {/* Right Column (7 cols): Top Sneaker Unit Economics Table */}
-          <div className="lg:col-span-7 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-zinc-800 pb-3">
-              <div>
-                <h3 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-2">
-                  <ShoppingBag size={15} className="text-fire" />
-                  Top Performing Sneaker Drops & Unit Margins
-                </h3>
-                <p className="text-[10px] text-gray-400 mt-0.5">Ranked by gross sales volume and net profitability</p>
-              </div>
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300">
-                Top 10
-              </span>
-            </div>
+          <div className="space-y-3">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">Top Demand Cities</span>
+            {cities.length === 0 ? (
+              <p className="text-xs text-gray-400 py-4 text-center">No city data available</p>
+            ) : (
+              cities.map(c => (
+                <div key={c.city} className="flex items-center justify-between text-xs p-2 rounded-xl bg-gray-50 dark:bg-zinc-800/40">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-fire" />
+                    <span className="font-bold text-gray-800 dark:text-zinc-200">{c.city}</span>
+                  </div>
+                  <span className="font-mono font-bold text-gray-900 dark:text-zinc-100">{fmt(c.revenue)}</span>
+                </div>
+              ))
+            )}
 
-            <div className="overflow-x-auto">
-              {topProducts.length === 0 ? (
-                <p className="text-xs text-gray-400 py-8 text-center">No product orders recorded in this interval</p>
-              ) : (
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-gray-100 dark:border-zinc-800 text-[10px] font-bold uppercase text-gray-400 tracking-wider">
-                      <th className="pb-2.5">Sneaker Silhouette</th>
-                      <th className="pb-2.5 text-center">Sold</th>
-                      <th className="pb-2.5 text-right">Revenue</th>
-                      <th className="pb-2.5 text-right">Net Profit</th>
-                      <th className="pb-2.5 text-right">Margin</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50 dark:divide-zinc-800/60 font-mono">
-                    {topProducts.map((p, idx) => (
-                      <tr key={p.id || idx} className="hover:bg-gray-50/60 dark:hover:bg-zinc-800/30 transition-colors">
-                        <td className="py-2.5 pr-2 font-sans">
-                          <div className="flex items-center gap-2.5">
-                            {p.image ? (
-                              <img src={p.image} alt="" className="w-8 h-8 rounded-lg object-cover bg-gray-100 shrink-0" />
-                            ) : (
-                              <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-zinc-800 flex items-center justify-center shrink-0">
-                                <Box size={14} className="text-gray-400" />
-                              </div>
-                            )}
+            {provinces.length > 0 && (
+              <div className="pt-3 border-t border-gray-100 dark:border-zinc-800 space-y-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">Provinces</span>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  {provinces.map(p => (
+                    <div key={p.province} className="p-2 bg-gray-50 dark:bg-zinc-800/40 rounded-xl">
+                      <span className="text-[10px] text-gray-400 block">{p.province}</span>
+                      <span className="font-mono font-bold text-gray-900 dark:text-zinc-100">{fmt(p.revenue)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column (7 cols): Top Sneaker Unit Economics Table */}
+        <div className="lg:col-span-7 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-gray-100 dark:border-zinc-800 pb-3">
+            <div>
+              <h3 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-2">
+                <ShoppingBag size={15} className="text-fire" />
+                Top Performing Sneaker Drops & Unit Margins
+              </h3>
+              <p className="text-[10px] text-gray-400 mt-0.5">Ranked by gross sales volume and net profitability</p>
+            </div>
+            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300">
+              Top 10
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            {topProducts.length === 0 ? (
+              <p className="text-xs text-gray-400 py-8 text-center">No product orders recorded in this interval</p>
+            ) : (
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-gray-100 dark:border-zinc-800 text-[10px] font-bold uppercase text-gray-400 tracking-wider">
+                    <th className="pb-2.5">Sneaker Silhouette</th>
+                    <th className="pb-2.5 text-center">Sold</th>
+                    <th className="pb-2.5 text-right">Revenue</th>
+                    <th className="pb-2.5 text-right">Net Profit</th>
+                    <th className="pb-2.5 text-right">Margin</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50 dark:divide-zinc-800/60 font-mono">
+                  {topProducts.map((p, idx) => (
+                    <tr key={p.id || idx} className="hover:bg-gray-50/60 dark:hover:bg-zinc-800/30 transition-colors">
+                      <td className="py-2.5 pr-2 font-sans">
+                        <div className="flex items-center gap-2.5">
+                          {p.image ? (
+                            <img src={p.image} alt="" className="w-8 h-8 rounded-lg object-cover bg-gray-100 shrink-0" />
+                          ) : (
+                            <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-zinc-800 flex items-center justify-center shrink-0">
+                              <Box size={14} className="text-gray-400" />
+                            </div>
+                          )}
                           <div className="min-w-0">
                             <span className="font-bold text-gray-900 dark:text-zinc-100 truncate block text-xs">
                               {p.name}
@@ -10199,31 +10182,28 @@ function BundlesManager({ isDark }) {
         <div className="flex items-center gap-1.5 bg-zinc-100 dark:bg-zinc-800/80 p-1 rounded-lg border border-gray-200 dark:border-zinc-800 self-start sm:self-auto">
           <button
             onClick={() => setStatusFilter("all")}
-            className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${
-              statusFilter === "all"
+            className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${statusFilter === "all"
                 ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm"
                 : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
-            }`}
+              }`}
           >
             All ({bundles.length})
           </button>
           <button
             onClick={() => setStatusFilter("active")}
-            className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${
-              statusFilter === "active"
+            className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${statusFilter === "active"
                 ? "bg-white dark:bg-zinc-900 text-emerald-600 dark:text-emerald-400 shadow-sm"
                 : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
-            }`}
+              }`}
           >
             Active ({activeCount})
           </button>
           <button
             onClick={() => setStatusFilter("inactive")}
-            className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${
-              statusFilter === "inactive"
+            className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${statusFilter === "inactive"
                 ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm"
                 : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
-            }`}
+              }`}
           >
             Draft ({inactiveCount})
           </button>
@@ -10290,11 +10270,10 @@ function BundlesManager({ isDark }) {
                       )}
                     </div>
                     <span
-                      className={`shrink-0 inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full ${
-                        b.is_active
+                      className={`shrink-0 inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full ${b.is_active
                           ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
                           : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700'
-                      }`}
+                        }`}
                     >
                       <span className={`w-1.5 h-1.5 rounded-full ${b.is_active ? 'bg-emerald-500' : 'bg-zinc-400'}`}></span>
                       {b.is_active ? 'Active' : 'Draft'}
@@ -10581,9 +10560,8 @@ function BundleDetailPage({ bundle, allProducts, isDark, onBack, onSaved }) {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs uppercase font-bold tracking-wider text-zinc-400">Product Bundles /</span>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                f.is_active ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
-              }`}>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${f.is_active ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
+                }`}>
                 {f.is_active ? 'ACTIVE DEAL' : 'DRAFT'}
               </span>
             </div>
@@ -10594,20 +10572,6 @@ function BundleDetailPage({ bundle, allProducts, isDark, onBack, onSaved }) {
         </div>
 
         <div className="flex items-center gap-2 self-end sm:self-auto">
-          {/* Status Toggle */}
-          <button
-            type="button"
-            onClick={() => setF(prev => ({ ...prev, is_active: !prev.is_active }))}
-            className={`px-3 py-2 text-xs font-bold rounded-lg border transition-all flex items-center gap-1.5 ${
-              f.is_active
-                ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800'
-                : 'bg-zinc-50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700'
-            }`}
-          >
-            <span className={`w-2 h-2 rounded-full ${f.is_active ? 'bg-emerald-500' : 'bg-zinc-400'}`}></span>
-            {f.is_active ? 'Status: Active' : 'Status: Draft'}
-          </button>
-
           <button
             type="button"
             onClick={onBack}
@@ -10663,6 +10627,50 @@ function BundleDetailPage({ bundle, allProducts, isDark, onBack, onSaved }) {
                 placeholder="Describe what's in the bundle and why it's a great deal for sneaker lovers..."
                 className="w-full px-3.5 py-2.5 text-sm bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-zinc-900 dark:focus:border-zinc-400 resize-none"
               />
+            </div>
+
+            {/* In-Form Status Segmented Control */}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1.5">
+                Publishing Status
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setF({ ...f, is_active: true })}
+                  className={`p-3 rounded-lg border text-left transition-all ${
+                    f.is_active
+                      ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-400 dark:border-emerald-700 text-emerald-950 dark:text-emerald-100 ring-1 ring-emerald-400'
+                      : 'bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full ${f.is_active ? 'bg-emerald-500' : 'bg-zinc-300'}`}></span>
+                    <span className="text-xs font-bold">Active (Live Deal)</span>
+                  </div>
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">
+                    Available for customers to purchase as a bundle package.
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setF({ ...f, is_active: false })}
+                  className={`p-3 rounded-lg border text-left transition-all ${
+                    !f.is_active
+                      ? 'bg-zinc-100 dark:bg-zinc-800 border-zinc-400 dark:border-zinc-600 text-zinc-900 dark:text-zinc-100 ring-1 ring-zinc-400'
+                      : 'bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full ${!f.is_active ? 'bg-zinc-500' : 'bg-zinc-300'}`}></span>
+                    <span className="text-xs font-bold">Draft / Inactive</span>
+                  </div>
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">
+                    Hidden from storefront. Saved for editing or future release.
+                  </p>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -10838,11 +10846,10 @@ function BundleDetailPage({ bundle, allProducts, isDark, onBack, onSaved }) {
                   <button
                     type="button"
                     onClick={() => setSelectedCategory("all")}
-                    className={`px-2.5 py-1 rounded-md font-semibold shrink-0 transition-colors ${
-                      selectedCategory === "all"
+                    className={`px-2.5 py-1 rounded-md font-semibold shrink-0 transition-colors ${selectedCategory === "all"
                         ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
                         : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
-                    }`}
+                      }`}
                   >
                     All Categories
                   </button>
@@ -10851,11 +10858,10 @@ function BundleDetailPage({ bundle, allProducts, isDark, onBack, onSaved }) {
                       key={cat}
                       type="button"
                       onClick={() => setSelectedCategory(cat)}
-                      className={`px-2.5 py-1 rounded-md font-semibold shrink-0 transition-colors ${
-                        selectedCategory === cat
+                      className={`px-2.5 py-1 rounded-md font-semibold shrink-0 transition-colors ${selectedCategory === cat
                           ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
                           : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
-                      }`}
+                        }`}
                     >
                       {cat}
                     </button>
@@ -10894,13 +10900,12 @@ function BundleDetailPage({ bundle, allProducts, isDark, onBack, onSaved }) {
                             <span className="text-xs font-mono font-bold text-zinc-700 dark:text-zinc-300">
                               {fmt(product.base_price)}
                             </span>
-                            <span className={`text-[10px] font-semibold px-1.5 py-0.2 rounded ${
-                              totalStock > 5
+                            <span className={`text-[10px] font-semibold px-1.5 py-0.2 rounded ${totalStock > 5
                                 ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400'
                                 : totalStock > 0
-                                ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400'
-                                : 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400'
-                            }`}>
+                                  ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400'
+                                  : 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400'
+                              }`}>
                               {totalStock > 0 ? `${totalStock} in stock` : 'Out of stock'}
                             </span>
                           </div>
@@ -11003,11 +11008,10 @@ function BundleDetailPage({ bundle, allProducts, isDark, onBack, onSaved }) {
 
             {/* Customer Savings Display */}
             {totalRRP > 0 && bundlePriceNum > 0 && (
-              <div className={`p-4 rounded-xl border ${
-                savings > 0
+              <div className={`p-4 rounded-xl border ${savings > 0
                   ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-100'
                   : 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-100'
-              }`}>
+                }`}>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider">Customer Incentive</span>
                   {savingsPct > 0 && (
