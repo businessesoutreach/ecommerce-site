@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Calendar, CreditCard, Wallet, Home, Megaphone, Tag, Layers, Zap, FileText, Search, LayoutDashboard, Package, ShoppingCart, Ticket, Star, Users, LogOut, TrendingUp, AlertTriangle, Plus, Trash2, X, RotateCcw, DollarSign, Image as ImageIcon, Upload, MessageCircle, Search as SearchIcon, Filter, MoreVertical, Eye, Download, Printer, CheckCircle, Check, Truck, MapPin, Edit, Copy, Activity, Loader2, HelpCircle, ExternalLink, Clock, ArrowLeft, ArrowUpRight, ArrowDownRight, RefreshCw, ShoppingBag, Box, ChevronRight, ChevronDown, Sun, Moon, Bell } from "lucide-react";
@@ -19,6 +20,82 @@ import TestimonialsCMS from './cms/TestimonialsCMS';
 import PagesCMS from './cms/PagesCMS';
 import SeoCMS from './cms/SeoCMS';
 import ConfirmModal from '../components/ConfirmModal';
+
+function TableActionDropdown({ isOpen, onToggle, onClose, children, menuWidth = "w-48" }) {
+  const [coords, setCoords] = useState(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const handleToggle = (e) => {
+    e.stopPropagation();
+    if (isOpen) {
+      onClose();
+    } else {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const openUpwards = spaceBelow < 220;
+      setCoords({
+        top: openUpwards ? undefined : rect.bottom + 6,
+        bottom: openUpwards ? (window.innerHeight - rect.top + 6) : undefined,
+        right: Math.max(12, window.innerWidth - rect.right),
+      });
+      onToggle();
+    }
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleScrollOrResize = () => onClose();
+    window.addEventListener("scroll", handleScrollOrResize, true);
+    window.addEventListener("resize", handleScrollOrResize);
+    return () => {
+      window.removeEventListener("scroll", handleScrollOrResize, true);
+      window.removeEventListener("resize", handleScrollOrResize);
+    };
+  }, [isOpen, onClose]);
+
+  return (
+    <div className="relative inline-block text-left" onClick={(e) => e.stopPropagation()}>
+      <button
+        type="button"
+        onClick={handleToggle}
+        className="p-1.5 text-gray-400 hover:text-gray-900 dark:hover:text-zinc-100 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+        title="More Actions"
+      >
+        <MoreVertical size={16} />
+      </button>
+
+      {isOpen && coords && mounted && typeof document !== "undefined" && createPortal(
+        <>
+          <div
+            className="fixed inset-0 z-50 bg-transparent"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
+          />
+          <div
+            style={{
+              position: "fixed",
+              top: coords.top,
+              bottom: coords.bottom,
+              right: coords.right,
+            }}
+            onClick={(e) => e.stopPropagation()}
+            className={`${menuWidth} bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 shadow-2xl rounded-xl py-1.5 z-50 text-left animate-in fade-in zoom-in-95 duration-100`}
+          >
+            {children}
+          </div>
+        </>,
+        document.body
+      )}
+    </div>
+  );
+}
+
 
 
 const ORDER_STATES = ["placed", "confirmed", "packed", "shipped", "out_for_delivery", "delivered", "cancelled", "returned"];
@@ -1438,25 +1515,21 @@ function Orders() {
                     {new Date(o.created_at).toLocaleDateString()}
                   </td>
                   <td className="p-3.5 text-center relative" onClick={e => e.stopPropagation()}>
-                    <button onClick={() => setActiveDropdown(activeDropdown === o.id ? null : o.id)} className="p-1.5 text-gray-400 hover:text-gray-900 dark:hover:text-zinc-100 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-md transition-colors">
-                      <MoreVertical size={16} />
-                    </button>
-                    {activeDropdown === o.id && (
-                      <>
-                        <div className="fixed inset-0 z-30" onClick={() => setActiveDropdown(null)}></div>
-                        <div className="absolute right-8 top-8 w-48 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl shadow-xl z-40 flex flex-col text-left py-1.5 text-xs animate-in fade-in zoom-in-95 duration-100">
-                          <button onClick={() => { openOrder(o); setActiveDropdown(null); }} className="w-full px-4 py-2 text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center gap-2 font-bold transition-colors cursor-pointer"><Eye size={14} className="text-gray-400" /> View Full Order</button>
-                          {(o.tracking_number || o.status === 'shipped') && (
-                            <button onClick={() => { setTrackParcelOrder(o); setActiveDropdown(null); }} className="w-full px-4 py-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 flex items-center gap-2 font-bold transition-colors cursor-pointer"><Truck size={14} /> Track Parcel</button>
-                          )}
-                          <button onClick={() => {
-                            navigator.clipboard.writeText(o.order_number);
-                            toast.success("Order reference copied!");
-                            setActiveDropdown(null);
-                          }} className="w-full px-4 py-2 text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center gap-2 font-bold transition-colors cursor-pointer"><Copy size={14} className="text-gray-400" /> Copy Order #</button>
-                        </div>
-                      </>
-                    )}
+                    <TableActionDropdown
+                      isOpen={activeDropdown === o.id}
+                      onToggle={() => setActiveDropdown(activeDropdown === o.id ? null : o.id)}
+                      onClose={() => setActiveDropdown(null)}
+                    >
+                      <button onClick={() => { openOrder(o); setActiveDropdown(null); }} className="w-full px-4 py-2 text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center gap-2 font-bold transition-colors cursor-pointer"><Eye size={14} className="text-gray-400" /> View Full Order</button>
+                      {(o.tracking_number || o.status === 'shipped') && (
+                        <button onClick={() => { setTrackParcelOrder(o); setActiveDropdown(null); }} className="w-full px-4 py-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 flex items-center gap-2 font-bold transition-colors cursor-pointer"><Truck size={14} /> Track Parcel</button>
+                      )}
+                      <button onClick={() => {
+                        navigator.clipboard.writeText(o.order_number);
+                        toast.success("Order reference copied!");
+                        setActiveDropdown(null);
+                      }} className="w-full px-4 py-2 text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center gap-2 font-bold transition-colors cursor-pointer"><Copy size={14} className="text-gray-400" /> Copy Order #</button>
+                    </TableActionDropdown>
                   </td>
                 </tr>
               ))}
@@ -3714,48 +3787,39 @@ function Products() {
                             >
                               <Edit size={13} /> Edit
                             </button>
-                            <div className="relative">
+                            <TableActionDropdown
+                              isOpen={activeMenuId === p.id}
+                              onToggle={() => setActiveMenuId(activeMenuId === p.id ? null : p.id)}
+                              onClose={() => setActiveMenuId(null)}
+                            >
                               <button
-                                onClick={() => setActiveMenuId(activeMenuId === p.id ? null : p.id)}
-                                className="p-1.5 text-gray-400 hover:text-gray-900 dark:hover:text-zinc-100 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800"
+                                onClick={() => { setActiveMenuId(null); openProduct(p.id); }}
+                                className="w-full px-3.5 py-2 text-xs font-bold text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center gap-2 transition-colors cursor-pointer"
                               >
-                                <MoreVertical size={16} />
+                                <Eye size={14} className="text-gray-400"/> View & Edit Details
                               </button>
-                              {activeMenuId === p.id && (
-                                <>
-                                  <div className="fixed inset-0 z-30" onClick={() => setActiveMenuId(null)} />
-                                  <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 shadow-xl rounded-xl py-1.5 z-40 text-left animate-in fade-in zoom-in-95 duration-100">
-                                    <button
-                                      onClick={() => { setActiveMenuId(null); openProduct(p.id); }}
-                                      className="w-full px-3.5 py-2 text-xs font-bold text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center gap-2 transition-colors cursor-pointer"
-                                    >
-                                      <Eye size={14} className="text-gray-400"/> View & Edit Details
-                                    </button>
-                                    <button
-                                      onClick={() => { setActiveMenuId(null); duplicate(p.id); }}
-                                      className="w-full px-3.5 py-2 text-xs font-bold text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center gap-2 transition-colors cursor-pointer"
-                                    >
-                                      <Copy size={14} className="text-gray-400"/> Duplicate (Draft)
-                                    </button>
-                                    <a
-                                      href={`/product/${p.slug}`}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="w-full px-3.5 py-2 text-xs font-bold text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center gap-2 transition-colors"
-                                    >
-                                      <ExternalLink size={14} className="text-gray-400"/> View on Store
-                                    </a>
-                                    <hr className="my-1 border-gray-100 dark:border-zinc-800" />
-                                    <button
-                                      onClick={() => { setActiveMenuId(null); del(p.id); }}
-                                      className="w-full px-3.5 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 transition-colors cursor-pointer"
-                                    >
-                                      <Trash2 size={14}/> Delete Drop
-                                    </button>
-                                  </div>
-                                </>
-                              )}
-                            </div>
+                              <button
+                                onClick={() => { setActiveMenuId(null); duplicate(p.id); }}
+                                className="w-full px-3.5 py-2 text-xs font-bold text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center gap-2 transition-colors cursor-pointer"
+                              >
+                                <Copy size={14} className="text-gray-400"/> Duplicate (Draft)
+                              </button>
+                              <a
+                                href={`/product/${p.slug}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="w-full px-3.5 py-2 text-xs font-bold text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center gap-2 transition-colors"
+                              >
+                                <ExternalLink size={14} className="text-gray-400"/> View on Store
+                              </a>
+                              <hr className="my-1 border-gray-100 dark:border-zinc-800" />
+                              <button
+                                onClick={() => { setActiveMenuId(null); del(p.id); }}
+                                className="w-full px-3.5 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 transition-colors cursor-pointer"
+                              >
+                                <Trash2 size={14}/> Delete Drop
+                              </button>
+                            </TableActionDropdown>
                           </div>
                         </td>
                       </tr>
@@ -5049,31 +5113,25 @@ function Coupons() {
                   </td>
                   <td className="p-3 text-right font-mono font-bold text-green-700">{fmt(c.revenue_generated)}</td>
                   <td className="p-3 text-center relative" onClick={e => e.stopPropagation()}>
-                    <button
-                      onClick={() => setActiveMenuId(activeMenuId === c.id ? null : c.id)}
-                      className="p-1.5 text-gray-400 hover:text-gray-900 dark:hover:text-zinc-100 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                    <TableActionDropdown
+                      isOpen={activeMenuId === c.id}
+                      onToggle={() => setActiveMenuId(activeMenuId === c.id ? null : c.id)}
+                      onClose={() => setActiveMenuId(null)}
+                      menuWidth="w-40"
                     >
-                      <MoreVertical size={16} />
-                    </button>
-                    {activeMenuId === c.id && (
-                      <>
-                        <div className="fixed inset-0 z-30" onClick={() => setActiveMenuId(null)} />
-                        <div className="absolute right-2 top-full mt-1 w-36 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 shadow-xl rounded-xl py-1.5 z-40 text-left animate-in fade-in zoom-in-95 duration-100">
-                          <button
-                            onClick={() => { setActiveMenuId(null); setViewCoupon(c); }}
-                            className="w-full px-3.5 py-2 text-xs font-bold text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center gap-2 transition-colors cursor-pointer"
-                          >
-                            <Eye size={14} className="text-gray-400" /> View Details
-                          </button>
-                          <button
-                            onClick={() => { setActiveMenuId(null); toggleStatus(c.id, !c.is_active); }}
-                            className="w-full px-3.5 py-2 text-xs font-bold text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center gap-2 transition-colors cursor-pointer"
-                          >
-                            <Trash2 size={14} className="text-gray-400" /> {c.is_active ? 'Disable' : 'Enable'}
-                          </button>
-                        </div>
-                      </>
-                    )}
+                      <button
+                        onClick={() => { setActiveMenuId(null); setViewCoupon(c); }}
+                        className="w-full px-3.5 py-2 text-xs font-bold text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center gap-2 transition-colors cursor-pointer"
+                      >
+                        <Eye size={14} className="text-gray-400" /> View Details
+                      </button>
+                      <button
+                        onClick={() => { setActiveMenuId(null); toggleStatus(c.id, !c.is_active); }}
+                        className="w-full px-3.5 py-2 text-xs font-bold text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center gap-2 transition-colors cursor-pointer"
+                      >
+                        <Trash2 size={14} className="text-gray-400" /> {c.is_active ? 'Disable' : 'Enable'}
+                      </button>
+                    </TableActionDropdown>
                   </td>
                 </tr>
               ))}
@@ -6685,36 +6743,28 @@ function Customers() {
 
                       {/* Three-dots menu (opens on CLICK, NOT hover, with crisp dark mode) */}
                       <td className="p-3.5 text-center relative" onClick={e => e.stopPropagation()}>
-                        <button
-                          onClick={() => setActiveMenuId(activeMenuId === u.id ? null : u.id)}
-                          className="p-1.5 text-gray-400 hover:text-gray-900 dark:hover:text-zinc-100 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-                          title="Shopper Actions"
+                        <TableActionDropdown
+                          isOpen={activeMenuId === u.id}
+                          onToggle={() => setActiveMenuId(activeMenuId === u.id ? null : u.id)}
+                          onClose={() => setActiveMenuId(null)}
                         >
-                          <MoreVertical size={16} />
-                        </button>
-                        {activeMenuId === u.id && (
-                          <>
-                            <div className="fixed inset-0 z-30" onClick={() => setActiveMenuId(null)} />
-                            <div className="absolute right-2 top-full mt-1 w-48 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 shadow-xl rounded-xl py-1.5 z-40 text-left animate-in fade-in zoom-in-95 duration-100">
-                              <button
-                                onClick={() => { setActiveMenuId(null); openCustomer(u); }}
-                                className="w-full px-3.5 py-2 text-xs font-bold text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center gap-2 transition-colors cursor-pointer"
-                              >
-                                <Eye size={14} className="text-gray-400" /> View Customer Page
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setActiveMenuId(null);
-                                  setSelected([u.id]);
-                                  bulkUpdate(u.is_blocked ? 'unblock' : 'block');
-                                }}
-                                className="w-full px-3.5 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 transition-colors cursor-pointer"
-                              >
-                                <Trash2 size={14} /> {u.is_blocked ? 'Unblock Account' : 'Block Customer'}
-                              </button>
-                            </div>
-                          </>
-                        )}
+                          <button
+                            onClick={() => { setActiveMenuId(null); openCustomer(u); }}
+                            className="w-full px-3.5 py-2 text-xs font-bold text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 flex items-center gap-2 transition-colors cursor-pointer"
+                          >
+                            <Eye size={14} className="text-gray-400" /> View Customer Page
+                          </button>
+                          <button
+                            onClick={() => {
+                              setActiveMenuId(null);
+                              setSelected([u.id]);
+                              bulkUpdate(u.is_blocked ? 'unblock' : 'block');
+                            }}
+                            className="w-full px-3.5 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 transition-colors cursor-pointer"
+                          >
+                            <Trash2 size={14} /> {u.is_blocked ? 'Unblock Account' : 'Block Customer'}
+                          </button>
+                        </TableActionDropdown>
                       </td>
                     </tr>
                   ))
