@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Instagram, Facebook, Twitter, Send, Truck, RefreshCw, ShieldCheck, MessageCircle, Loader2 } from "lucide-react";
+import { Send, Truck, RefreshCw, ShieldCheck, MessageCircle, Loader2 } from "lucide-react";
 import { http } from "../lib/api";
 import { toast } from "sonner";
 
@@ -52,11 +52,6 @@ export default function Footer() {
           <div>
             <span className="font-display tracking-tighter">SOLEKICKS<span className="text-fire">.</span>PK</span>
             <p className="text-white/50 text-sm mt-4 leading-relaxed">Pakistan's home for high-heat streetwear silhouettes, retro re-issues & performance runners. Cop with confidence.</p>
-            <div className="flex gap-3 mt-5">
-              {[Instagram, Facebook, Twitter].map((I, i) => (
-                <a key={i} href="#" className="h-9 w-9 grid place-items-center rounded-none bg-white/10 hover:bg-fire transition-colors"><I size={16} /></a>
-              ))}
-            </div>
           </div>
           {[
             { t: "Shop", links: [["New Arrivals", "/new-arrivals"], ["Flash Sale", "/flash-sale"], ["Retro & Highs", "/collections/retro"], ["Runners", "/collections/runners"], ["Slides", "/collections/slides"]] },

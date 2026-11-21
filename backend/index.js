@@ -43,6 +43,7 @@ apiRouter.use('/wishlist', wishlistRoutes);
 apiRouter.use('/checkout', checkoutRoutes);
 apiRouter.use('/orders', ordersRoutes);
 apiRouter.use('/', paymentsRoutes);
+apiRouter.use('/cms', cmsRoutes);
 apiRouter.use('/admin/cms', cmsRoutes);
 apiRouter.use('/admin', adminRoutes);
 apiRouter.use('/me', userRoutes);

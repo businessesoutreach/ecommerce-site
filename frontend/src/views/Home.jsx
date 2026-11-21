@@ -259,35 +259,47 @@ function WhyUsSection() {
 }
 
 function ReviewsSection() {
-  const [reviews, setReviews] = useState([
-    { author_name: "Hamza Tariq", author_meta: "Lahore", content: "Delivered in 2 days to DHA via COD! The cushioning on the Oreo 4s is insane. Exactly matches jutay quality.", rating: 5 },
-    { author_name: "Zeeshan Malik", author_meta: "Karachi", content: "Size 43 fit true to chart. Exchange policy gave me full confidence to order. 10/10 streetwear staple.", rating: 5 },
-    { author_name: "Ali Raza", author_meta: "Islamabad", content: "Hands down best sneaker cop in Pakistan. Packaging with extra laces & sticker pack was top tier.", rating: 5 },
-  ]);
+  const [reviews, setReviews] = useState([]);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    http.get("/admin/cms/testimonials").then(({ data }) => {
-      const active = data.data.filter(t => t.is_published);
-      if (active.length > 0) {
-        setReviews(active.slice(0, 3));
-      }
-    }).catch(() => {});
+    http.get("/cms/testimonials")
+      .then(({ data }) => {
+        const active = (data.data || []).filter(t => t.is_published);
+        setReviews(active);
+        setLoaded(true);
+      })
+      .catch(() => {
+        http.get("/admin/cms/testimonials")
+          .then(({ data }) => {
+            const active = (data.data || []).filter(t => t.is_published);
+            setReviews(active);
+          })
+          .catch(() => {})
+          .finally(() => setLoaded(true));
+      });
   }, []);
+
+  if (!loaded || reviews.length === 0) return null;
 
   return (
     <section className="bg-white border-y border-ink-200 py-16">
       <div className="max-w-[1400px] mx-auto px-5 sm:px-8">
         <SectionHeader eyebrow="Verified buyers" title="From The Culture" tagline="Real kicks. Real people. Real cities across Pakistan." />
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {reviews.map((r, i) => (
-            <ScrollReveal key={i} delay={i * 0.1}>
-              <div className="bg-canvas rounded-none p-6 h-full border border-ink-200">
-                <Stars rating={r.rating} />
-                <p className="mt-4 text-ink-700 leading-relaxed">"{r.content}"</p>
-                <div className="mt-5 flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-none bg-obsidian text-white grid place-items-center font-display font-bold">{r.author_name?.[0] || 'U'}</div>
+            <ScrollReveal key={r.id || i} delay={i * 0.08}>
+              <div className="bg-canvas rounded-none p-6 h-full border border-ink-200 flex flex-col justify-between">
+                <div>
+                  <Stars rating={r.rating || 5} />
+                  <p className="mt-4 text-ink-700 leading-relaxed italic">"{r.content}"</p>
+                </div>
+                <div className="mt-5 flex items-center gap-3 pt-4 border-t border-ink-100">
+                  <div className="h-10 w-10 rounded-none bg-obsidian text-white grid place-items-center font-display font-bold shrink-0">
+                    {r.author_name?.[0] || 'U'}
+                  </div>
                   <div>
-                    <p className="font-display font-bold text-sm">{r.author_name}</p>
+                    <p className="font-display font-bold text-sm text-obsidian">{r.author_name}</p>
                     <span className="text-ink-400 text-xs">{r.author_meta || 'Verified Customer'}</span>
                   </div>
                 </div>
