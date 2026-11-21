@@ -2248,27 +2248,51 @@ router.get('/users/:id', async (req, res) => {
         const user = await prisma.user.findUnique({
             where: { id: req.params.id },
             include: {
-                orders: {
-                    orderBy: { created_at: 'desc' },
-                    take: 5
-                },
                 addresses: true
             }
         });
         
         if (!user) return res.status(404).json({ detail: "User not found" });
-        
-        const allOrders = await prisma.order.findMany({ where: { user_id: user.id, status: { not: 'cancelled' } } });
-        const totalSpent = allOrders.reduce((sum, o) => sum + o.total, 0);
-        const avgOrder = allOrders.length > 0 ? totalSpent / allOrders.length : 0;
+
+        // Match all orders by user_id OR matching customer_email OR customer_phone
+        const orConditions = [{ user_id: user.id }];
+        if (user.email) orConditions.push({ customer_email: user.email });
+        if (user.phone) orConditions.push({ customer_phone: user.phone });
+
+        const userOrders = await prisma.order.findMany({
+            where: { OR: orConditions },
+            include: {
+                items: {
+                    include: {
+                        product: {
+                            select: {
+                                id: true,
+                                name: true,
+                                slug: true,
+                                images: true,
+                                category_slug: true,
+                                brand_slug: true
+                            }
+                        }
+                    }
+                }
+            },
+            orderBy: { created_at: 'desc' }
+        });
+
+        const validOrders = userOrders.filter(o => o.status !== 'cancelled' && o.status !== 'failed');
+        const totalSpent = validOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+        const avgOrder = validOrders.length > 0 ? totalSpent / validOrders.length : 0;
         
         res.json({
             success: true,
             data: {
                 ...user,
+                orders: userOrders,
                 total_spent: totalSpent,
                 avg_order: avgOrder,
-                total_orders: allOrders.length
+                total_orders: userOrders.length,
+                completed_orders: userOrders.filter(o => o.status === 'delivered').length
             }
         });
     } catch (err) {
