@@ -58,7 +58,6 @@ export default function HomepageCMS({ setActiveTab, setMainTab }) {
       'new_arrivals': 'product_sections',
       'best_sellers': 'product_sections',
       'trending': 'product_sections',
-      'promotional_banner': 'promo',
       'flash_sale': 'flash_sale',
       'testimonials': 'testimonials'
     };

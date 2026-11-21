@@ -14,7 +14,6 @@ import HeroSlidesCMS from './cms/HeroSlidesCMS';
 import CategoriesCMS from './cms/CategoriesCMS';
 import BrandsCMS from './cms/BrandsCMS';
 import ProductSectionsCMS from './cms/ProductSectionsCMS';
-import PromoBannersCMS from './cms/PromoBannersCMS';
 import FlashSaleCMS from './cms/FlashSaleCMS';
 import TestimonialsCMS from './cms/TestimonialsCMS';
 import PagesCMS from './cms/PagesCMS';
@@ -489,7 +488,6 @@ export default function Admin() {
     { id: "cms_hero", label: "Hero Slides", icon: ImageIcon },
     { id: "cms_announcement", label: "Announcement Bar", icon: Megaphone },
     { id: "cms_product_sections", label: "Product Sections", icon: Layers },
-    { id: "cms_promo", label: "Promo Banners", icon: Ticket },
     { id: "cms_flash_sale", label: "Flash Sale", icon: Zap },
     { id: "cms_testimonials", label: "Testimonials", icon: Star },
     { id: "cms_pages", label: "Custom Pages", icon: FileText },
@@ -724,7 +722,6 @@ export default function Admin() {
           {tab === "cms_hero" && <HeroSlidesCMS />}
           {tab === "cms_announcement" && <StoreSettings />}
           {tab === "cms_product_sections" && <ProductSectionsCMS />}
-          {tab === "cms_promo" && <PromoBannersCMS />}
           {tab === "cms_flash_sale" && <FlashSaleCMS />}
           {tab === "cms_testimonials" && <TestimonialsCMS />}
           {tab === "cms_pages" && <PagesCMS />}
