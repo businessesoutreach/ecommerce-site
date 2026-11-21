@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { http } from '../../lib/api';
 import { toast } from "sonner";
 import ConfirmModal from '../../components/ConfirmModal';
-import { Trash2, Star, Plus, Check, Search, MessageSquare, UserCheck, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Trash2, Star, Plus, Check, Search, UserCheck, Loader2 } from 'lucide-react';
 
-export default function TestimonialsCMS() {
+export default function TestimonialsCMS({ isDark }) {
   const [confirmModal, setConfirmModal] = useState({ isOpen: false });
   const [testimonials, setTestimonials] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -130,8 +130,8 @@ export default function TestimonialsCMS() {
   // Check if a review is already converted into a testimonial
   const isReviewFeatured = (rev) => {
     return testimonials.some(t =>
-      t.content?.trim().toLowerCase() === rev.comment?.trim().toLowerCase() ||
-      (t.author_name?.toLowerCase() === rev.customer_name?.toLowerCase() && t.content?.includes(rev.comment?.slice(0, 20)))
+      (t.content && rev.comment && t.content.trim().toLowerCase() === rev.comment.trim().toLowerCase()) ||
+      (t.author_name && rev.customer_name && t.author_name.toLowerCase() === rev.customer_name.toLowerCase() && rev.comment && t.content?.includes(rev.comment.slice(0, 20)))
     );
   };
 
@@ -158,19 +158,19 @@ export default function TestimonialsCMS() {
     <div className="max-w-5xl space-y-8 animate-in fade-in duration-150">
       {/* Header */}
       <div>
-        <h1 className="font-display tracking-tight text-2xl font-black text-gray-900 dark:text-zinc-100">
+        <h1 className="font-display tracking-tight text-2xl font-black text-gray-900 dark:text-white">
           Storefront Testimonials
         </h1>
         <p className="text-sm text-gray-500 dark:text-zinc-400 font-medium mt-0.5">
-          Feature authentic customer reviews or create bespoke brand testimonials for your homepage
+          Feature authentic customer reviews or create custom testimonials for your homepage
         </p>
       </div>
 
-      {/* Creation Mode Switcher */}
+      {/* Creation Mode Switcher Card */}
       <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-xs space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-gray-100 dark:border-zinc-800 pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-gray-200 dark:border-zinc-800 pb-4">
           <div>
-            <h3 className="font-display font-black text-sm text-gray-900 dark:text-zinc-100">
+            <h3 className="font-display font-black text-sm text-gray-900 dark:text-white">
               Add New Testimonial
             </h3>
             <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">
@@ -184,13 +184,13 @@ export default function TestimonialsCMS() {
               onClick={() => setMode("reviews")}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                 mode === "reviews"
-                  ? "bg-white dark:bg-zinc-900 text-gray-900 dark:text-zinc-100 shadow-xs"
-                  : "text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100"
+                  ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white shadow-xs font-black"
+                  : "text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white"
               }`}
             >
               <UserCheck size={14} />
               Select From User Reviews
-              <span className="text-[10px] font-mono font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 px-1.5 py-0.2 rounded">
+              <span className="text-[10px] font-mono font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 px-1.5 py-0.2 rounded border border-amber-300/40 dark:border-amber-800">
                 {customerReviews.length}
               </span>
             </button>
@@ -200,8 +200,8 @@ export default function TestimonialsCMS() {
               onClick={() => setMode("manual")}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                 mode === "manual"
-                  ? "bg-white dark:bg-zinc-900 text-gray-900 dark:text-zinc-100 shadow-xs"
-                  : "text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100"
+                  ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white shadow-xs font-black"
+                  : "text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white"
               }`}
             >
               <Plus size={14} />
@@ -216,20 +216,20 @@ export default function TestimonialsCMS() {
             {/* Filter Bar */}
             <div className="flex flex-col sm:flex-row gap-3 items-center">
               <div className="relative flex-1 w-full">
-                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-400" />
                 <input
                   type="text"
                   placeholder="Search reviews by customer, product, or comment..."
                   value={reviewSearch}
                   onChange={e => setReviewSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg text-xs bg-gray-50 dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-fire"
+                  className="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg text-xs bg-gray-50 dark:bg-zinc-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-fire"
                 />
               </div>
 
               <select
                 value={reviewRatingFilter}
                 onChange={e => setReviewRatingFilter(Number(e.target.value))}
-                className="w-full sm:w-auto px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg text-xs font-bold bg-gray-50 dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-fire cursor-pointer"
+                className="w-full sm:w-auto px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg text-xs font-bold bg-gray-50 dark:bg-zinc-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-fire cursor-pointer"
               >
                 <option value={0}>All Star Ratings</option>
                 <option value={5}>⭐⭐⭐⭐⭐ 5 Stars Only</option>
@@ -240,30 +240,30 @@ export default function TestimonialsCMS() {
 
             {/* Reviews List */}
             {reviewsLoading ? (
-              <div className="p-8 text-center text-gray-400 font-mono text-xs flex items-center justify-center gap-2">
+              <div className="p-8 text-center text-gray-400 dark:text-zinc-400 font-mono text-xs flex items-center justify-center gap-2">
                 <Loader2 size={16} className="animate-spin text-fire" /> Loading customer reviews...
               </div>
             ) : filteredReviews.length === 0 ? (
-              <div className="p-8 text-center border border-dashed border-gray-200 dark:border-zinc-800 rounded-xl text-gray-400 dark:text-zinc-500 text-xs">
+              <div className="p-8 text-center border border-dashed border-gray-200 dark:border-zinc-800 rounded-xl text-gray-500 dark:text-zinc-400 text-xs">
                 No matching customer reviews found.
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[380px] overflow-y-auto pr-1 custom-scrollbar">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[420px] overflow-y-auto pr-1 custom-scrollbar">
                 {filteredReviews.map(r => {
                   const alreadyFeatured = isReviewFeatured(r);
                   return (
                     <div
                       key={r.id}
-                      className="p-4 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50/60 dark:bg-zinc-850 flex flex-col justify-between hover:border-gray-300 dark:hover:border-zinc-700 transition-colors text-xs"
+                      className="p-4 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50/80 dark:bg-zinc-800/90 flex flex-col justify-between hover:border-gray-300 dark:hover:border-zinc-600 transition-colors shadow-2xs"
                     >
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <div>
-                            <span className="font-bold text-gray-900 dark:text-zinc-100 text-xs">
+                            <span className="font-bold text-gray-900 dark:text-white text-xs block">
                               {r.customer_name || "Verified Customer"}
                             </span>
                             {r.product?.name && (
-                              <p className="text-[10px] text-gray-500 dark:text-zinc-400 truncate max-w-[220px]">
+                              <p className="text-[10px] text-gray-600 dark:text-zinc-400 truncate max-w-[220px]">
                                 on {r.product.name}
                               </p>
                             )}
@@ -275,31 +275,32 @@ export default function TestimonialsCMS() {
                                 key={i}
                                 size={12}
                                 fill={i < (r.rating || 5) ? "currentColor" : "none"}
-                                className={i < (r.rating || 5) ? "text-amber-400" : "text-gray-300 dark:text-zinc-700"}
+                                className={i < (r.rating || 5) ? "text-amber-400" : "text-gray-300 dark:text-zinc-600"}
                               />
                             ))}
                           </div>
                         </div>
 
-                        <p className="text-gray-700 dark:text-zinc-300 italic text-[11px] line-clamp-3 leading-relaxed">
+                        {/* Customer Review Text — High Contrast for Dark Mode */}
+                        <p className="text-gray-900 dark:text-zinc-100 font-medium text-xs leading-relaxed mt-1 break-words">
                           "{r.comment || "Great sneaker purchase!"}"
                         </p>
                       </div>
 
-                      <div className="pt-3 border-t border-gray-200/80 dark:border-zinc-800 mt-2 flex items-center justify-between">
-                        <span className="text-[10px] font-mono text-gray-400">
+                      <div className="pt-3 border-t border-gray-200 dark:border-zinc-700 mt-2.5 flex items-center justify-between">
+                        <span className="text-[10px] font-mono text-gray-500 dark:text-zinc-400">
                           {r.created_at ? new Date(r.created_at).toLocaleDateString() : ""}
                         </span>
 
                         {alreadyFeatured ? (
-                          <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 px-2.5 py-1 rounded-md flex items-center gap-1 font-mono">
+                          <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700 px-2.5 py-1 rounded-md flex items-center gap-1 font-mono">
                             <Check size={12} /> Featured
                           </span>
                         ) : (
                           <button
                             type="button"
                             onClick={() => featureReview(r)}
-                            className="text-[11px] font-bold px-3 py-1 bg-black hover:bg-fire dark:bg-fire text-white rounded-md transition-colors cursor-pointer flex items-center gap-1"
+                            className="text-[11px] font-bold px-3 py-1 bg-black hover:bg-fire dark:bg-fire text-white rounded-md transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
                           >
                             <Plus size={12} /> Feature as Testimonial
                           </button>
@@ -326,7 +327,7 @@ export default function TestimonialsCMS() {
                   placeholder="e.g. Zaid Malik"
                   value={f.author_name}
                   onChange={e => setF({ ...f, author_name: e.target.value })}
-                  className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-fire"
+                  className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-zinc-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-fire"
                 />
               </div>
 
@@ -339,7 +340,7 @@ export default function TestimonialsCMS() {
                   placeholder="e.g. Verified Customer • Lahore"
                   value={f.author_meta}
                   onChange={e => setF({ ...f, author_meta: e.target.value })}
-                  className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-fire"
+                  className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-zinc-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-fire"
                 />
               </div>
             </div>
@@ -351,7 +352,7 @@ export default function TestimonialsCMS() {
               <select
                 value={f.rating}
                 onChange={e => setF({ ...f, rating: e.target.value })}
-                className="w-full sm:w-48 border border-gray-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs font-bold bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-fire cursor-pointer"
+                className="w-full sm:w-48 border border-gray-300 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs font-bold bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-fire cursor-pointer"
               >
                 <option value="5">⭐⭐⭐⭐⭐ 5 Stars</option>
                 <option value="4">⭐⭐⭐⭐ 4 Stars</option>
@@ -370,7 +371,7 @@ export default function TestimonialsCMS() {
                 value={f.content}
                 onChange={e => setF({ ...f, content: e.target.value })}
                 rows={3}
-                className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg p-3 text-xs bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-fire"
+                className="w-full border border-gray-300 dark:border-zinc-700 rounded-lg p-3 text-xs bg-white dark:bg-zinc-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-fire"
               />
             </div>
 
@@ -389,10 +390,10 @@ export default function TestimonialsCMS() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h3 className="font-display font-black text-base text-gray-900 dark:text-zinc-100">
+            <h3 className="font-display font-black text-base text-gray-900 dark:text-white">
               Active Storefront Testimonials
             </h3>
-            <span className="text-xs font-mono font-bold bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 px-2 py-0.5 rounded-full">
+            <span className="text-xs font-mono font-bold bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 px-2 py-0.5 rounded-full border border-gray-200 dark:border-zinc-700">
               {testimonials.length}
             </span>
           </div>
@@ -412,8 +413,8 @@ export default function TestimonialsCMS() {
                 key={t.id}
                 className={`p-5 rounded-2xl border transition-all flex flex-col justify-between shadow-xs ${
                   t.is_published
-                    ? "bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800"
-                    : "bg-gray-50/70 dark:bg-zinc-900/40 border-dashed border-gray-300 dark:border-zinc-800 opacity-60"
+                    ? "bg-white dark:bg-zinc-800/90 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-zinc-100"
+                    : "bg-gray-50/70 dark:bg-zinc-900/60 border-dashed border-gray-300 dark:border-zinc-800 opacity-60 text-gray-600 dark:text-zinc-400"
                 }`}
               >
                 <div className="space-y-3">
@@ -424,7 +425,7 @@ export default function TestimonialsCMS() {
                           key={i}
                           size={13}
                           fill={i < (t.rating || 5) ? "currentColor" : "none"}
-                          className={i < (t.rating || 5) ? "text-amber-400" : "text-gray-300 dark:text-zinc-700"}
+                          className={i < (t.rating || 5) ? "text-amber-400" : "text-gray-300 dark:text-zinc-600"}
                         />
                       ))}
                     </div>
@@ -434,7 +435,7 @@ export default function TestimonialsCMS() {
                       onClick={() => toggleStatus(t)}
                       className={`text-[10px] font-bold font-mono px-2 py-0.5 rounded cursor-pointer transition-colors ${
                         t.is_published
-                          ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800"
+                          ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700"
                           : "bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400 border border-gray-300 dark:border-zinc-700"
                       }`}
                     >
@@ -442,14 +443,14 @@ export default function TestimonialsCMS() {
                     </button>
                   </div>
 
-                  <p className="text-gray-800 dark:text-zinc-200 text-xs leading-relaxed italic">
+                  <p className="text-gray-900 dark:text-zinc-100 text-xs leading-relaxed font-normal break-words">
                     "{t.content}"
                   </p>
                 </div>
 
-                <div className="pt-4 border-t border-gray-100 dark:border-zinc-800 mt-3 flex items-center justify-between">
+                <div className="pt-4 border-t border-gray-100 dark:border-zinc-700 mt-3 flex items-center justify-between">
                   <div>
-                    <h5 className="font-bold text-xs text-gray-900 dark:text-zinc-100">
+                    <h5 className="font-bold text-xs text-gray-900 dark:text-white">
                       {t.author_name}
                     </h5>
                     {t.author_meta && (
@@ -462,7 +463,7 @@ export default function TestimonialsCMS() {
                   <button
                     type="button"
                     onClick={() => del(t.id)}
-                    className="p-1.5 text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                    className="p-1.5 text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
                     title="Delete testimonial"
                   >
                     <Trash2 size={15} />
