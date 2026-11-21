@@ -6526,22 +6526,6 @@ function Customers() {
         ))}
       </div>
 
-      {/* Chart */}
-      <div className="bg-white border border-ink-200 p-6 mb-6">
-        <h3 className="font-display text-sm  tracking-wider text-ink-500 mb-4">User Growth (Last 7 Days)</h3>
-        <div className="h-64 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data.chart || []}>
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#888' }} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#888' }} />
-              <Tooltip contentStyle={{ borderRadius: 0, border: '1px solid #eee' }} />
-              <Line type="monotone" dataKey="New" stroke="#000" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="Active" stroke="#ccc" strokeWidth={2} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
       {/* Filters */}
       <div className="bg-white p-4 border border-ink-200 mb-6 flex flex-col lg:flex-row gap-4 items-center">
         <form onSubmit={handleSearch} className="flex-1 relative w-full">
