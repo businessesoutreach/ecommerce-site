@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { CreditCard, Wallet, Home, Megaphone, Tag, Layers, Zap, FileText, Search, LayoutDashboard, Package, ShoppingCart, Ticket, Star, Users, LogOut, TrendingUp, AlertTriangle, Plus, Trash2, X, RotateCcw, DollarSign, Image as ImageIcon, Upload, MessageCircle, Search as SearchIcon, Filter, MoreVertical, Eye, Download, Printer, CheckCircle, Check, Truck, MapPin, Edit, Copy, Activity, Loader2, HelpCircle, ExternalLink, Clock, ArrowLeft, ArrowUpRight, ArrowDownRight, RefreshCw, ShoppingBag, Box, ChevronRight, ChevronDown, Sun, Moon, Bell } from "lucide-react";
+import { Calendar, CreditCard, Wallet, Home, Megaphone, Tag, Layers, Zap, FileText, Search, LayoutDashboard, Package, ShoppingCart, Ticket, Star, Users, LogOut, TrendingUp, AlertTriangle, Plus, Trash2, X, RotateCcw, DollarSign, Image as ImageIcon, Upload, MessageCircle, Search as SearchIcon, Filter, MoreVertical, Eye, Download, Printer, CheckCircle, Check, Truck, MapPin, Edit, Copy, Activity, Loader2, HelpCircle, ExternalLink, Clock, ArrowLeft, ArrowUpRight, ArrowDownRight, RefreshCw, ShoppingBag, Box, ChevronRight, ChevronDown, Sun, Moon, Bell } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell } from "recharts";
 import { http, fmt, imgUrl, waLink } from "../lib/api";
 import { PROVINCES, PROVINCE_CITIES } from "../components/LocationDropdowns";
@@ -7200,51 +7200,761 @@ function PosSystem() {
 
 function ProfitabilityAnalytics() {
   const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [range, setRange] = useState("30d");
+  const [customStart, setCustomStart] = useState("");
+  const [customEnd, setCustomEnd] = useState("");
+  const [showCustomPicker, setShowCustomPicker] = useState(false);
+  const [activeChartMetric, setActiveChartMetric] = useState("dynamics"); // "dynamics" | "revenue" | "profit" | "orders"
+
+  const RANGE_OPTIONS = [
+    { id: "today", label: "Today" },
+    { id: "yesterday", label: "Yesterday" },
+    { id: "7d", label: "7 Days" },
+    { id: "30d", label: "30 Days" },
+    { id: "90d", label: "90 Days" },
+    { id: "mtd", label: "This Month" },
+    { id: "ytd", label: "This Year" },
+    { id: "all", label: "All Time" },
+  ];
+
+  const load = async (selectedRange = range, sDate = customStart, eDate = customEnd) => {
+    setLoading(true);
+    try {
+      let url = `/admin/analytics/profitability?range=${selectedRange}`;
+      if (selectedRange === "custom" && sDate) {
+        url += `&startDate=${sDate}&endDate=${eDate || ""}`;
+      }
+      const res = await http.get(url);
+      setData(res.data.data);
+    } catch {
+      toast.error("Failed to load analytics data");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    http.get("/admin/analytics/profitability").then(res => setData(res.data.data)).catch(() => toast.error("Failed to load analytics"));
-  }, []);
+    if (range !== "custom") {
+      load(range);
+    }
+  }, [range]);
 
-  if (!data) return <div className="p-10 flex justify-center"><Loader2 size={24} className="animate-spin text-obsidian" /></div>;
+  const handleApplyCustom = (e) => {
+    e.preventDefault();
+    if (!customStart) return toast.error("Please select a start date");
+    setRange("custom");
+    load("custom", customStart, customEnd);
+  };
+
+  const exportCSV = () => {
+    if (!data) return;
+    const headers = ["Metric", "Value", "Notes"];
+    const rows = [
+      ["Time Range", range.toUpperCase(), ""],
+      ["Period Start", data.period?.start || "", ""],
+      ["Period End", data.period?.end || "", ""],
+      ["Gross Revenue", data.kpis?.gross_revenue?.value || 0, "PKR"],
+      ["Net Profit", data.kpis?.net_profit?.value || 0, "PKR"],
+      ["Net Margin", (data.kpis?.net_margin?.value || 0) + "%", ""],
+      ["COGS (Cost basis)", data.kpis?.cogs?.value || 0, "PKR"],
+      ["Shipping Revenue", data.kpis?.shipping_revenue?.value || 0, "PKR"],
+      ["Shipping Costs", data.kpis?.shipping_costs?.value || 0, "PKR"],
+      ["Completed Orders", data.kpis?.orders_count?.value || 0, ""],
+      ["Total Units Sold", data.kpis?.units_sold?.value || 0, "Pairs"],
+      ["Average Order Value", data.kpis?.aov?.value || 0, "PKR"],
+      ["Unique Customers", data.kpis?.unique_customers?.value || 0, ""],
+      ["Repeat Rate", (data.kpis?.repeat_rate?.value || 0) + "%", ""],
+    ];
+
+    if (data.top_products?.length) {
+      rows.push(["", "", ""]);
+      rows.push(["TOP PERFORMING SNEAKERS", "", ""]);
+      rows.push(["Product Name", "Units Sold", "Gross Revenue (PKR)", "Net Margin %"]);
+      data.top_products.forEach(p => {
+        rows.push([`"${p.name}"`, p.units_sold, p.revenue, p.margin + "%"]);
+      });
+    }
+
+    if (data.category_performance?.length) {
+      rows.push(["", "", ""]);
+      rows.push(["SALES BY CATEGORY", "", ""]);
+      rows.push(["Category", "Units Sold", "Gross Revenue (PKR)", "Net Margin %"]);
+      data.category_performance.forEach(c => {
+        rows.push([`"${c.name}"`, c.units, c.revenue, c.margin + "%"]);
+      });
+    }
+
+    const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => Array.isArray(e) ? e.join(",") : e).join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `solekicks-analytics-${range}-${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Analytics CSV exported successfully");
+  };
+
+  const printReport = () => {
+    window.print();
+  };
+
+  if (loading && !data) {
+    return (
+      <div className="p-16 flex flex-col items-center justify-center gap-3">
+        <Loader2 size={32} className="animate-spin text-fire" />
+        <span className="font-mono text-xs font-bold text-gray-500 dark:text-zinc-400">
+          Crunching store telemetry & financial ledgers...
+        </span>
+      </div>
+    );
+  }
+
+  const kpis = data?.kpis || {};
+  const timeline = data?.timeline_trend || [];
+  const categories = data?.category_performance || [];
+  const brands = data?.brand_performance || [];
+  const topProducts = data?.top_products || [];
+  const cities = data?.city_distribution || [];
+  const provinces = data?.province_distribution || [];
+  const payments = data?.payment_breakdown || {};
+  const statusMap = data?.order_status || {};
+
+  const totalStatusOrders = Object.values(statusMap).reduce((a, b) => a + b, 0) || 1;
+  const deliveredCount = statusMap.delivered || 0;
+  const returnedCount = (statusMap.returned || 0) + (statusMap.cancelled || 0);
+  const deliverySuccessRate = totalStatusOrders > 0 ? ((deliveredCount / totalStatusOrders) * 100).toFixed(1) : 0;
+  const returnRate = totalStatusOrders > 0 ? ((returnedCount / totalStatusOrders) * 100).toFixed(1) : 0;
+
+  const totalCatRevenue = categories.reduce((sum, c) => sum + c.revenue, 0) || 1;
+  const totalBrandRevenue = brands.reduce((sum, b) => sum + b.revenue, 0) || 1;
 
   return (
-    <div>
-      <div className="flex justify-between items-start mb-6">
+    <div className="space-y-6 animate-in fade-in duration-150 pb-12 print:p-0">
+      
+      {/* Header & Controls Bar */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-gray-200 dark:border-zinc-800 pb-5">
         <div>
-          <h1 className="font-display tracking-tight text-2xl font-semibold ">Profitability Analytics</h1>
-          <p className="text-sm text-ink-500">Real-time net profit dashboard (Revenue - COGS - Shipping - Platform Fees).</p>
+          <div className="flex items-center gap-3">
+            <h1 className="font-display tracking-tight text-2xl font-black text-gray-900 dark:text-zinc-100 flex items-center gap-2.5">
+              <TrendingUp className="text-fire" size={24} />
+              Store Analytics & Financial Telemetry
+            </h1>
+            <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 uppercase">
+              Live Ledgers
+            </span>
+          </div>
+          <p className="text-xs text-gray-500 dark:text-zinc-400 mt-1">
+            Real-time multi-horizon profitability, unit margins, category velocity, payment flow, and geographic demand.
+          </p>
+        </div>
+
+        {/* Global Range Selector & Actions */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Presets */}
+          <div className="flex items-center bg-gray-100 dark:bg-zinc-800/80 p-1 rounded-xl border border-gray-200 dark:border-zinc-700/60 shadow-xs">
+            {RANGE_OPTIONS.map(opt => (
+              <button
+                key={opt.id}
+                onClick={() => {
+                  setShowCustomPicker(false);
+                  setRange(opt.id);
+                }}
+                className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                  range === opt.id && !showCustomPicker
+                    ? "bg-white dark:bg-zinc-900 text-gray-900 dark:text-zinc-100 shadow-xs font-black"
+                    : "text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-200"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+            <button
+              onClick={() => setShowCustomPicker(!showCustomPicker)}
+              className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
+                range === "custom" || showCustomPicker
+                  ? "bg-white dark:bg-zinc-900 text-fire font-black shadow-xs"
+                  : "text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-200"
+              }`}
+            >
+              <Calendar size={13} />
+              <span>Custom</span>
+            </button>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => load()}
+              disabled={loading}
+              title="Refresh Data"
+              className="p-2 bg-white dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 rounded-xl border border-gray-200 dark:border-zinc-700 transition-colors shadow-xs cursor-pointer"
+            >
+              <RefreshCw size={14} className={loading ? "animate-spin text-fire" : ""} />
+            </button>
+            <button
+              onClick={exportCSV}
+              title="Export CSV"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 font-bold text-xs rounded-xl border border-gray-200 dark:border-zinc-700 transition-colors shadow-xs cursor-pointer"
+            >
+              <Download size={13} />
+              <span className="hidden sm:inline">Export</span>
+            </button>
+            <button
+              onClick={printReport}
+              title="Print Summary Report"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 font-bold text-xs rounded-xl border border-gray-200 dark:border-zinc-700 transition-colors shadow-xs cursor-pointer"
+            >
+              <Printer size={13} />
+              <span className="hidden sm:inline">Print</span>
+            </button>
+          </div>
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white p-6 border border-ink-200">
-          <p className="text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Total Revenue</p>
-          <p className="font-display text-3xl font-semibold text-obsidian">{fmt(data.revenue)}</p>
+
+      {/* Custom Date Range Picker Collapsible */}
+      {showCustomPicker && (
+        <form onSubmit={handleApplyCustom} className="p-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl shadow-sm flex flex-wrap items-center gap-3 animate-in fade-in slide-in-from-top-1">
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-bold text-gray-600 dark:text-zinc-400">Start Date:</label>
+            <input
+              type="date"
+              required
+              value={customStart}
+              onChange={(e) => setCustomStart(e.target.value)}
+              className="px-3 py-1.5 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs font-mono text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-fire"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-bold text-gray-600 dark:text-zinc-400">End Date:</label>
+            <input
+              type="date"
+              value={customEnd}
+              onChange={(e) => setCustomEnd(e.target.value)}
+              className="px-3 py-1.5 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs font-mono text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-fire"
+            />
+          </div>
+          <button
+            type="submit"
+            className="px-4 py-1.5 bg-fire hover:bg-fire-hover text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+          >
+            Apply Filter
+          </button>
+        </form>
+      )}
+
+      {/* Date Window Badge */}
+      {data?.period && (
+        <div className="flex items-center justify-between text-[11px] text-gray-500 dark:text-zinc-400 px-1">
+          <span className="flex items-center gap-1.5">
+            <Calendar size={13} className="text-fire" />
+            Showing data for: <strong className="text-gray-900 dark:text-zinc-200 font-mono">{new Date(data.period.start).toLocaleDateString()}</strong> to <strong className="text-gray-900 dark:text-zinc-200 font-mono">{new Date(data.period.end).toLocaleDateString()}</strong>
+          </span>
+          {data.period.prev_start && (
+            <span className="text-[10px] hidden md:inline">
+              Compared against: {new Date(data.period.prev_start).toLocaleDateString()} – {new Date(data.period.prev_end).toLocaleDateString()}
+            </span>
+          )}
         </div>
-        <div className="bg-white p-6 border border-ink-200">
-          <p className="text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">COGS (Estimated)</p>
-          <p className="font-display text-3xl font-semibold text-orange-600">-{fmt(data.cogs)}</p>
+      )}
+
+      {/* 6-Card Executive Commercial KPI Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+        
+        {/* Card 1: Gross Revenue */}
+        <div className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm flex flex-col justify-between">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-zinc-400 block">Gross Revenue</span>
+            <div className="mt-1 flex items-baseline gap-1.5">
+              <span className="font-mono text-xl font-black text-gray-900 dark:text-zinc-100">
+                {fmt(kpis.gross_revenue?.value || 0)}
+              </span>
+            </div>
+          </div>
+          <div className="mt-2.5 pt-2 border-t border-gray-100 dark:border-zinc-800/80 flex items-center justify-between text-[10px]">
+            <span className={`font-mono font-bold flex items-center gap-0.5 ${(kpis.gross_revenue?.trend || 0) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500"}`}>
+              {(kpis.gross_revenue?.trend || 0) >= 0 ? <ArrowUpRight size={12}/> : <ArrowDownRight size={12}/>}
+              {Math.abs(kpis.gross_revenue?.trend || 0)}%
+            </span>
+            <span className="text-gray-400">vs prev</span>
+          </div>
         </div>
-        <div className="bg-white p-6 border border-ink-200">
-          <p className="text-xs font-bold text-ink-500 uppercase tracking-wider mb-2">Shipping Costs</p>
-          <p className="font-display text-3xl font-semibold text-orange-600">-{fmt(data.shipping_costs)}</p>
+
+        {/* Card 2: Net Profit & Margin */}
+        <div className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-emerald-500/30 dark:border-emerald-500/20 shadow-sm flex flex-col justify-between relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/5 rounded-full blur-xl pointer-events-none" />
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Net Profit</span>
+              <span className="text-[9px] font-mono font-black px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-300">
+                {kpis.net_margin?.value || 0}% Margin
+              </span>
+            </div>
+            <div className="mt-1">
+              <span className="font-mono text-xl font-black text-emerald-600 dark:text-emerald-400">
+                {fmt(kpis.net_profit?.value || 0)}
+              </span>
+            </div>
+          </div>
+          <div className="mt-2.5 pt-2 border-t border-emerald-500/10 flex items-center justify-between text-[10px]">
+            <span className={`font-mono font-bold flex items-center gap-0.5 ${(kpis.net_profit?.trend || 0) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500"}`}>
+              {(kpis.net_profit?.trend || 0) >= 0 ? <ArrowUpRight size={12}/> : <ArrowDownRight size={12}/>}
+              {Math.abs(kpis.net_profit?.trend || 0)}%
+            </span>
+            <span className="text-gray-400">bottom-line</span>
+          </div>
         </div>
-        <div className="bg-obsidian p-6 border border-ink-200 text-white shadow-xl">
-          <p className="text-xs font-bold text-ink-400 uppercase tracking-wider mb-2">Net Profit</p>
-          <p className="font-display text-3xl font-semibold text-green-400">{fmt(data.net_profit)}</p>
-          <p className="text-sm text-ink-300 mt-2 font-mono">{((data.net_profit / data.revenue) * 100 || 0).toFixed(1)}% Margin</p>
+
+        {/* Card 3: COGS (Cost Basis) */}
+        <div className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm flex flex-col justify-between">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-zinc-400 block">COGS (Stock Cost)</span>
+            <div className="mt-1">
+              <span className="font-mono text-xl font-black text-orange-600 dark:text-orange-400">
+                {fmt(kpis.cogs?.value || 0)}
+              </span>
+            </div>
+          </div>
+          <div className="mt-2.5 pt-2 border-t border-gray-100 dark:border-zinc-800/80 flex items-center justify-between text-[10px]">
+            <span className="text-gray-500 dark:text-zinc-400 font-mono">
+              Ship cost: {fmt(kpis.shipping_costs?.value || 0)}
+            </span>
+            <span className="text-gray-400 font-bold">COGS</span>
+          </div>
+        </div>
+
+        {/* Card 4: Orders & Volume */}
+        <div className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm flex flex-col justify-between">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-zinc-400 block">Orders Fulfilled</span>
+            <div className="mt-1">
+              <span className="font-mono text-xl font-black text-gray-900 dark:text-zinc-100">
+                {kpis.orders_count?.value || 0}
+              </span>
+            </div>
+          </div>
+          <div className="mt-2.5 pt-2 border-t border-gray-100 dark:border-zinc-800/80 flex items-center justify-between text-[10px]">
+            <span className={`font-mono font-bold flex items-center gap-0.5 ${(kpis.orders_count?.trend || 0) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500"}`}>
+              {(kpis.orders_count?.trend || 0) >= 0 ? <ArrowUpRight size={12}/> : <ArrowDownRight size={12}/>}
+              {Math.abs(kpis.orders_count?.trend || 0)}%
+            </span>
+            <span className="text-gray-400">{kpis.total_orders_placed?.value || 0} created</span>
+          </div>
+        </div>
+
+        {/* Card 5: Average Order Value (AOV) */}
+        <div className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm flex flex-col justify-between">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-zinc-400 block">Average Order Value</span>
+            <div className="mt-1">
+              <span className="font-mono text-xl font-black text-gray-900 dark:text-zinc-100">
+                {fmt(kpis.aov?.value || 0)}
+              </span>
+            </div>
+          </div>
+          <div className="mt-2.5 pt-2 border-t border-gray-100 dark:border-zinc-800/80 flex items-center justify-between text-[10px]">
+            <span className={`font-mono font-bold flex items-center gap-0.5 ${(kpis.aov?.trend || 0) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500"}`}>
+              {(kpis.aov?.trend || 0) >= 0 ? <ArrowUpRight size={12}/> : <ArrowDownRight size={12}/>}
+              {Math.abs(kpis.aov?.trend || 0)}%
+            </span>
+            <span className="text-gray-400">per basket</span>
+          </div>
+        </div>
+
+        {/* Card 6: Units Sold & Repeat Rate */}
+        <div className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm flex flex-col justify-between">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-zinc-400 block">Sneaker Units Sold</span>
+            <div className="mt-1">
+              <span className="font-mono text-xl font-black text-gray-900 dark:text-zinc-100">
+                {kpis.units_sold?.value || 0}
+              </span>
+              <span className="text-[10px] text-gray-400 ml-1">pairs</span>
+            </div>
+          </div>
+          <div className="mt-2.5 pt-2 border-t border-gray-100 dark:border-zinc-800/80 flex items-center justify-between text-[10px]">
+            <span className="text-emerald-600 dark:text-emerald-400 font-bold font-mono">
+              {kpis.repeat_rate?.value || 0}% repeat
+            </span>
+            <span className="text-gray-400">{kpis.unique_customers?.value || 0} buyers</span>
+          </div>
+        </div>
+
+      </div>
+
+      {/* Main Interactive Timeline Dynamics Chart */}
+      <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h2 className="font-display font-bold text-sm text-gray-900 dark:text-zinc-100 flex items-center gap-2">
+              <Activity size={16} className="text-fire" />
+              Revenue & Profit Trajectory Over Time
+            </h2>
+            <p className="text-[11px] text-gray-400 mt-0.5">
+              Comparative velocity across top-line sales, inventory replenishment cost, and net profit margins.
+            </p>
+          </div>
+
+          {/* Metric Switcher */}
+          <div className="flex items-center bg-gray-100 dark:bg-zinc-800/80 p-1 rounded-xl text-xs font-bold shrink-0">
+            <button
+              onClick={() => setActiveChartMetric("dynamics")}
+              className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                activeChartMetric === "dynamics" ? "bg-white dark:bg-zinc-900 text-gray-900 dark:text-zinc-100 font-black shadow-xs" : "text-gray-500 dark:text-zinc-400 hover:text-gray-800"
+              }`}
+            >
+              Combined Dynamics
+            </button>
+            <button
+              onClick={() => setActiveChartMetric("revenue")}
+              className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                activeChartMetric === "revenue" ? "bg-white dark:bg-zinc-900 text-fire font-black shadow-xs" : "text-gray-500 dark:text-zinc-400 hover:text-gray-800"
+              }`}
+            >
+              Revenue Only
+            </button>
+            <button
+              onClick={() => setActiveChartMetric("profit")}
+              className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                activeChartMetric === "profit" ? "bg-white dark:bg-zinc-900 text-emerald-600 font-black shadow-xs" : "text-gray-500 dark:text-zinc-400 hover:text-gray-800"
+              }`}
+            >
+              Profit Only
+            </button>
+            <button
+              onClick={() => setActiveChartMetric("orders")}
+              className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                activeChartMetric === "orders" ? "bg-white dark:bg-zinc-900 text-blue-600 font-black shadow-xs" : "text-gray-500 dark:text-zinc-400 hover:text-gray-800"
+              }`}
+            >
+              Orders Volume
+            </button>
+          </div>
+        </div>
+
+        {/* Recharts Area Container */}
+        <div className="h-72 w-full pt-2">
+          {timeline.length === 0 ? (
+            <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 text-xs">
+              <Calendar size={28} className="mb-2 opacity-40 text-fire" />
+              <span>No completed orders recorded in this time range window</span>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              {activeChartMetric === "orders" ? (
+                <BarChart data={timeline}>
+                  <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#888' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 10, fill: '#888' }} axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', borderRadius: '12px', color: '#fff', fontSize: '12px' }} />
+                  <Bar dataKey="orders" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              ) : (
+                <AreaChart data={timeline}>
+                  <defs>
+                    <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#FF3B30" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#FF3B30" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#888' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 10, fill: '#888' }} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    formatter={(val) => [fmt(val), ""]}
+                    contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', borderRadius: '12px', color: '#fff', fontSize: '12px' }}
+                  />
+                  {(activeChartMetric === "dynamics" || activeChartMetric === "revenue") && (
+                    <Area type="monotone" dataKey="revenue" name="Gross Revenue" stroke="#FF3B30" strokeWidth={2.5} fillOpacity={1} fill="url(#colorRev)" />
+                  )}
+                  {(activeChartMetric === "dynamics" || activeChartMetric === "profit") && (
+                    <Area type="monotone" dataKey="profit" name="Net Profit" stroke="#10b981" strokeWidth={2.5} fillOpacity={1} fill="url(#colorProfit)" />
+                  )}
+                  {activeChartMetric === "dynamics" && (
+                    <Area type="monotone" dataKey="cogs" name="COGS" stroke="#f97316" strokeWidth={1.5} strokeDasharray="3 3" fill="none" />
+                  )}
+                </AreaChart>
+              )}
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        {/* Legend */}
+        <div className="flex items-center justify-center gap-6 pt-2 border-t border-gray-100 dark:border-zinc-800/80 text-[11px] text-gray-500">
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-fire" /> Gross Revenue</span>
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Net Profit</span>
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-orange-500" /> COGS Basis</span>
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> Orders</span>
         </div>
       </div>
-      <div className="bg-white border border-ink-200 p-6">
-        <h3 className="font-display font-semibold mb-6">30-Day Profit Trend</h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <AreaChart data={data.trend}>
-            <XAxis dataKey="date" tick={{fontSize: 11}} axisLine={false} tickLine={false} />
-            <YAxis tick={{fontSize: 11}} axisLine={false} tickLine={false} />
-            <Tooltip contentStyle={{ borderRadius: 0, border: '1px solid #e5e5e5' }} />
-            <Area type="monotone" dataKey="profit" stroke="#10b981" fill="#d1fae5" strokeWidth={2} />
-          </AreaChart>
-        </ResponsiveContainer>
+
+      {/* 3-Column Diagnostic Deep Dive: Category Velocity, Brand Silhouettes & Cash Flow */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        {/* Column 1: Sales by Category */}
+        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-gray-100 dark:border-zinc-800 pb-3">
+            <h3 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-2">
+              <Tag size={15} className="text-fire" />
+              Category Share & Velocity
+            </h3>
+            <span className="text-[10px] font-mono text-gray-400">{categories.length} Categories</span>
+          </div>
+
+          <div className="space-y-3.5">
+            {categories.length === 0 ? (
+              <p className="text-xs text-gray-400 py-6 text-center">No category data recorded in this period</p>
+            ) : (
+              categories.map(c => {
+                const percent = Math.round((c.revenue / totalCatRevenue) * 100);
+                return (
+                  <div key={c.slug} className="space-y-1 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-gray-800 dark:text-zinc-200 truncate pr-2">{c.name}</span>
+                      <div className="flex items-center gap-2 font-mono shrink-0">
+                        <span className="font-bold text-gray-900 dark:text-zinc-100">{fmt(c.revenue)}</span>
+                        <span className="text-[10px] text-gray-400">({percent}%)</span>
+                      </div>
+                    </div>
+                    {/* Progress Bar */}
+                    <div className="w-full bg-gray-100 dark:bg-zinc-800 h-2 rounded-full overflow-hidden flex">
+                      <div className="bg-fire h-full rounded-full transition-all" style={{ width: `${percent}%` }} />
+                    </div>
+                    <div className="flex items-center justify-between text-[10px] text-gray-400 font-mono pt-0.5">
+                      <span>{c.units} pairs sold</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">{c.margin}% margin</span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        {/* Column 2: Brand Silhouette Share */}
+        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-gray-100 dark:border-zinc-800 pb-3">
+            <h3 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-2">
+              <Box size={15} className="text-fire" />
+              Brand Manufacturer Mix
+            </h3>
+            <span className="text-[10px] font-mono text-gray-400">{brands.length} Brands</span>
+          </div>
+
+          <div className="space-y-3.5">
+            {brands.length === 0 ? (
+              <p className="text-xs text-gray-400 py-6 text-center">No brand sales in this period</p>
+            ) : (
+              brands.map(b => {
+                const percent = Math.round((b.revenue / totalBrandRevenue) * 100);
+                return (
+                  <div key={b.slug} className="space-y-1 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-gray-800 dark:text-zinc-200 truncate pr-2">{b.name}</span>
+                      <div className="flex items-center gap-2 font-mono shrink-0">
+                        <span className="font-bold text-gray-900 dark:text-zinc-100">{fmt(b.revenue)}</span>
+                        <span className="text-[10px] text-gray-400">({percent}%)</span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-gray-100 dark:bg-zinc-800 h-2 rounded-full overflow-hidden flex">
+                      <div className="bg-emerald-500 h-full rounded-full transition-all" style={{ width: `${percent}%` }} />
+                    </div>
+                    <div className="flex items-center justify-between text-[10px] text-gray-400 font-mono pt-0.5">
+                      <span>{b.units} pairs sold</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">{b.margin}% margin</span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        {/* Column 3: Payment & Cash Flow Telemetry */}
+        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-gray-100 dark:border-zinc-800 pb-3">
+            <h3 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-2">
+              <CreditCard size={15} className="text-fire" />
+              Cash Flow & Gateways
+            </h3>
+            <span className="text-[10px] font-mono text-gray-400">COD vs Bank</span>
+          </div>
+
+          <div className="space-y-3 text-xs">
+            {/* COD Card */}
+            <div className="p-3.5 bg-gray-50 dark:bg-zinc-800/60 rounded-xl border border-gray-100 dark:border-zinc-700/60 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-gray-900 dark:text-zinc-100">Cash on Delivery (COD)</span>
+                <span className="font-mono font-black text-gray-900 dark:text-zinc-100">{fmt(payments.COD?.revenue || 0)}</span>
+              </div>
+              <div className="flex items-center justify-between text-[10px] text-gray-500 dark:text-zinc-400 font-mono">
+                <span>{payments.COD?.count || 0} orders</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-bold">Collected: {fmt(payments.COD?.collected || 0)}</span>
+              </div>
+              {payments.COD?.pending > 0 && (
+                <div className="pt-1 text-[10px] text-orange-600 dark:text-orange-400 font-bold font-mono">
+                  Pending Courier Remittance: {fmt(payments.COD.pending)}
+                </div>
+              )}
+            </div>
+
+            {/* Bank Transfer Card */}
+            <div className="p-3.5 bg-gray-50 dark:bg-zinc-800/60 rounded-xl border border-gray-100 dark:border-zinc-700/60 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-gray-900 dark:text-zinc-100">Direct Bank Transfer</span>
+                <span className="font-mono font-black text-gray-900 dark:text-zinc-100">{fmt(payments.BANK_TRANSFER?.revenue || 0)}</span>
+              </div>
+              <div className="flex items-center justify-between text-[10px] text-gray-500 dark:text-zinc-400 font-mono">
+                <span>{payments.BANK_TRANSFER?.count || 0} orders</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-bold">Paid Upfront</span>
+              </div>
+            </div>
+
+            {/* Fulfillment Quality Gauge */}
+            <div className="p-3 bg-gray-50 dark:bg-zinc-800/60 rounded-xl border border-gray-100 dark:border-zinc-700/60 space-y-1">
+              <div className="flex items-center justify-between text-xs font-bold">
+                <span className="text-gray-700 dark:text-zinc-300">Fulfillment Success Rate</span>
+                <span className="font-mono text-emerald-600 dark:text-emerald-400">{deliverySuccessRate}%</span>
+              </div>
+              <div className="flex items-center justify-between text-[10px] text-gray-400 font-mono">
+                <span>Returns / Cancellations:</span>
+                <span className="text-rose-500 font-bold">{returnRate}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
+
+      {/* Two-Column Lower Grid: Regional Demand & Top Products Unit Economics */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        {/* Left Column (5 cols): Geographic Breakdown (Top Cities & Provinces) */}
+        <div className="lg:col-span-5 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-gray-100 dark:border-zinc-800 pb-3">
+            <h3 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-2">
+              <MapPin size={15} className="text-fire" />
+              Geographic Order Volume & Cities
+            </h3>
+            <span className="text-[10px] text-gray-400">Delivery destinations</span>
+          </div>
+
+          <div className="space-y-3">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">Top Demand Cities</span>
+            {cities.length === 0 ? (
+              <p className="text-xs text-gray-400 py-4 text-center">No city data available</p>
+            ) : (
+              cities.map(c => (
+                <div key={c.city} className="flex items-center justify-between text-xs p-2 rounded-xl bg-gray-50 dark:bg-zinc-800/40">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-fire" />
+                    <span className="font-bold text-gray-800 dark:text-zinc-200">{c.city}</span>
+                  </div>
+                  <span className="font-mono font-bold text-gray-900 dark:text-zinc-100">{fmt(c.revenue)}</span>
+                </div>
+              ))
+            )}
+
+            {provinces.length > 0 && (
+              <div className="pt-3 border-t border-gray-100 dark:border-zinc-800 space-y-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">Provinces</span>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  {provinces.map(p => (
+                    <div key={p.province} className="p-2 bg-gray-50 dark:bg-zinc-800/40 rounded-xl">
+                      <span className="text-[10px] text-gray-400 block">{p.province}</span>
+                      <span className="font-mono font-bold text-gray-900 dark:text-zinc-100">{fmt(p.revenue)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column (7 cols): Top Sneaker Unit Economics Table */}
+        <div className="lg:col-span-7 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-gray-100 dark:border-zinc-800 pb-3">
+            <div>
+              <h3 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-2">
+                <ShoppingBag size={15} className="text-fire" />
+                Top Performing Sneaker Drops & Unit Margins
+              </h3>
+              <p className="text-[10px] text-gray-400 mt-0.5">Ranked by gross sales volume and net profitability</p>
+            </div>
+            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300">
+              Top 10
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            {topProducts.length === 0 ? (
+              <p className="text-xs text-gray-400 py-8 text-center">No product orders recorded in this interval</p>
+            ) : (
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-gray-100 dark:border-zinc-800 text-[10px] font-bold uppercase text-gray-400 tracking-wider">
+                    <th className="pb-2.5">Sneaker Silhouette</th>
+                    <th className="pb-2.5 text-center">Sold</th>
+                    <th className="pb-2.5 text-right">Revenue</th>
+                    <th className="pb-2.5 text-right">Net Profit</th>
+                    <th className="pb-2.5 text-right">Margin</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50 dark:divide-zinc-800/60 font-mono">
+                  {topProducts.map((p, idx) => (
+                    <tr key={p.id || idx} className="hover:bg-gray-50/60 dark:hover:bg-zinc-800/30 transition-colors">
+                      <td className="py-2.5 pr-2 font-sans">
+                        <div className="flex items-center gap-2.5">
+                          {p.image ? (
+                            <img src={p.image} alt="" className="w-8 h-8 rounded-lg object-cover bg-gray-100 shrink-0" />
+                          ) : (
+                            <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-zinc-800 flex items-center justify-center shrink-0">
+                              <Box size={14} className="text-gray-400" />
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <span className="font-bold text-gray-900 dark:text-zinc-100 truncate block text-xs">
+                              {p.name}
+                            </span>
+                            <span className="text-[10px] text-gray-400 block font-mono">
+                              {p.brand} • {p.category}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-2.5 text-center font-bold text-gray-700 dark:text-zinc-300">
+                        {p.units_sold}
+                      </td>
+                      <td className="py-2.5 text-right font-bold text-gray-900 dark:text-zinc-100">
+                        {fmt(p.revenue)}
+                      </td>
+                      <td className="py-2.5 text-right font-bold text-emerald-600 dark:text-emerald-400">
+                        {fmt(p.profit)}
+                      </td>
+                      <td className="py-2.5 text-right">
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
+                          p.margin >= 50
+                            ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400"
+                            : p.margin >= 20
+                            ? "bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400"
+                            : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400"
+                        }`}>
+                          {p.margin}%
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+
+      </div>
+
     </div>
   );
 }

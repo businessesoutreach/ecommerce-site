@@ -102,50 +102,314 @@ router.post('/pos/checkout', async (req, res) => {
 
 router.get('/analytics/profitability', async (req, res) => {
     try {
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const { range = '30d', startDate, endDate } = req.query;
+        const now = new Date();
+        let periodStart, periodEnd = now;
+        let prevPeriodStart = null, prevPeriodEnd = null;
 
-        const orders = await prisma.order.findMany({
-            where: {
-                created_at: { gte: thirtyDaysAgo },
-                status: { notIn: ['cancelled', 'failed', 'refunded'] }
-            },
-            include: { items: { include: { product: true } } }
-        });
+        if (range === 'today') {
+            periodStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+            const elapsed = now.getTime() - periodStart.getTime();
+            prevPeriodStart = new Date(periodStart.getTime() - 24 * 60 * 60 * 1000);
+            prevPeriodEnd = new Date(prevPeriodStart.getTime() + elapsed);
+        } else if (range === 'yesterday') {
+            periodStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0);
+            periodEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59);
+            prevPeriodStart = new Date(periodStart.getTime() - 24 * 60 * 60 * 1000);
+            prevPeriodEnd = new Date(periodEnd.getTime() - 24 * 60 * 60 * 1000);
+        } else if (range === '7d') {
+            periodStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            prevPeriodStart = new Date(periodStart.getTime() - 7 * 24 * 60 * 60 * 1000);
+            prevPeriodEnd = periodStart;
+        } else if (range === '30d') {
+            periodStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            prevPeriodStart = new Date(periodStart.getTime() - 30 * 24 * 60 * 60 * 1000);
+            prevPeriodEnd = periodStart;
+        } else if (range === '90d') {
+            periodStart = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+            prevPeriodStart = new Date(periodStart.getTime() - 90 * 24 * 60 * 60 * 1000);
+            prevPeriodEnd = periodStart;
+        } else if (range === 'mtd') {
+            periodStart = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+            const elapsed = now.getTime() - periodStart.getTime();
+            prevPeriodStart = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0);
+            prevPeriodEnd = new Date(prevPeriodStart.getTime() + elapsed);
+        } else if (range === 'ytd') {
+            periodStart = new Date(now.getFullYear(), 0, 1, 0, 0, 0);
+            const elapsed = now.getTime() - periodStart.getTime();
+            prevPeriodStart = new Date(now.getFullYear() - 1, 0, 1, 0, 0, 0);
+            prevPeriodEnd = new Date(prevPeriodStart.getTime() + elapsed);
+        } else if (range === 'all') {
+            periodStart = new Date(0);
+            prevPeriodStart = null;
+            prevPeriodEnd = null;
+        } else if (range === 'custom' && startDate) {
+            periodStart = new Date(startDate);
+            periodEnd = endDate ? new Date(endDate) : now;
+            const elapsed = periodEnd.getTime() - periodStart.getTime();
+            prevPeriodStart = new Date(periodStart.getTime() - elapsed);
+            prevPeriodEnd = periodStart;
+        } else {
+            periodStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            prevPeriodStart = new Date(periodStart.getTime() - 30 * 24 * 60 * 60 * 1000);
+            prevPeriodEnd = periodStart;
+        }
 
-        const revenue = orders.reduce((acc, o) => acc + o.total, 0);
-        
-        // Calculate exact COGS using the product's actual cost_price in DB
+        const [currentOrders, previousOrders, categories, brands] = await Promise.all([
+            prisma.order.findMany({
+                where: { created_at: { gte: periodStart, lte: periodEnd } },
+                include: { items: { include: { product: true } } },
+                orderBy: { created_at: 'asc' }
+            }),
+            prevPeriodStart ? prisma.order.findMany({
+                where: { created_at: { gte: prevPeriodStart, lte: prevPeriodEnd } },
+                include: { items: { include: { product: true } } }
+            }) : Promise.resolve([]),
+            prisma.category.findMany(),
+            prisma.brand.findMany()
+        ]);
+
+        const catMap = Object.fromEntries(categories.map(c => [c.slug, c.name]));
+        const brandMap = Object.fromEntries(brands.map(b => [b.slug, b.name]));
+
+        const validOrders = currentOrders.filter(o => o.status !== 'cancelled' && o.status !== 'failed');
+        const validPrevOrders = previousOrders.filter(o => o.status !== 'cancelled' && o.status !== 'failed');
+
+        const grossRevenue = validOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+        const prevGrossRevenue = validPrevOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+
         let cogs = 0;
-        orders.forEach(o => {
-            o.items.forEach(it => {
-                cogs += ((it.product?.cost_price || 0) * it.quantity);
+        let totalUnitsSold = 0;
+        validOrders.forEach(o => {
+            o.items?.forEach(it => {
+                totalUnitsSold += (it.quantity || 1);
+                cogs += ((it.product?.cost_price || 0) * (it.quantity || 1));
             });
         });
-        
-        const shipping_costs = orders.reduce((acc, o) => acc + (o.shipping_fee * 0.8), 0); // Cost of shipping is ~80% of what we charge
-        
-        const net_profit = revenue - cogs - shipping_costs;
 
-        // Daily trend
-        const trendMap = {};
-        orders.forEach(o => {
-            const date = new Date(o.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            if (!trendMap[date]) trendMap[date] = 0;
-            
-            let orderCogs = 0;
-            o.items.forEach(it => { orderCogs += ((it.product?.cost_price || 0) * it.quantity); });
-            
-            trendMap[date] += (o.total - orderCogs - (o.shipping_fee * 0.8));
+        let prevCogs = 0;
+        let prevUnitsSold = 0;
+        validPrevOrders.forEach(o => {
+            o.items?.forEach(it => {
+                prevUnitsSold += (it.quantity || 1);
+                prevCogs += ((it.product?.cost_price || 0) * (it.quantity || 1));
+            });
         });
-        
-        const trend = Object.keys(trendMap).map(date => ({ date, profit: trendMap[date] })).reverse();
+
+        const shippingRevenue = validOrders.reduce((sum, o) => sum + (o.shipping_fee || 0), 0);
+        const shippingCosts = Math.round(shippingRevenue * 0.8);
+        const discounts = validOrders.reduce((sum, o) => sum + (o.discount_amount || 0) + (o.store_credit_used || 0), 0);
+
+        const prevShippingRevenue = validPrevOrders.reduce((sum, o) => sum + (o.shipping_fee || 0), 0);
+        const prevShippingCosts = Math.round(prevShippingRevenue * 0.8);
+
+        const netProfit = grossRevenue - cogs - shippingCosts;
+        const prevNetProfit = prevGrossRevenue - prevCogs - prevShippingCosts;
+
+        const netMargin = grossRevenue > 0 ? (netProfit / grossRevenue) * 100 : 0;
+        const prevNetMargin = prevGrossRevenue > 0 ? (prevNetProfit / prevGrossRevenue) * 100 : 0;
+
+        const aov = validOrders.length > 0 ? grossRevenue / validOrders.length : 0;
+        const prevAov = validPrevOrders.length > 0 ? prevGrossRevenue / validPrevOrders.length : 0;
+
+        const calcTrend = (curr, prev) => {
+            if (!prev || prev === 0) return curr > 0 ? 100 : 0;
+            return Number((((curr - prev) / prev) * 100).toFixed(1));
+        };
+
+        const paymentBreakdown = {
+            COD: { count: 0, revenue: 0, collected: 0, pending: 0 },
+            BANK_TRANSFER: { count: 0, revenue: 0, collected: 0, pending: 0 },
+            CARD: { count: 0, revenue: 0, collected: 0, pending: 0 },
+        };
+
+        validOrders.forEach(o => {
+            const method = (o.payment_method || 'COD').toUpperCase();
+            const target = paymentBreakdown[method] || paymentBreakdown.COD;
+            target.count += 1;
+            target.revenue += o.total;
+            if (o.payment_status === 'paid' || o.cod_remittance_status === 'remitted') {
+                target.collected += o.total;
+            } else {
+                target.pending += o.total;
+            }
+        });
+
+        const orderStatusMap = {};
+        currentOrders.forEach(o => {
+            orderStatusMap[o.status] = (orderStatusMap[o.status] || 0) + 1;
+        });
+
+        const isHourly = range === 'today' || range === 'yesterday';
+        const isMonthly = range === 'ytd' || range === 'all';
+        const trendBuckets = {};
+
+        validOrders.forEach(o => {
+            const d = new Date(o.created_at);
+            let key;
+            if (isHourly) {
+                key = `${d.getHours()}:00`;
+            } else if (isMonthly) {
+                key = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+            } else {
+                key = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            }
+
+            if (!trendBuckets[key]) {
+                trendBuckets[key] = { date: key, label: key, revenue: 0, profit: 0, cogs: 0, orders: 0 };
+            }
+
+            let orderCogs = 0;
+            o.items?.forEach(it => {
+                orderCogs += ((it.product?.cost_price || 0) * (it.quantity || 1));
+            });
+            const orderShippingCost = (o.shipping_fee || 0) * 0.8;
+            const orderProfit = o.total - orderCogs - orderShippingCost;
+
+            trendBuckets[key].revenue += Math.round(o.total);
+            trendBuckets[key].profit += Math.round(orderProfit);
+            trendBuckets[key].cogs += Math.round(orderCogs);
+            trendBuckets[key].orders += 1;
+        });
+
+        const timelineTrend = Object.values(trendBuckets);
+
+        const categoryStats = {};
+        const brandStats = {};
+        const productPerformance = {};
+
+        validOrders.forEach(o => {
+            o.items?.forEach(it => {
+                const p = it.product;
+                const catSlug = p?.category_slug || 'other';
+                const catName = catMap[catSlug] || catSlug;
+                const brandSlug = p?.brand_slug || 'airvault';
+                const brandName = brandMap[brandSlug] || brandSlug;
+                const lineRev = (it.price || it.unit_price || 0) * (it.quantity || 1);
+                const lineCost = (p?.cost_price || 0) * (it.quantity || 1);
+                const lineProfit = lineRev - lineCost;
+
+                if (!categoryStats[catSlug]) categoryStats[catSlug] = { name: catName, slug: catSlug, revenue: 0, units: 0, profit: 0 };
+                categoryStats[catSlug].revenue += lineRev;
+                categoryStats[catSlug].units += (it.quantity || 1);
+                categoryStats[catSlug].profit += lineProfit;
+
+                if (!brandStats[brandSlug]) brandStats[brandSlug] = { name: brandName, slug: brandSlug, revenue: 0, units: 0, profit: 0 };
+                brandStats[brandSlug].revenue += lineRev;
+                brandStats[brandSlug].units += (it.quantity || 1);
+                brandStats[brandSlug].profit += lineProfit;
+
+                const pid = it.product_id || p?.id || it.product_name;
+                if (!productPerformance[pid]) {
+                    productPerformance[pid] = {
+                        id: pid,
+                        name: p?.name || it.product_name || 'Sneaker Drop',
+                        slug: p?.slug || '',
+                        image: p?.images?.[0] || '',
+                        category: catName,
+                        brand: brandName,
+                        units_sold: 0,
+                        revenue: 0,
+                        cost: 0,
+                        profit: 0,
+                        margin: 0,
+                        stock: p?.sizes?.reduce((acc, s) => acc + s.stock, 0) || 0
+                    };
+                }
+                productPerformance[pid].units_sold += (it.quantity || 1);
+                productPerformance[pid].revenue += lineRev;
+                productPerformance[pid].cost += lineCost;
+                productPerformance[pid].profit += lineProfit;
+            });
+        });
+
+        const categoryList = Object.values(categoryStats).map(c => ({
+            ...c,
+            margin: c.revenue > 0 ? Number(((c.profit / c.revenue) * 100).toFixed(1)) : 0
+        })).sort((a, b) => b.revenue - a.revenue);
+
+        const brandList = Object.values(brandStats).map(b => ({
+            ...b,
+            margin: b.revenue > 0 ? Number(((b.profit / b.revenue) * 100).toFixed(1)) : 0
+        })).sort((a, b) => b.revenue - a.revenue);
+
+        const topProducts = Object.values(productPerformance).map(p => ({
+            ...p,
+            margin: p.revenue > 0 ? Number(((p.profit / p.revenue) * 100).toFixed(1)) : 0
+        })).sort((a, b) => b.revenue - a.revenue).slice(0, 15);
+
+        const cityMap = {};
+        const provinceMap = {};
+        validOrders.forEach(o => {
+            let addr = o.shipping_address;
+            if (typeof addr === 'string') {
+                try { addr = JSON.parse(addr); } catch { addr = {}; }
+            }
+            const city = addr?.city?.trim() || 'Karachi';
+            const province = addr?.province?.trim() || 'Sindh';
+
+            cityMap[city] = (cityMap[city] || 0) + o.total;
+            provinceMap[province] = (provinceMap[province] || 0) + o.total;
+        });
+
+        const cityDistribution = Object.entries(cityMap)
+            .map(([city, revenue]) => ({ city, revenue }))
+            .sort((a, b) => b.revenue - a.revenue)
+            .slice(0, 8);
+
+        const provinceDistribution = Object.entries(provinceMap)
+            .map(([province, revenue]) => ({ province, revenue }))
+            .sort((a, b) => b.revenue - a.revenue);
+
+        const customerPhones = validOrders.map(o => o.customer_phone).filter(Boolean);
+        const uniqueCustomers = new Set(customerPhones).size;
+        const phoneCounts = {};
+        customerPhones.forEach(p => { phoneCounts[p] = (phoneCounts[p] || 0) + 1; });
+        const repeatCustomersCount = Object.values(phoneCounts).filter(c => c > 1).length;
+        const repeatPurchaseRate = uniqueCustomers > 0 ? Number(((repeatCustomersCount / uniqueCustomers) * 100).toFixed(1)) : 0;
 
         res.json({
             success: true,
-            data: { revenue, cogs, shipping_costs, net_profit, trend }
+            data: {
+                revenue: grossRevenue,
+                cogs,
+                shipping_costs: shippingCosts,
+                net_profit: netProfit,
+                trend: timelineTrend,
+                range,
+                period: {
+                    start: periodStart.toISOString(),
+                    end: periodEnd.toISOString(),
+                    prev_start: prevPeriodStart ? prevPeriodStart.toISOString() : null,
+                    prev_end: prevPeriodEnd ? prevPeriodEnd.toISOString() : null
+                },
+                kpis: {
+                    gross_revenue: { value: grossRevenue, trend: calcTrend(grossRevenue, prevGrossRevenue) },
+                    net_profit: { value: netProfit, trend: calcTrend(netProfit, prevNetProfit) },
+                    net_margin: { value: Number(netMargin.toFixed(1)), trend: Number((netMargin - prevNetMargin).toFixed(1)) },
+                    cogs: { value: cogs, trend: calcTrend(cogs, prevCogs) },
+                    orders_count: { value: validOrders.length, trend: calcTrend(validOrders.length, validPrevOrders.length) },
+                    total_orders_placed: { value: currentOrders.length },
+                    units_sold: { value: totalUnitsSold, trend: calcTrend(totalUnitsSold, prevUnitsSold) },
+                    aov: { value: Math.round(aov), trend: calcTrend(aov, prevAov) },
+                    discounts_given: { value: discounts },
+                    shipping_revenue: { value: shippingRevenue },
+                    shipping_costs: { value: shippingCosts },
+                    unique_customers: { value: uniqueCustomers },
+                    repeat_rate: { value: repeatPurchaseRate }
+                },
+                payment_breakdown: paymentBreakdown,
+                order_status: orderStatusMap,
+                timeline_trend: timelineTrend,
+                category_performance: categoryList,
+                brand_performance: brandList,
+                top_products: topProducts,
+                city_distribution: cityDistribution,
+                province_distribution: provinceDistribution
+            }
         });
     } catch (err) {
+        console.error("Analytics Error:", err);
         res.status(500).json({ detail: err.message });
     }
 });
