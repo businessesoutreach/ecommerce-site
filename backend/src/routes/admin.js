@@ -1698,27 +1698,6 @@ router.get('/coupons/:id', async (req, res) => {
     }
 });
 
-router.get('/reviews', async (req, res) => {
-    try {
-        const items = await prisma.review.findMany({ orderBy: { created_at: 'desc' } });
-        res.json({ success: true, data: items });
-    } catch (err) {
-        res.status(500).json({ detail: err.message });
-    }
-});
-
-router.patch('/reviews/:id', async (req, res) => {
-    try {
-        await prisma.review.update({
-            where: { id: req.params.id },
-            data: { status: req.body.is_approved !== false ? 'approved' : 'rejected' }
-        });
-        res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ detail: err.message });
-    }
-});
-
 router.get('/customers', async (req, res) => {
     try {
         const items = await prisma.user.findMany({
@@ -2451,12 +2430,21 @@ router.get('/reviews', async (req, res) => {
                 take: limit,
                 orderBy: { created_at: 'desc' },
                 include: {
-                    product: { select: { id: true, name: true, image_url: true } },
+                    product: { select: { id: true, name: true, images: true } },
                     order: { select: { id: true, order_number: true } }
                 }
             }),
             prisma.review.count({ where })
         ]);
+
+        const formattedItems = items.map(r => ({
+            ...r,
+            product: r.product ? {
+                id: r.product.id,
+                name: r.product.name,
+                image_url: r.product.images?.[0] || null
+            } : null
+        }));
         
         // Aggregate KPI Stats
         const allReviews = await prisma.review.findMany();
@@ -2517,7 +2505,7 @@ router.get('/reviews', async (req, res) => {
         res.json({
             success: true,
             data: {
-                reviews: items,
+                reviews: formattedItems,
                 pagination: { totalCount, totalPages: Math.ceil(totalCount / limit), page, limit },
                 stats,
                 chartData
@@ -2547,7 +2535,7 @@ router.get('/reviews/products', async (req, res) => {
         let products = Object.values(prodMap).map(p => {
             p.avg = parseFloat((p.sumRating / p.total).toFixed(1));
             return p;
-        }).filter(p => p.total >= 3); // Minimum 3 reviews to rank
+        }).filter(p => p.total >= 1);
         
         products.sort((a, b) => b.avg - a.avg);
         
@@ -2588,6 +2576,8 @@ router.patch('/reviews/:id', async (req, res) => {
                 data: { review_count: count, avg_rating: avg }
             });
         }
+
+        await logAdminAction(req.user, 'MODERATE_REVIEW', 'review', req.params.id, { status, has_reply: !!admin_reply });
         
         res.json({ success: true, data: updated });
     } catch (err) {

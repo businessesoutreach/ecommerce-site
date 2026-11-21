@@ -642,7 +642,7 @@ export default function Admin() {
           {tab === "returns" && <Returns />}
           {tab === "refunds" && <Refunds />}
           {tab === "coupons" && <Coupons />}
-          {tab === "reviews" && <Reviews />}
+          {tab === "reviews" && <Reviews isDark={isDark} />}
           {tab === "customers" && <Customers />}
           {tab === "bundles" && <BundlesManager />}
           {tab === "categories" && <CategoriesCMS />}
@@ -5667,7 +5667,7 @@ function CouponDetailsDrawer({ coupon, onClose }) {
 
 
 
-function Reviews() {
+function Reviews({ isDark }) {
   const [data, setData] = useState({ reviews: [], pagination: { totalCount: 0, totalPages: 1, page: 1, limit: 25 }, stats: {}, chartData: [] });
   const [productsData, setProductsData] = useState({ best: [], attention: [] });
   const [loading, setLoading] = useState(true);
@@ -5689,7 +5689,7 @@ function Reviews() {
   const fetchReviews = async () => {
     setLoading(true);
     try {
-      const res = await http.get(`/admin/reviews?page=${page}&search=${search}&status=${status}&rating=${ratingFilter}`);
+      const res = await http.get(`/admin/reviews?page=${page}&search=${encodeURIComponent(search)}&status=${status}&rating=${ratingFilter}`);
       setData(res.data.data);
     } catch (err) {
       toast.error("Failed to load reviews");
@@ -5700,7 +5700,7 @@ function Reviews() {
   const fetchProductRatings = async () => {
     try {
       const res = await http.get('/admin/reviews/products');
-      setProductsData(res.data.data);
+      setProductsData(res.data.data || { best: [], attention: [] });
     } catch (err) {
       // silent fail
     }
@@ -5718,6 +5718,7 @@ function Reviews() {
       toast.success(`Review ${newStatus}`);
       if (viewReview && viewReview.id === id) setViewReview({ ...viewReview, status: newStatus });
       fetchReviews();
+      fetchProductRatings();
     } catch (err) {
       toast.error("Failed to update review");
     }
@@ -5726,10 +5727,12 @@ function Reviews() {
   const sendReply = async (id) => {
     if (!replyText.trim()) return;
     try {
-      await http.patch(`/admin/reviews/${id}`, { admin_reply: replyText, status: 'approved' }); // also approve if replying
-      toast.success("Reply submitted");
+      await http.patch(`/admin/reviews/${id}`, { admin_reply: replyText, status: 'approved' });
+      toast.success("Reply submitted & review approved");
       if (viewReview && viewReview.id === id) setViewReview({ ...viewReview, admin_reply: replyText, status: 'approved' });
+      setReplyText("");
       fetchReviews();
+      fetchProductRatings();
     } catch (err) {
       toast.error("Failed to send reply");
     }
@@ -5737,7 +5740,7 @@ function Reviews() {
 
   const statCards = [
     { label: "Total Reviews", value: data?.stats?.total || 0 },
-    { label: "Pending Reviews", value: data?.stats?.pending || 0, alert: data?.stats?.pending > 0 },
+    { label: "Pending Approval", value: data?.stats?.pending || 0, alert: data?.stats?.pending > 0 },
     { label: "Average Rating", value: `${data?.stats?.average || 0} ★` },
     { label: "Positive Reviews", value: data?.stats?.positive || 0, sub: `${data?.stats?.positivePercent || 0}%` },
     { label: "Negative Reviews", value: data?.stats?.negative || 0, sub: `${data?.stats?.negativePercent || 0}%` }
@@ -5745,107 +5748,200 @@ function Reviews() {
 
   const renderStars = (rating) => {
     return Array.from({ length: 5 }).map((_, i) => (
-      <span key={i} className={`text-lg ${i < rating ? 'text-yellow-400' : 'text-ink-200'}`}>★</span>
+      <span key={i} className={`text-base ${i < rating ? 'text-amber-400' : 'text-gray-300 dark:text-zinc-600'}`}>★</span>
     ));
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-        <div>
-          <h1 className="font-display text-3xl font-bold tracking-tight text-obsidian">Reviews</h1>
-          <p className="text-ink-500 mt-1">Manage customer reviews, ratings and feedback.</p>
+    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 p-6 rounded-2xl shadow-sm">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-xl bg-obsidian text-white dark:bg-white dark:text-black flex items-center justify-center shrink-0 shadow-md">
+            <Star size={24} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">Customer Reviews & Ratings</h1>
+              <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-300 dark:border-amber-800/60">
+                Verified Feedback
+              </span>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-zinc-400 mt-1">
+              Moderate sneaker reviews, approve genuine buyers, respond directly with verified badges, and track customer satisfaction.
+            </p>
+          </div>
         </div>
+
+        <button
+          onClick={() => { fetchReviews(); fetchProductRatings(); }}
+          className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 border border-gray-200 dark:border-zinc-700 transition-colors shadow-sm self-start sm:self-auto"
+        >
+          <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+          <span>Refresh</span>
+        </button>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      {/* KPI Stats Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {statCards.map((s, i) => (
-          <div key={i} className="bg-white p-4 border border-ink-200 shadow-sm relative overflow-hidden group hover:border-fire transition-colors">
-            <div className="text-xs font-bold  tracking-wider text-ink-500 mb-2">{s.label}</div>
-            <div className="text-2xl lg:text-3xl font-display font-semibold flex items-baseline gap-2">
+          <div key={i} className="bg-white dark:bg-zinc-900 p-4 border border-gray-200 dark:border-zinc-800 rounded-xl shadow-sm relative overflow-hidden group hover:border-gray-400 dark:hover:border-zinc-700 transition-colors">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-zinc-400 mb-1.5">{s.label}</div>
+            <div className="text-2xl lg:text-3xl font-bold font-mono text-gray-900 dark:text-white flex items-baseline gap-2">
               {s.value}
-              {s.sub && <span className="text-xs text-ink-400 font-normal">{s.sub}</span>}
+              {s.sub && <span className="text-xs text-gray-400 dark:text-zinc-500 font-normal font-sans">{s.sub}</span>}
             </div>
-            {s.alert && <div className="absolute top-4 right-4 text-amber-500"><AlertTriangle size={16} /></div>}
+            {s.alert && (
+              <div className="absolute top-3.5 right-3.5 px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-400 border border-amber-300 dark:border-amber-800/60 flex items-center gap-1">
+                <AlertTriangle size={11} /> Action Req
+              </div>
+            )}
           </div>
         ))}
       </div>
 
+      {/* Distribution & Trend Analytics */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1 bg-white border border-ink-200 p-6">
-          <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500 mb-6">Rating Distribution</h3>
+        {/* Rating Breakdown */}
+        <div className="lg:col-span-1 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm">
+          <h3 className="font-semibold text-xs tracking-wider uppercase text-gray-500 dark:text-zinc-400 mb-5">Rating Distribution</h3>
           <div className="space-y-3">
             {[5, 4, 3, 2, 1].map(star => {
               const count = data?.stats?.ratingDist?.[star] || 0;
               const total = data?.stats?.total || 1;
               const pct = Math.round((count / total) * 100);
               return (
-                <div key={star} className="flex items-center gap-3 text-sm">
-                  <div className="flex text-yellow-400 w-16">
+                <div key={star} className="flex items-center gap-3 text-xs">
+                  <div className="flex text-amber-400 w-16 text-sm">
                     {Array.from({ length: 5 }).map((_, i) => <span key={i}>{i < star ? '★' : '☆'}</span>)}
                   </div>
-                  <div className="flex-1 h-2 bg-ink-100 overflow-hidden">
-                    <div className={`h-full ${star >= 4 ? 'bg-green-500' : star === 3 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${pct}%` }}></div>
+                  <div className="flex-1 h-2 bg-gray-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full transition-all duration-500 ${star >= 4 ? 'bg-emerald-500' : star === 3 ? 'bg-amber-500' : 'bg-rose-500'}`} style={{ width: `${pct}%` }}></div>
                   </div>
-                  <div className="w-8 text-right font-bold text-ink-600">{count}</div>
-                  <div className="w-8 text-right text-ink-400 text-xs">{pct}%</div>
+                  <div className="w-8 text-right font-bold text-gray-700 dark:text-zinc-300 font-mono">{count}</div>
+                  <div className="w-9 text-right text-gray-400 dark:text-zinc-500 text-[11px] font-mono">{pct}%</div>
                 </div>
               );
             })}
           </div>
         </div>
 
-        <div className="lg:col-span-2 bg-white border border-ink-200 p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500">Review Trend</h3>
-            <div className="flex gap-2">
-              <button onClick={() => setChartMode('count')} className={`px-2 py-1 text-xs font-bold ${chartMode === 'count' ? 'bg-ink-100 text-obsidian' : 'text-ink-400 hover:bg-ink-50'}`}>Volume</button>
-              <button onClick={() => setChartMode('avgRating')} className={`px-2 py-1 text-xs font-bold ${chartMode === 'avgRating' ? 'bg-ink-100 text-obsidian' : 'text-ink-400 hover:bg-ink-50'}`}>Average Rating</button>
+        {/* 7-Day Trend Chart */}
+        <div className="lg:col-span-2 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm flex flex-col justify-between">
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <h3 className="font-semibold text-xs tracking-wider uppercase text-gray-500 dark:text-zinc-400">7-Day Activity Trend</h3>
+              <p className="text-[11px] text-gray-400 dark:text-zinc-500 mt-0.5">Real-time daily review volume & rating trajectory</p>
+            </div>
+            <div className="flex gap-1 bg-gray-100 dark:bg-zinc-800 p-1 rounded-lg">
+              <button
+                onClick={() => setChartMode('count')}
+                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${
+                  chartMode === 'count'
+                    ? 'bg-white dark:bg-zinc-900 text-gray-900 dark:text-white shadow-sm'
+                    : 'text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                Volume
+              </button>
+              <button
+                onClick={() => setChartMode('avgRating')}
+                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${
+                  chartMode === 'avgRating'
+                    ? 'bg-white dark:bg-zinc-900 text-gray-900 dark:text-white shadow-sm'
+                    : 'text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                Avg Rating
+              </button>
             </div>
           </div>
           <div className="h-48 w-full">
             {data?.chartData?.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data?.chartData}>
-                  <XAxis dataKey="name" fontSize={10} axisLine={false} tickLine={false} />
-                  <YAxis fontSize={10} axisLine={false} tickLine={false} domain={chartMode === 'avgRating' ? [0, 5] : ['auto', 'auto']} />
-                  <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: 0, border: '1px solid #e5e5e5' }} />
-                  <Line type="monotone" dataKey={chartMode === 'count' ? 'count' : 'avgRating'} stroke="#f97316" strokeWidth={2} dot={{ r: 3, fill: '#f97316' }} activeDot={{ r: 5 }} />
+                  <XAxis dataKey="name" fontSize={11} axisLine={false} tickLine={false} tick={{ fill: isDark ? '#71717a' : '#9ca3af' }} />
+                  <YAxis fontSize={11} axisLine={false} tickLine={false} tick={{ fill: isDark ? '#71717a' : '#9ca3af' }} domain={chartMode === 'avgRating' ? [0, 5] : ['auto', 'auto']} />
+                  <Tooltip
+                    cursor={{ stroke: isDark ? '#3f3f46' : '#e5e7eb', strokeDasharray: '3 3' }}
+                    contentStyle={{
+                      borderRadius: '10px',
+                      border: isDark ? '1px solid #27272a' : '1px solid #e5e7eb',
+                      backgroundColor: isDark ? '#18181b' : '#ffffff',
+                      color: isDark ? '#f4f4f5' : '#111827',
+                      fontSize: '12px'
+                    }}
+                  />
+                  <Line type="monotone" dataKey={chartMode === 'count' ? 'count' : 'avgRating'} stroke="#f97316" strokeWidth={2.5} dot={{ r: 4, fill: '#f97316' }} activeDot={{ r: 6 }} />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-sm text-ink-400">No data available</div>
+              <div className="w-full h-full flex items-center justify-center text-xs text-gray-400 dark:text-zinc-500">No trend data available</div>
             )}
           </div>
         </div>
       </div>
 
-      <div className="bg-white border border-ink-200">
-        <div className="p-4 border-b border-ink-100 flex flex-col lg:flex-row gap-4 justify-between items-center bg-ink-50/50">
-          <div className="flex gap-4 overflow-x-auto w-full lg:w-auto pb-2 lg:pb-0 hide-scrollbar">
-            {['all', 'pending', 'approved', 'rejected', 'reported'].map(s => (
-              <button
-                key={s}
-                onClick={() => { setStatus(s); setPage(1); }}
-                className={`whitespace-nowrap px-4 py-2 text-sm font-bold capitalize transition-colors ${status === s ? 'text-fire border-b-2 border-fire' : 'text-ink-500 hover:text-obsidian'}`}
-              >
-                {s} {s === 'pending' && data?.stats?.pending > 0 && <span className="ml-2 bg-fire text-white text-[10px] px-2 py-0.5 rounded-full">{data?.stats?.pending}</span>}
-              </button>
-            ))}
+      {/* Main Reviews Management Table */}
+      <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl shadow-sm overflow-hidden">
+        {/* Status Filters */}
+        <div className="p-4 border-b border-gray-200 dark:border-zinc-800 flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center bg-gray-50/50 dark:bg-zinc-800/40">
+          <div className="flex gap-2 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 scrollbar-none">
+            {[
+              { id: 'all', label: 'All Reviews' },
+              { id: 'pending', label: 'Pending Approval' },
+              { id: 'approved', label: 'Approved' },
+              { id: 'reported', label: 'Flagged / Spam' },
+              { id: 'rejected', label: 'Rejected' },
+            ].map(tabItem => {
+              const count = tabItem.id === 'pending' ? data?.stats?.pending : tabItem.id === 'approved' ? data?.stats?.approved : tabItem.id === 'rejected' ? data?.stats?.rejected : tabItem.id === 'reported' ? data?.stats?.reported : data?.stats?.total;
+              const active = status === tabItem.id;
+              return (
+                <button
+                  key={tabItem.id}
+                  onClick={() => { setStatus(tabItem.id); setPage(1); }}
+                  className={`whitespace-nowrap px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                    active
+                      ? 'bg-obsidian text-white dark:bg-white dark:text-black shadow-sm'
+                      : 'text-gray-600 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-zinc-100'
+                  }`}
+                >
+                  <span>{tabItem.label}</span>
+                  <span className={`ml-2 text-[10px] font-mono px-1.5 py-0.5 rounded-full ${
+                    active ? 'bg-white/20 dark:bg-black/20 text-white dark:text-black' : 'bg-gray-200 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400'
+                  }`}>
+                    {count || 0}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        <div className="p-4 border-b border-ink-100 flex flex-col lg:flex-row gap-4">
+        {/* Search & Rating Filter Controls */}
+        <div className="p-4 border-b border-gray-200 dark:border-zinc-800 flex flex-col md:flex-row gap-3">
           <form onSubmit={handleSearch} className="flex-1 flex gap-2">
             <div className="relative flex-1">
-              <SearchIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
-              <input type="text" placeholder="Search by customer name or review text..." value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2 bg-white border border-ink-200 text-sm focus:outline-none focus:border-fire transition-colors" />
+              <SearchIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-500" />
+              <input
+                type="text"
+                placeholder="Search by customer name or review text..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 text-xs rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-obsidian dark:focus:ring-white transition-colors"
+              />
             </div>
-            <button type="submit" className="bg-obsidian text-white px-6 py-2 text-sm font-bold hover:bg-fire transition-colors">Search</button>
+            <button type="submit" className="bg-obsidian dark:bg-white text-white dark:text-black px-5 py-2 text-xs font-semibold rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors shadow-sm">
+              Search
+            </button>
           </form>
           <div className="flex gap-2">
-            <select value={ratingFilter} onChange={e => { setRatingFilter(Number(e.target.value)); setPage(1); }} className="bg-white border border-ink-200 px-4 py-2 text-sm focus:outline-none focus:border-fire appearance-none font-bold">
-              <option value={0}>All Ratings</option>
+            <select
+              value={ratingFilter}
+              onChange={e => { setRatingFilter(Number(e.target.value)); setPage(1); }}
+              className="bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 px-3.5 py-2 text-xs rounded-lg text-gray-900 dark:text-white font-medium focus:outline-none cursor-pointer"
+            >
+              <option value={0}>All Star Ratings</option>
               <option value={5}>⭐⭐⭐⭐⭐ 5 Stars</option>
               <option value={4}>⭐⭐⭐⭐ 4 Stars</option>
               <option value={3}>⭐⭐⭐ 3 Stars</option>
@@ -5855,54 +5951,120 @@ function Reviews() {
           </div>
         </div>
 
+        {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-ink-50 text-ink-500 font-display  tracking-wider text-xs">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-gray-50/80 dark:bg-zinc-800/60 border-b border-gray-200 dark:border-zinc-800 text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-zinc-400">
               <tr>
-                <th className="p-4 font-semibold">Customer</th>
-                <th className="p-4 font-semibold">Review</th>
-                <th className="p-4 font-semibold">Product</th>
-                <th className="p-4 font-semibold">Rating</th>
-                <th className="p-4 font-semibold">Status</th>
-                <th className="p-4 font-semibold">Date</th>
-                <th className="p-4 font-semibold text-right">Actions</th>
+                <th className="py-3 px-4">Customer</th>
+                <th className="py-3 px-4">Product</th>
+                <th className="py-3 px-4">Rating</th>
+                <th className="py-3 px-4">Review Content</th>
+                <th className="py-3 px-4">Status</th>
+                <th className="py-3 px-4">Date</th>
+                <th className="py-3 px-4 text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-ink-100">
+            <tbody className="divide-y divide-gray-100 dark:divide-zinc-800/60">
               {loading ? (
-                <tr><td colSpan={7} className="p-8 text-center text-ink-400"><RotateCcw className="animate-spin mx-auto mb-2 opacity-50" /> Loading reviews...</td></tr>
+                <tr>
+                  <td colSpan={7} className="py-16 text-center text-gray-400 dark:text-zinc-500">
+                    <Loader2 className="animate-spin mx-auto mb-2 text-obsidian dark:text-white" size={24} />
+                    <span>Loading reviews...</span>
+                  </td>
+                </tr>
               ) : data?.reviews?.length === 0 ? (
-                <tr><td colSpan={7} className="p-8 text-center text-ink-400">No reviews found matching criteria.</td></tr>
+                <tr>
+                  <td colSpan={7} className="py-16 text-center text-gray-400 dark:text-zinc-500">
+                    <Star className="mx-auto mb-2 opacity-40" size={28} />
+                    <p className="font-semibold text-gray-700 dark:text-zinc-300">No reviews found</p>
+                    <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1">Try resetting your filters or search query.</p>
+                  </td>
+                </tr>
               ) : (
                 data?.reviews?.map(r => (
-                  <tr key={r.id} className="hover:bg-ink-50/50 transition-colors group">
-                    <td className="p-4">
-                      <div className="font-bold text-obsidian">{r.customer_name}</div>
-                      {r.order_id && <div className="text-[10px]  font-bold text-green-600 flex items-center gap-1 mt-1"><CheckCircle size={10} /> Verified</div>}
+                  <tr
+                    key={r.id}
+                    onClick={() => setViewReview(r)}
+                    className="hover:bg-gray-50/70 dark:hover:bg-zinc-800/40 transition-colors group cursor-pointer"
+                  >
+                    {/* Customer */}
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      <div className="font-semibold text-gray-900 dark:text-zinc-100">{r.customer_name}</div>
+                      {r.order_id && (
+                        <div className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-0.5">
+                          <CheckCircle size={10} /> Verified Purchase
+                        </div>
+                      )}
                     </td>
-                    <td className="p-4 max-w-xs">
-                      <div className="text-obsidian font-medium truncate">{r.comment || "No comment provided"}</div>
-                      {r.admin_reply && <div className="text-xs text-ink-400 mt-1 flex items-center gap-1"><MessageCircle size={12} /> Replied</div>}
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-2">
+
+                    {/* Product */}
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2.5">
                         {r.product?.image_url ? (
-                          <img src={imgUrl(r.product.image_url)} alt="" className="w-8 h-8 object-cover border border-ink-100" />
+                          <img src={imgUrl(r.product.image_url)} alt="" className="w-9 h-9 object-cover rounded-lg border border-gray-200 dark:border-zinc-700 shrink-0" />
                         ) : (
-                          <div className="w-8 h-8 bg-ink-100 border border-ink-200"></div>
+                          <div className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 flex items-center justify-center text-gray-400">
+                            <Package size={14} />
+                          </div>
                         )}
-                        <span className="text-xs font-bold text-ink-600 truncate max-w-[120px]">{r.product?.name || 'Unknown'}</span>
+                        <span className="font-medium text-gray-900 dark:text-zinc-200 truncate max-w-[150px]" title={r.product?.name}>
+                          {r.product?.name || 'Unknown Sneaker'}
+                        </span>
                       </div>
                     </td>
-                    <td className="p-4 whitespace-nowrap">{renderStars(r.rating)}</td>
-                    <td className="p-4">
-                      <span className={`px-2 py-1 text-[10px] font-bold  tracking-wider ${r.status === 'approved' ? 'bg-green-100 text-green-700' : r.status === 'pending' ? 'bg-amber-100 text-amber-700' : r.status === 'reported' ? 'bg-red-100 text-red-700' : 'bg-ink-200 text-ink-600'}`}>
-                        {r.status}
+
+                    {/* Rating */}
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      <div className="flex items-center gap-1">
+                        {renderStars(r.rating)}
+                        <span className="font-mono text-xs font-bold text-gray-700 dark:text-zinc-300 ml-1">({r.rating})</span>
+                      </div>
+                    </td>
+
+                    {/* Comment */}
+                    <td className="py-3.5 px-4 max-w-xs">
+                      <div className="text-gray-700 dark:text-zinc-300 truncate font-normal" title={r.comment}>
+                        "{r.comment || "No comment provided"}"
+                      </div>
+                      {r.admin_reply && (
+                        <div className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 mt-1 flex items-center gap-1">
+                          <MessageCircle size={11} /> Admin Replied
+                        </div>
+                      )}
+                    </td>
+
+                    {/* Status Badge */}
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                        r.status === 'approved'
+                          ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/40'
+                          : r.status === 'pending'
+                          ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border-amber-200 dark:border-amber-800/40'
+                          : r.status === 'reported'
+                          ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border-rose-200 dark:border-rose-800/40'
+                          : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700'
+                      }`}>
+                        {r.status === 'reported' ? 'Flagged Spam' : r.status}
                       </span>
                     </td>
-                    <td className="p-4 text-ink-500 text-xs whitespace-nowrap">{new Date(r.created_at).toLocaleDateString()}</td>
-                    <td className="p-4 text-right relative">
-                      <button onClick={() => setViewReview(r)} className="text-ink-400 hover:text-obsidian p-2"><MoreVertical size={16} /></button>
+
+                    {/* Date */}
+                    <td className="py-3.5 px-4 text-gray-500 dark:text-zinc-400 font-mono text-xs whitespace-nowrap">
+                      {new Date(r.created_at).toLocaleDateString()}
+                    </td>
+
+                    {/* Inspect button */}
+                    <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setViewReview(r);
+                        }}
+                        className="px-2.5 py-1 text-xs font-medium rounded-lg bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 transition-colors"
+                      >
+                        Moderate
+                      </button>
                     </td>
                   </tr>
                 ))
@@ -5911,150 +6073,211 @@ function Reviews() {
           </table>
         </div>
 
-        {/* Pagination */}
-        <div className="p-4 border-t border-ink-100 flex items-center justify-between text-sm">
-          <div className="text-ink-500">
-            Showing <span className="font-bold text-obsidian">{((data?.pagination?.page - 1) * data?.pagination?.limit) + (data?.reviews?.length > 0 ? 1 : 0)}</span> to <span className="font-bold text-obsidian">{((data?.pagination?.page - 1) * data?.pagination?.limit) + data?.reviews?.length}</span> of <span className="font-bold text-obsidian">{data?.pagination?.totalCount}</span> reviews
+        {/* Pagination Bar */}
+        <div className="p-4 border-t border-gray-200 dark:border-zinc-800 flex items-center justify-between text-xs text-gray-500 dark:text-zinc-400 bg-gray-50/50 dark:bg-zinc-800/30">
+          <div>
+            Showing <span className="font-semibold text-gray-900 dark:text-white">{((data?.pagination?.page - 1) * data?.pagination?.limit) + (data?.reviews?.length > 0 ? 1 : 0)}</span> to <span className="font-semibold text-gray-900 dark:text-white">{((data?.pagination?.page - 1) * data?.pagination?.limit) + data?.reviews?.length}</span> of <span className="font-semibold text-gray-900 dark:text-white">{data?.pagination?.totalCount}</span> reviews
           </div>
-          <div className="flex gap-1">
-            <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="px-3 py-1 border border-ink-200 hover:bg-ink-50 disabled:opacity-50 font-bold">&larr;</button>
-            <button disabled={page === data?.pagination?.totalPages || data?.pagination?.totalPages === 0} onClick={() => setPage(p => p + 1)} className="px-3 py-1 border border-ink-200 hover:bg-ink-50 disabled:opacity-50 font-bold">&rarr;</button>
+          <div className="flex gap-1.5">
+            <button
+              disabled={page === 1}
+              onClick={() => setPage(p => p - 1)}
+              className="px-3 py-1.5 border border-gray-200 dark:border-zinc-700 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 disabled:opacity-40 font-semibold transition-colors"
+            >
+              &larr; Prev
+            </button>
+            <button
+              disabled={page === data?.pagination?.totalPages || data?.pagination?.totalPages === 0}
+              onClick={() => setPage(p => p + 1)}
+              className="px-3 py-1.5 border border-gray-200 dark:border-zinc-700 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 disabled:opacity-40 font-semibold transition-colors"
+            >
+              Next &rarr;
+            </button>
           </div>
         </div>
       </div>
 
       {/* Product Rating Analytics */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-        <div className="bg-white border border-ink-200 p-6">
-          <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500 mb-6 flex items-center gap-2"><Star size={16} className="text-yellow-500" /> Products With Best Ratings</h3>
-          <div className="space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm">
+          <h3 className="font-semibold text-xs tracking-wider uppercase text-gray-500 dark:text-zinc-400 mb-5 flex items-center gap-2">
+            <Star size={14} className="text-amber-500" /> Top Rated Sneakers
+          </h3>
+          <div className="space-y-3.5">
             {productsData.best?.map((p, i) => (
-              <div key={p.id} className="flex justify-between items-center border-b border-ink-100 pb-3 last:border-0">
+              <div key={p.id} className="flex justify-between items-center border-b border-gray-100 dark:border-zinc-800 pb-3 last:border-0">
                 <div className="flex items-center gap-3">
-                  <span className="text-ink-300 font-display font-bold w-4">{i + 1}.</span>
-                  <span className="font-bold text-sm text-obsidian truncate max-w-[200px]">{p.name}</span>
+                  <span className="text-gray-400 dark:text-zinc-500 font-mono font-bold w-4">{i + 1}.</span>
+                  <span className="font-semibold text-xs text-gray-900 dark:text-white truncate max-w-[220px]">{p.name}</span>
                 </div>
-                <div className="flex items-center gap-4 text-sm">
-                  <span className="font-bold text-yellow-500 flex items-center gap-1">★ {p.avg}</span>
-                  <span className="text-ink-400 text-xs w-20 text-right">{p.total} reviews</span>
+                <div className="flex items-center gap-3 text-xs">
+                  <span className="font-bold text-amber-500 flex items-center gap-1">★ {p.avg}</span>
+                  <span className="text-gray-400 dark:text-zinc-500 text-[11px] font-mono">{p.total} {p.total === 1 ? 'review' : 'reviews'}</span>
                 </div>
               </div>
             ))}
-            {(!productsData.best || productsData.best.length === 0) && <div className="text-sm text-ink-400">Not enough data to rank products.</div>}
+            {(!productsData.best || productsData.best.length === 0) && (
+              <div className="text-xs text-gray-400 dark:text-zinc-500 py-4 text-center">Not enough data to rank products.</div>
+            )}
           </div>
         </div>
 
-        <div className="bg-white border border-ink-200 p-6">
-          <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500 mb-6 flex items-center gap-2"><AlertTriangle size={16} className="text-red-500" /> Products Needing Attention</h3>
-          <div className="space-y-4">
+        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm">
+          <h3 className="font-semibold text-xs tracking-wider uppercase text-gray-500 dark:text-zinc-400 mb-5 flex items-center gap-2">
+            <AlertTriangle size={14} className="text-rose-500" /> Sneakers Needing Attention
+          </h3>
+          <div className="space-y-3.5">
             {productsData.attention?.map((p, i) => (
-              <div key={p.id} className="flex justify-between items-center border-b border-ink-100 pb-3 last:border-0">
+              <div key={p.id} className="flex justify-between items-center border-b border-gray-100 dark:border-zinc-800 pb-3 last:border-0">
                 <div className="flex items-center gap-3">
-                  <span className="text-ink-300 font-display font-bold w-4">{i + 1}.</span>
-                  <span className="font-bold text-sm text-obsidian truncate max-w-[200px]">{p.name}</span>
+                  <span className="text-gray-400 dark:text-zinc-500 font-mono font-bold w-4">{i + 1}.</span>
+                  <span className="font-semibold text-xs text-gray-900 dark:text-white truncate max-w-[220px]">{p.name}</span>
                 </div>
-                <div className="flex items-center gap-4 text-sm">
-                  <span className="font-bold text-red-500 flex items-center gap-1">★ {p.avg}</span>
-                  <span className="text-ink-400 text-xs w-20 text-right">{p.total} reviews</span>
+                <div className="flex items-center gap-3 text-xs">
+                  <span className="font-bold text-rose-500 flex items-center gap-1">★ {p.avg}</span>
+                  <span className="text-gray-400 dark:text-zinc-500 text-[11px] font-mono">{p.total} {p.total === 1 ? 'review' : 'reviews'}</span>
                 </div>
               </div>
             ))}
-            {(!productsData.attention || productsData.attention.length === 0) && <div className="text-sm text-ink-400">Not enough data to rank products.</div>}
+            {(!productsData.attention || productsData.attention.length === 0) && (
+              <div className="text-xs text-gray-400 dark:text-zinc-500 py-4 text-center">Not enough data to rank products.</div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Review Details Drawer */}
       {viewReview && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="absolute inset-0 bg-obsidian/40 backdrop-blur-sm" onClick={() => { setViewReview(null); setReplyText(""); }}></div>
-          <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col border-l border-ink-200 animate-slide-in-right">
-            <div className="p-6 border-b border-ink-200 flex justify-between items-center bg-ink-50">
-              <h2 className="font-display text-xl font-bold tracking-tight">Review Details</h2>
-              <button onClick={() => { setViewReview(null); setReplyText(""); }} className="p-2 hover:bg-ink-200 transition-colors"><X size={20} /></button>
+        <div className={`${isDark ? 'dark' : ''} fixed inset-0 z-50 flex justify-end animate-in fade-in duration-150`}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => { setViewReview(null); setReplyText(""); }}></div>
+          <div className="relative w-full max-w-md bg-white dark:bg-zinc-900 h-full shadow-2xl flex flex-col border-l border-gray-200 dark:border-zinc-800 animate-in slide-in-from-right duration-200 text-gray-900 dark:text-zinc-100">
+            {/* Drawer Header */}
+            <div className="p-5 border-b border-gray-200 dark:border-zinc-800 flex justify-between items-center bg-gray-50/70 dark:bg-zinc-850 dark:bg-zinc-800/60">
+              <div className="flex items-center gap-2">
+                <Star size={18} className="text-amber-400" />
+                <h2 className="text-base font-bold text-gray-900 dark:text-white">Review Moderation</h2>
+              </div>
+              <button
+                onClick={() => { setViewReview(null); setReplyText(""); }}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+              >
+                <X size={18} />
+              </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-8">
+            {/* Drawer Content */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 text-xs">
               {/* Review Content */}
               <div>
-                <div className="flex justify-between items-start mb-4">
+                <div className="flex justify-between items-start mb-3">
                   <div>
-                    <div className="mb-2">{renderStars(viewReview.rating)}</div>
-                    <div className="font-bold text-lg text-obsidian">{viewReview.customer_name}</div>
-                    <div className="text-xs text-ink-400">{new Date(viewReview.created_at).toLocaleDateString()} at {new Date(viewReview.created_at).toLocaleTimeString()}</div>
+                    <div className="mb-1">{renderStars(viewReview.rating)}</div>
+                    <div className="font-bold text-base text-gray-900 dark:text-white">{viewReview.customer_name}</div>
+                    <div className="text-[11px] text-gray-400 dark:text-zinc-500 font-mono mt-0.5">
+                      {new Date(viewReview.created_at).toLocaleString()}
+                    </div>
                   </div>
-                  <span className={`px-2 py-1 text-[10px] font-bold  tracking-wider ${viewReview.status === 'approved' ? 'bg-green-100 text-green-700' : viewReview.status === 'pending' ? 'bg-amber-100 text-amber-700' : viewReview.status === 'reported' ? 'bg-red-100 text-red-700' : 'bg-ink-200 text-ink-600'}`}>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                    viewReview.status === 'approved'
+                      ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/40'
+                      : viewReview.status === 'pending'
+                      ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border-amber-200 dark:border-amber-800/40'
+                      : viewReview.status === 'reported'
+                      ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400 border-rose-200 dark:border-rose-800/40'
+                      : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700'
+                  }`}>
                     {viewReview.status}
                   </span>
                 </div>
 
-                <div className="bg-ink-50 p-4 border border-ink-100 text-sm text-obsidian italic">
+                <div className="bg-gray-50 dark:bg-zinc-950/70 p-4 rounded-xl border border-gray-200 dark:border-zinc-800 text-gray-800 dark:text-zinc-200 italic leading-relaxed">
                   "{viewReview.comment || "No written review provided."}"
                 </div>
               </div>
 
               {/* Associations */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="border border-ink-200 p-4">
-                  <div className="text-[10px] font-bold  text-ink-400 mb-1">Product</div>
-                  <div className="font-bold text-sm truncate">{viewReview.product?.name || 'Unknown'}</div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="border border-gray-200 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-950/50 p-3 rounded-xl">
+                  <div className="text-[10px] font-semibold uppercase text-gray-400 dark:text-zinc-500 mb-1">Product</div>
+                  <div className="font-semibold text-xs truncate text-gray-900 dark:text-zinc-200">{viewReview.product?.name || 'Unknown'}</div>
                 </div>
-                <div className="border border-ink-200 p-4">
-                  <div className="text-[10px] font-bold  text-ink-400 mb-1">Order</div>
+                <div className="border border-gray-200 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-950/50 p-3 rounded-xl">
+                  <div className="text-[10px] font-semibold uppercase text-gray-400 dark:text-zinc-500 mb-1">Order Link</div>
                   {viewReview.order_id ? (
                     <div>
-                      <div className="font-bold text-sm">#{viewReview.order?.order_number || viewReview.order_id.substring(0, 6)}</div>
-                      <div className="text-[10px] text-green-600 font-bold  flex items-center gap-1 mt-1"><CheckCircle size={10} /> Verified</div>
+                      <div className="font-mono font-semibold text-xs text-gray-900 dark:text-zinc-200">#{viewReview.order?.order_number || viewReview.order_id.substring(0, 8)}</div>
+                      <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 mt-0.5">
+                        <CheckCircle size={10} /> Verified Order
+                      </div>
                     </div>
                   ) : (
-                    <div className="text-sm text-ink-400">Unverified / Guest</div>
+                    <div className="text-gray-400 dark:text-zinc-500">Unverified / Guest</div>
                   )}
                 </div>
               </div>
 
               {/* Admin Reply */}
               <div>
-                <h4 className="font-display font-semibold  text-sm tracking-wider text-ink-500 mb-3">Admin Reply</h4>
+                <h4 className="font-semibold text-xs uppercase tracking-wider text-gray-500 dark:text-zinc-400 mb-2.5">Official Store Reply</h4>
                 {viewReview.admin_reply ? (
-                  <div className="bg-obsidian text-white p-4 text-sm relative">
-                    <div className="absolute top-0 right-0 p-2 text-white/50 opacity-20"><MessageCircle size={40} /></div>
-                    <div className="font-bold mb-2">Store Response</div>
-                    <p className="text-white/80 leading-relaxed z-10 relative">{viewReview.admin_reply}</p>
+                  <div className="bg-zinc-900 text-white p-4 rounded-xl relative overflow-hidden border border-zinc-800">
+                    <div className="absolute top-0 right-0 p-2 text-white/10"><MessageCircle size={40} /></div>
+                    <div className="font-bold text-xs mb-1.5 flex items-center gap-1.5 text-amber-400">
+                      <CheckCircle size={12} /> Store Response Published
+                    </div>
+                    <p className="text-zinc-300 leading-relaxed text-xs relative z-10">{viewReview.admin_reply}</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     <textarea
                       value={replyText}
                       onChange={e => setReplyText(e.target.value)}
                       placeholder={`Thank you for your feedback, ${viewReview.customer_name}...`}
-                      className="w-full border border-ink-200 p-3 text-sm min-h-[100px] focus:outline-none focus:border-fire transition-colors"
+                      className="w-full bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 p-3 text-xs rounded-xl min-h-[90px] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-obsidian dark:focus:ring-white transition-colors"
                     ></textarea>
                     <button
                       onClick={() => sendReply(viewReview.id)}
                       disabled={!replyText.trim()}
-                      className="w-full bg-obsidian text-white py-3 font-bold text-sm  tracking-wider hover:bg-fire transition-colors disabled:opacity-50"
+                      className="w-full bg-obsidian dark:bg-white text-white dark:text-black py-2.5 font-semibold text-xs rounded-xl hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-40 shadow-sm"
                     >
-                      Send Reply & Approve
+                      Publish Reply & Approve
                     </button>
-                    <div className="text-xs text-ink-400 mt-2 flex items-center gap-1"><AlertTriangle size={12} /> Replying will automatically approve this review and publish it.</div>
+                    <div className="text-[11px] text-gray-400 dark:text-zinc-500 flex items-center gap-1">
+                      <AlertTriangle size={11} className="text-amber-500" /> Replying automatically approves and features this review.
+                    </div>
                   </div>
                 )}
               </div>
 
-              {/* Report Info */}
+              {/* Report Reason */}
               {viewReview.status === 'reported' && viewReview.report_reason && (
-                <div className="bg-red-50 border border-red-200 p-4">
-                  <div className="text-[10px] font-bold  text-red-500 mb-1">Report Reason</div>
-                  <div className="text-sm text-red-700">{viewReview.report_reason}</div>
+                <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/50 p-3.5 rounded-xl">
+                  <div className="text-[10px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-1">Flagged Reason</div>
+                  <div className="text-xs text-rose-800 dark:text-rose-300">{viewReview.report_reason}</div>
                 </div>
               )}
             </div>
 
             {/* Actions Footer */}
-            <div className="p-6 border-t border-ink-200 bg-ink-50 grid grid-cols-3 gap-2">
-              <button onClick={() => moderateReview(viewReview.id, 'approved')} className="bg-green-600 text-white py-2 text-xs font-bold  hover:bg-green-700">Approve</button>
-              <button onClick={() => moderateReview(viewReview.id, 'rejected')} className="bg-ink-600 text-white py-2 text-xs font-bold  hover:bg-obsidian">Reject</button>
-              <button onClick={() => moderateReview(viewReview.id, 'reported')} className="bg-red-600 text-white py-2 text-xs font-bold  hover:bg-red-700">Flag Spam</button>
+            <div className="p-4 border-t border-gray-200 dark:border-zinc-800 bg-gray-50/70 dark:bg-zinc-800/60 grid grid-cols-3 gap-2">
+              <button
+                onClick={() => moderateReview(viewReview.id, 'approved')}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white py-2 text-xs font-semibold rounded-lg transition-colors shadow-sm"
+              >
+                Approve
+              </button>
+              <button
+                onClick={() => moderateReview(viewReview.id, 'rejected')}
+                className="bg-gray-200 hover:bg-gray-300 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-800 dark:text-zinc-200 py-2 text-xs font-semibold rounded-lg transition-colors"
+              >
+                Reject
+              </button>
+              <button
+                onClick={() => moderateReview(viewReview.id, 'reported')}
+                className="bg-rose-600 hover:bg-rose-700 text-white py-2 text-xs font-semibold rounded-lg transition-colors shadow-sm"
+              >
+                Flag Spam
+              </button>
             </div>
           </div>
         </div>
