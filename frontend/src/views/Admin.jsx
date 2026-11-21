@@ -100,6 +100,247 @@ function TableActionDropdown({ isOpen, onToggle, onClose, children, menuWidth = 
 
 const ORDER_STATES = ["placed", "confirmed", "packed", "shipped", "out_for_delivery", "delivered", "cancelled", "returned"];
 
+function AdminNavbarSearch({ activeTab, onSelectTab }) {
+  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const searchContainerRef = useRef(null);
+
+  // Debounced search against /api/admin/omnisearch
+  useEffect(() => {
+    const q = query.trim();
+    if (!q || q.length < 2) {
+      setResults(null);
+      setLoading(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const res = await http.get(`/admin/omnisearch?q=${encodeURIComponent(q)}`);
+        setResults(res.data?.data || { products: [], orders: [], customers: [] });
+      } catch (e) {
+        setResults({ products: [], orders: [], customers: [] });
+      } finally {
+        setLoading(false);
+      }
+    }, 200);
+
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  // Click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && query.trim()) {
+      setIsOpen(false);
+      const q = encodeURIComponent(query.trim());
+      if (activeTab === "orders") {
+        navigate(`?tab=orders&search=${q}`);
+      } else if (activeTab === "customers") {
+        navigate(`?tab=customers&search=${q}`);
+      } else {
+        navigate(`?tab=products&search=${q}`);
+      }
+    } else if (e.key === "Escape") {
+      setIsOpen(false);
+    }
+  };
+
+  const handleSelectProduct = (p) => {
+    setIsOpen(false);
+    setQuery("");
+    navigate(`?tab=products&productId=${p.id}`);
+  };
+
+  const handleSelectOrder = (o) => {
+    setIsOpen(false);
+    setQuery("");
+    navigate(`?tab=orders&orderId=${o.order_number || o.id}`);
+  };
+
+  const handleSelectCustomer = (c) => {
+    setIsOpen(false);
+    setQuery("");
+    navigate(`?tab=customers&userId=${c.id}`);
+  };
+
+  const hasAnyResults = results && (results.products?.length > 0 || results.orders?.length > 0 || results.customers?.length > 0);
+  const noResults = results && !loading && !hasAnyResults && query.trim().length >= 2;
+
+  return (
+    <div ref={searchContainerRef} className="hidden md:flex items-center relative max-w-md w-full mx-4">
+      <Search size={14} className="absolute left-3.5 text-gray-400 dark:text-zinc-500 pointer-events-none" />
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setIsOpen(true);
+        }}
+        onFocus={() => setIsOpen(true)}
+        onKeyDown={handleKeyDown}
+        placeholder="Search sneakers, orders (#1004), customers..."
+        className="w-full bg-gray-100 dark:bg-zinc-800/80 border border-transparent dark:border-zinc-700/60 rounded-xl pl-9 pr-14 py-1.5 text-xs text-gray-900 dark:text-zinc-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-fire/50 focus:bg-white dark:focus:bg-zinc-900 transition-all shadow-2xs"
+      />
+      {loading ? (
+        <Loader2 size={13} className="absolute right-3 animate-spin text-fire" />
+      ) : (
+        <span className="absolute right-2 px-1.5 py-0.5 text-[9px] font-mono font-bold text-gray-400 dark:text-zinc-500 bg-white dark:bg-zinc-700 rounded border border-gray-200 dark:border-zinc-600 shadow-2xs pointer-events-none">
+          ENTER
+        </span>
+      )}
+
+      {/* Live Omnisearch Dropdown Popover */}
+      {isOpen && query.trim().length >= 2 && (
+        <div className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 shadow-2xl rounded-2xl overflow-hidden z-50 text-xs divide-y divide-gray-100 dark:divide-zinc-800 animate-in fade-in zoom-in-95 duration-100 max-h-96 overflow-y-auto">
+          {noResults && (
+            <div className="p-6 text-center text-gray-400 dark:text-zinc-500">
+              <p className="font-bold text-xs">No matches found for "{query}"</p>
+              <p className="text-[11px] mt-0.5 text-gray-400">Press ENTER to filter current tab</p>
+            </div>
+          )}
+
+          {/* Sneakers / Products Group */}
+          {results?.products?.length > 0 && (
+            <div className="p-2">
+              <div className="px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-gray-400 dark:text-zinc-500 flex items-center justify-between">
+                <span className="flex items-center gap-1.5"><Package size={12} className="text-fire" /> Sneakers ({results.products.length})</span>
+                <span className="text-[9px] text-gray-400">Click to view/edit</span>
+              </div>
+              <div className="space-y-0.5">
+                {results.products.map(p => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => handleSelectProduct(p)}
+                    className="w-full px-2.5 py-2 rounded-xl flex items-center gap-2.5 hover:bg-gray-100 dark:hover:bg-zinc-800/80 transition-colors text-left cursor-pointer group"
+                  >
+                    {p.images?.[0] ? (
+                      <img src={p.images[0]} alt="" className="w-8 h-8 rounded-lg object-cover bg-gray-100 shrink-0 border border-gray-200 dark:border-zinc-700" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-zinc-800 flex items-center justify-center shrink-0">
+                        <Box size={14} className="text-gray-400" />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold text-gray-900 dark:text-zinc-100 truncate group-hover:text-fire transition-colors">{p.name}</div>
+                      <div className="text-[10px] text-gray-400 flex items-center gap-2 font-mono">
+                        <span>{fmt(p.base_price)}</span>
+                        <span>•</span>
+                        <span className="capitalize">{p.category_slug}</span>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Orders Group */}
+          {results?.orders?.length > 0 && (
+            <div className="p-2">
+              <div className="px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-gray-400 dark:text-zinc-500 flex items-center justify-between">
+                <span className="flex items-center gap-1.5"><ShoppingBag size={12} className="text-blue-500" /> Orders ({results.orders.length})</span>
+                <span className="text-[9px] text-gray-400">Click to inspect</span>
+              </div>
+              <div className="space-y-0.5">
+                {results.orders.map(o => (
+                  <button
+                    key={o.id}
+                    type="button"
+                    onClick={() => handleSelectOrder(o)}
+                    className="w-full px-2.5 py-2 rounded-xl flex items-center justify-between hover:bg-gray-100 dark:hover:bg-zinc-800/80 transition-colors text-left cursor-pointer group"
+                  >
+                    <div className="min-w-0">
+                      <div className="font-mono font-bold text-gray-900 dark:text-zinc-100 group-hover:text-fire transition-colors">
+                        #{o.order_number}
+                      </div>
+                      <div className="text-[10px] text-gray-400 truncate">
+                        {o.customer_name} • {o.customer_email || 'No email'}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0 pl-2">
+                      <div className="font-mono font-bold text-gray-900 dark:text-zinc-100">{fmt(o.total)}</div>
+                      <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${
+                        o.status === 'delivered' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-zinc-300'
+                      }`}>
+                        {o.status}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Customers Group */}
+          {results?.customers?.length > 0 && (
+            <div className="p-2">
+              <div className="px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-gray-400 dark:text-zinc-500 flex items-center justify-between">
+                <span className="flex items-center gap-1.5"><Users size={12} className="text-emerald-500" /> Customers ({results.customers.length})</span>
+                <span className="text-[9px] text-gray-400">Click to view profile</span>
+              </div>
+              <div className="space-y-0.5">
+                {results.customers.map(c => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => handleSelectCustomer(c)}
+                    className="w-full px-2.5 py-2 rounded-xl flex items-center gap-2.5 hover:bg-gray-100 dark:hover:bg-zinc-800/80 transition-colors text-left cursor-pointer group"
+                  >
+                    {c.picture ? (
+                      <img src={c.picture} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" />
+                    ) : (
+                      <div className="w-7 h-7 rounded-full bg-gray-900 dark:bg-zinc-700 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                        {c.name ? c.name[0].toUpperCase() : 'U'}
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold text-gray-900 dark:text-zinc-100 truncate group-hover:text-fire transition-colors">{c.name}</div>
+                      <div className="text-[10px] text-gray-400 font-mono truncate">{c.email}</div>
+                    </div>
+                    {c.is_blocked && (
+                      <span className="text-[9px] font-bold text-rose-500 px-1.5 py-0.5 bg-rose-50 dark:bg-rose-950 rounded uppercase">Blocked</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Enter quick jump footer */}
+          <div className="px-3.5 py-2 bg-gray-50/80 dark:bg-zinc-800/50 flex items-center justify-between text-[11px] text-gray-500">
+            <span>Press <kbd className="font-mono font-bold bg-white dark:bg-zinc-700 px-1.5 py-0.5 rounded border border-gray-200 dark:border-zinc-600 text-[10px]">ENTER</kbd> to search in {activeTab}</span>
+            <button
+              type="button"
+              onClick={() => {
+                setIsOpen(false);
+                navigate(`?tab=${activeTab === 'overview' ? 'products' : activeTab}&search=${encodeURIComponent(query.trim())}`);
+              }}
+              className="font-bold text-fire hover:underline cursor-pointer"
+            >
+              Search All →
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Admin() {
   const { user, logout } = useStore();
   const navigate = useNavigate();
@@ -264,72 +505,18 @@ export default function Admin() {
               </span>
             </div>
 
-            {/* Center: Global Quick Jump / Search Bar */}
-            <div className="hidden md:flex items-center relative max-w-sm w-full mx-4">
-              <Search size={14} className="absolute left-3 text-gray-400 dark:text-zinc-500" />
-              <input
-                type="text"
-                placeholder="Search orders, sneakers, customers..."
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && e.target.value) {
-                    const q = e.target.value.toLowerCase();
-                    if (q.includes("order") || q.startsWith("#") || q.startsWith("pk")) {
-                      navigate(`?tab=orders&search=${encodeURIComponent(e.target.value)}`);
-                    } else if (q.includes("customer") || q.includes("user")) {
-                      setTab("customers");
-                    } else {
-                      setTab("products");
-                    }
-                  }
-                }}
-                className="w-full bg-gray-100 dark:bg-zinc-800/80 border border-transparent dark:border-zinc-700/60 rounded-xl pl-8 pr-12 py-1.5 text-xs text-gray-900 dark:text-zinc-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-fire/50 focus:bg-white dark:focus:bg-zinc-900 transition-all"
-              />
-              <span className="absolute right-2 px-1.5 py-0.5 text-[9px] font-mono font-bold text-gray-400 dark:text-zinc-500 bg-white dark:bg-zinc-700 rounded border border-gray-200 dark:border-zinc-600 shadow-2xs">
-                ENTER
-              </span>
-            </div>
+            {/* Center: Global Omnisearch Bar */}
+            <AdminNavbarSearch activeTab={tab} onSelectTab={setTab} />
 
-            {/* Right: Storefront Link, Live Status Pill, Dark Mode Toggle & User Profile */}
-            <div className="flex items-center gap-2 sm:gap-3">
-              <a
-                href="/"
-                target="_blank"
-                rel="noreferrer"
-                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-lg text-gray-600 dark:text-zinc-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
-                title="Preview Live Store"
-              >
-                <ExternalLink size={13} />
-                <span>Store</span>
-              </a>
-
-              <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                Live
-              </span>
-
-              {/* Dark Mode Switcher Toggle Button */}
+            {/* Right: Dark Mode Toggle */}
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => setIsDark(!isDark)}
-                className="p-2 rounded-xl text-gray-600 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 border border-gray-200 dark:border-zinc-700 transition-colors"
+                className="p-2 rounded-xl text-gray-600 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 border border-gray-200 dark:border-zinc-700 transition-colors cursor-pointer"
                 title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
               >
                 {isDark ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} className="text-gray-700 dark:text-zinc-300" />}
               </button>
-
-              {/* User Profile Pill */}
-              <div className="flex items-center gap-2 pl-2 border-l border-gray-200 dark:border-zinc-800">
-                <div className="w-7 h-7 rounded-full bg-linear-to-br from-fire to-orange-500 text-white font-bold text-[11px] flex items-center justify-center shadow-xs">
-                  {user?.name?.[0]?.toUpperCase() || "A"}
-                </div>
-                <div className="hidden lg:block text-left">
-                  <div className="text-xs font-bold text-gray-900 dark:text-zinc-100 leading-none truncate max-w-[100px]">
-                    {user?.name || "Administrator"}
-                  </div>
-                  <div className="text-[10px] text-gray-400 dark:text-zinc-500 leading-none mt-0.5 capitalize">
-                    {user?.role || "Admin"}
-                  </div>
-                </div>
-              </div>
             </div>
           </header>
         )}
@@ -1043,8 +1230,17 @@ function Orders() {
 
   const [data, setData] = useState({ orders: [], pagination: {}, status_counts: {} });
   const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState({ page: 1, limit: 10, status: "all", payment: "all", date: "all", search: "" });
-  const [searchInput, setSearchInput] = useState("");
+  const urlSearch = searchParams.get("search") || "";
+  const [query, setQuery] = useState({ page: 1, limit: 10, status: "all", payment: "all", date: "all", search: urlSearch });
+  const [searchInput, setSearchInput] = useState(urlSearch);
+
+  useEffect(() => {
+    const s = searchParams.get("search") || "";
+    if (s !== query.search) {
+      setSearchInput(s);
+      setQuery(prev => ({ ...prev, search: s, page: 1 }));
+    }
+  }, [searchParams.get("search")]);
   const [selected, setSelected] = useState([]);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [showStatusGuide, setShowStatusGuide] = useState(false);
@@ -3328,8 +3524,17 @@ function Products() {
 
   const [data, setData] = useState({ products: [], pagination: {}, stats: {} });
   const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState({ page: 1, limit: 25, search: "", status: "all", stock: "all", category: "all", brand: "all", price: "all" });
-  const [searchInput, setSearchInput] = useState("");
+  const urlSearch = searchParams.get("search") || "";
+  const [query, setQuery] = useState({ page: 1, limit: 25, search: urlSearch, status: "all", stock: "all", category: "all", brand: "all", price: "all" });
+  const [searchInput, setSearchInput] = useState(urlSearch);
+
+  useEffect(() => {
+    const s = searchParams.get("search") || "";
+    if (s !== query.search) {
+      setSearchInput(s);
+      setQuery(prev => ({ ...prev, search: s, page: 1 }));
+    }
+  }, [searchParams.get("search")]);
   const [selected, setSelected] = useState([]);
   const [activeMenuId, setActiveMenuId] = useState(null);
   const [availableCategories, setAvailableCategories] = useState([]);
@@ -6484,10 +6689,19 @@ function Customers() {
   const [searchParams, setSearchParams] = useSearchParams();
   const userId = searchParams.get("userId") || searchParams.get("customerId");
 
+  const urlSearch = searchParams.get("search") || "";
   const [data, setData] = useState({ users: [], pagination: {}, stats: {} });
   const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState({ page: 1, limit: 25, search: "", status: "all" });
-  const [searchInput, setSearchInput] = useState("");
+  const [query, setQuery] = useState({ page: 1, limit: 25, search: urlSearch, status: "all" });
+  const [searchInput, setSearchInput] = useState(urlSearch);
+
+  useEffect(() => {
+    const s = searchParams.get("search") || "";
+    if (s !== query.search) {
+      setSearchInput(s);
+      setQuery(prev => ({ ...prev, search: s, page: 1 }));
+    }
+  }, [searchParams.get("search")]);
   const [selected, setSelected] = useState([]);
   const [activeMenuId, setActiveMenuId] = useState(null);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false });

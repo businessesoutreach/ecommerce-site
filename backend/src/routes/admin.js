@@ -45,6 +45,89 @@ router.get('/audit-logs', async (req, res) => {
     }
 });
 
+// Global Omnisearch across products, orders, and customers
+router.get('/omnisearch', async (req, res) => {
+    try {
+        const q = (req.query.q || '').trim();
+        if (!q || q.length < 2) {
+            return res.json({ success: true, data: { products: [], orders: [], customers: [] } });
+        }
+
+        const [products, orders, customers] = await Promise.all([
+            prisma.product.findMany({
+                where: {
+                    OR: [
+                        { name: { contains: q, mode: 'insensitive' } },
+                        { slug: { contains: q, mode: 'insensitive' } },
+                        { category_slug: { contains: q, mode: 'insensitive' } },
+                        { brand_slug: { contains: q, mode: 'insensitive' } },
+                    ]
+                },
+                take: 5,
+                select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                    base_price: true,
+                    images: true,
+                    category_slug: true,
+                    brand_slug: true,
+                    status: true,
+                }
+            }),
+            prisma.order.findMany({
+                where: {
+                    OR: [
+                        { order_number: { contains: q, mode: 'insensitive' } },
+                        { customer_name: { contains: q, mode: 'insensitive' } },
+                        { customer_phone: { contains: q, mode: 'insensitive' } },
+                        { customer_email: { contains: q, mode: 'insensitive' } },
+                    ]
+                },
+                take: 5,
+                select: {
+                    id: true,
+                    order_number: true,
+                    customer_name: true,
+                    customer_email: true,
+                    total: true,
+                    status: true,
+                    created_at: true,
+                }
+            }),
+            prisma.user.findMany({
+                where: {
+                    OR: [
+                        { name: { contains: q, mode: 'insensitive' } },
+                        { email: { contains: q, mode: 'insensitive' } },
+                        { phone: { contains: q, mode: 'insensitive' } },
+                    ]
+                },
+                take: 5,
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    phone: true,
+                    picture: true,
+                    is_blocked: true,
+                }
+            })
+        ]);
+
+        res.json({
+            success: true,
+            data: {
+                products,
+                orders,
+                customers
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, detail: err.message });
+    }
+});
+
 router.post('/pos/checkout', async (req, res) => {
     try {
         const { items, customer, payment_method, total } = req.body;
