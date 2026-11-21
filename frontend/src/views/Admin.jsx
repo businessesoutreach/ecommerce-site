@@ -191,7 +191,7 @@ function AdminSearchModal({ isOpen, onClose, activeTab }) {
   const noMatches = results && !loading && totalCount === 0 && query.trim().length >= 2;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 sm:pt-20 p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 sm:pt-20 p-4 bg-black/60 animate-in fade-in duration-150" onClick={onClose}>
       <div
         className="w-full max-w-2xl bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150 max-h-[82vh]"
         onClick={(e) => e.stopPropagation()}
@@ -530,7 +530,7 @@ export default function Admin() {
   return (
     <div className={`min-h-screen flex ${isDark ? 'dark bg-zinc-950 text-zinc-100' : 'bg-gray-50 text-gray-900'} transition-colors duration-200`} data-testid="admin-dashboard">
       {tab !== "cms" && (
-        <aside className="w-16 lg:w-60 bg-white/95 dark:bg-zinc-900/95 border-r border-gray-200 dark:border-zinc-800 h-screen sticky top-0 flex flex-col shrink-0 z-20 transition-colors">
+        <aside className="w-16 lg:w-60 bg-white dark:bg-zinc-900 border-r border-gray-200 dark:border-zinc-800 h-screen sticky top-0 flex flex-col shrink-0 z-20 transition-colors">
           {/* Streamlined compact sidebar header to avoid excessive vertical padding */}
           <div className="h-14 px-3.5 lg:px-4 border-b border-gray-200 dark:border-zinc-800 shrink-0 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -589,7 +589,7 @@ export default function Admin() {
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
         {tab !== "cms" && (
           <>
-            <header className="h-14 bg-white/85 dark:bg-zinc-900/85 backdrop-blur-md border-b border-gray-200 dark:border-zinc-800 sticky top-0 z-30 px-4 lg:px-8 flex items-center justify-between shrink-0 transition-colors">
+            <header className="h-14 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 sticky top-0 z-30 px-4 lg:px-8 flex items-center justify-between shrink-0 transition-colors">
             {/* Left: Breadcrumbs & Module Title */}
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-gray-400 dark:text-zinc-500">Admin</span>
@@ -641,7 +641,7 @@ export default function Admin() {
           {tab === "pos" && <PosSystem />}
           {tab === "returns" && <Returns />}
           {tab === "refunds" && <Refunds />}
-          {tab === "coupons" && <Coupons />}
+          {tab === "coupons" && <Coupons isDark={isDark} />}
           {tab === "reviews" && <Reviews isDark={isDark} />}
           {tab === "customers" && <Customers />}
           {tab === "bundles" && <BundlesManager />}
@@ -1925,7 +1925,7 @@ function Orders() {
 
       {/* Status Guide Modal */}
       {showStatusGuide && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setShowStatusGuide(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setShowStatusGuide(false)}>
           <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 max-w-xl w-full shadow-2xl rounded-2xl overflow-hidden flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
             <div className="p-5 border-b border-gray-200 dark:border-zinc-800 flex justify-between items-center bg-gray-50 dark:bg-zinc-800/50">
               <h3 className="font-display text-base font-bold text-gray-900 dark:text-zinc-100 flex items-center gap-2"><HelpCircle size={18} className="text-fire" /> Order Status Lifecycle Guide</h3>
@@ -3370,7 +3370,7 @@ function OrderDetailPage({ orderId, initialOrder, onBack, onUpdate }) {
           </div>
 
           {/* Right Column: Customer Details, Fulfillment & Logistics (42% width) */}
-          <div className="w-full lg:w-[42%] p-6 space-y-6 bg-gray-50/70 dark:bg-zinc-900/60">
+          <div className="w-full lg:w-[42%] p-6 space-y-6 bg-gray-50 dark:bg-zinc-950">
 
             {/* Customer & Address Card */}
             <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm space-y-4 text-xs">
@@ -5298,7 +5298,7 @@ function ProductDetailPage({ productId, initialProduct, isNew = false, onBack, o
 }
 
 
-function Coupons() {
+function Coupons({ isDark }) {
   const [data, setData] = useState({ coupons: [], pagination: {}, stats: {} });
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState({ page: 1, limit: 25, search: "", status: "all", type: "all" });
@@ -5467,13 +5467,13 @@ function Coupons() {
         </div>
       )}
 
-      {showCreate && <CreateCouponForm onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); load(); }} />}
-      {viewCoupon && <CouponDetailsDrawer coupon={viewCoupon} onClose={() => setViewCoupon(null)} />}
+      {showCreate && <CreateCouponForm isDark={isDark} onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); load(); }} />}
+      {viewCoupon && <CouponDetailsDrawer isDark={isDark} coupon={viewCoupon} onClose={() => setViewCoupon(null)} />}
     </div>
   );
 }
 
-function CreateCouponForm({ onClose, onCreated }) {
+function CreateCouponForm({ onClose, onCreated, isDark }) {
   const [f, setF] = useState({
     code: "", type: "percentage", value: "", min_order_value: "", max_uses: "", expires_at: ""
   });
@@ -5502,89 +5502,183 @@ function CreateCouponForm({ onClose, onCreated }) {
   const presets = [
     { label: "10% Off", set: { type: "percentage", value: "10" } },
     { label: "20% Off", set: { type: "percentage", value: "20" } },
-    { label: "$10 Off", set: { type: "flat", value: "10" } },
+    { label: "Rs 1,000 Off", set: { type: "flat", value: "1000" } },
+    { label: "Rs 2,000 Off", set: { type: "flat", value: "2000" } },
     { label: "Free Shipping", set: { type: "percentage", value: "100" } }
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-obsidian/30 backdrop-blur-sm" onClick={onClose}>
-      <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "tween", duration: 0.2 }}
-        className="w-full max-w-lg bg-ink-50 h-full overflow-y-auto flex flex-col shadow-2xl border-l border-ink-200" onClick={e => e.stopPropagation()}>
-
-        <div className="bg-white border-b border-ink-200 p-6 flex justify-between items-center sticky top-0 z-10">
-          <h2 className="font-display font-semibold text-xl ">Create Coupon</h2>
-          <button onClick={onClose} className="p-2 text-ink-400 hover:text-fire"><X size={20} /></button>
+    <div
+      className={`${isDark ? 'dark' : ''} fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 animate-in fade-in duration-150`}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-xl bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-150 text-gray-900 dark:text-zinc-100"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Modal Header */}
+        <div className="bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 p-5 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-obsidian text-white dark:bg-zinc-800 dark:text-zinc-100 dark:border dark:border-zinc-700 flex items-center justify-center font-bold shadow-sm">
+              <Ticket size={20} />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-gray-900 dark:text-white">Create New Coupon</h2>
+              <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">Configure discount voucher code and usage rules</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+          >
+            <X size={18} />
+          </button>
         </div>
 
-        <div className="p-6 space-y-6 flex-1">
-          <div className="flex gap-2 flex-wrap">
-            {presets.map(p => (
-              <button key={p.label} type="button" onClick={() => setF({ ...f, ...p.set })} className="px-3 py-1.5 border border-ink-200 bg-white hover:bg-ink-100 text-xs font-bold  transition-colors">{p.label}</button>
-            ))}
+        {/* Modal Body */}
+        <div className="p-6 space-y-5 overflow-y-auto flex-1 text-xs bg-white dark:bg-zinc-900">
+          {/* Quick Presets */}
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-zinc-400 mb-2">
+              Quick Presets
+            </label>
+            <div className="flex gap-2 flex-wrap">
+              {presets.map(p => (
+                <button
+                  key={p.label}
+                  type="button"
+                  onClick={() => setF({ ...f, ...p.set })}
+                  className="px-3 py-1.5 border border-gray-200 dark:border-zinc-700 rounded-lg bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-xs font-semibold text-gray-700 dark:text-zinc-200 transition-colors shadow-sm"
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="bg-white border border-ink-200 p-6 space-y-4">
-            <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500 border-b border-ink-100 pb-2">Basic Information</h3>
+          {/* Basic Information */}
+          <div className="bg-gray-50 dark:bg-zinc-950/70 border border-gray-200 dark:border-zinc-800 rounded-xl p-4 space-y-4">
+            <h3 className="font-semibold text-xs tracking-wider uppercase text-gray-500 dark:text-zinc-400 border-b border-gray-200 dark:border-zinc-800 pb-2">
+              Basic Information
+            </h3>
             <div>
-              <label className="block text-xs font-bold text-ink-500  mb-1">Coupon Code</label>
-              <input type="text" placeholder="e.g. SUMMER20" value={f.code} onChange={e => setF({ ...f, code: e.target.value.toUpperCase().replace(/\s/g, '') })} className="w-full border border-ink-200 px-3 py-2 outline-none focus:border-obsidian font-mono " />
+              <label className="block text-xs font-semibold text-gray-700 dark:text-zinc-300 mb-1">Coupon Code</label>
+              <input
+                type="text"
+                placeholder="e.g. SUMMER20"
+                value={f.code}
+                onChange={e => setF({ ...f, code: e.target.value.toUpperCase().replace(/\s/g, '') })}
+                className="w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg px-3.5 py-2 text-xs font-mono font-bold text-gray-900 dark:text-white uppercase outline-none focus:ring-1 focus:ring-obsidian dark:focus:ring-white"
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-ink-500  mb-1">Discount Type</label>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-zinc-300 mb-1">Discount Type</label>
                 <div className="flex gap-2">
-                  <button type="button" onClick={() => setF({ ...f, type: 'percentage' })} className={`flex-1 py-2 text-sm font-bold border ${f.type === 'percentage' ? 'bg-obsidian text-white border-obsidian' : 'bg-white text-ink-500 border-ink-200'}`}>%</button>
-                  <button type="button" onClick={() => setF({ ...f, type: 'flat' })} className={`flex-1 py-2 text-sm font-bold border ${f.type === 'flat' ? 'bg-obsidian text-white border-obsidian' : 'bg-white text-ink-500 border-ink-200'}`}>$</button>
+                  <button
+                    type="button"
+                    onClick={() => setF({ ...f, type: 'percentage' })}
+                    className={`flex-1 py-2 text-xs font-bold rounded-lg border transition-colors ${
+                      f.type === 'percentage'
+                        ? 'bg-obsidian text-white border-obsidian dark:bg-white dark:text-black dark:border-white'
+                        : 'bg-white dark:bg-zinc-900 text-gray-700 dark:text-zinc-300 border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800'
+                    }`}
+                  >
+                    Percentage (%)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setF({ ...f, type: 'flat' })}
+                    className={`flex-1 py-2 text-xs font-bold rounded-lg border transition-colors ${
+                      f.type === 'flat'
+                        ? 'bg-obsidian text-white border-obsidian dark:bg-white dark:text-black dark:border-white'
+                        : 'bg-white dark:bg-zinc-900 text-gray-700 dark:text-zinc-300 border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800'
+                    }`}
+                  >
+                    Fixed (Rs)
+                  </button>
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-bold text-ink-500  mb-1">Value</label>
-                <input type="number" placeholder="e.g. 20" value={f.value} onChange={e => setF({ ...f, value: e.target.value })} className="w-full border border-ink-200 px-3 py-2 outline-none focus:border-obsidian" />
+                <label className="block text-xs font-semibold text-gray-700 dark:text-zinc-300 mb-1">
+                  Discount Value {f.type === 'percentage' ? '(%)' : '(Rs)'}
+                </label>
+                <input
+                  type="number"
+                  placeholder={f.type === 'percentage' ? "e.g. 20" : "e.g. 1500"}
+                  value={f.value}
+                  onChange={e => setF({ ...f, value: e.target.value })}
+                  className="w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg px-3.5 py-2 text-xs font-mono text-gray-900 dark:text-white outline-none focus:ring-1 focus:ring-obsidian dark:focus:ring-white"
+                />
               </div>
             </div>
           </div>
 
-          <div className="bg-white border border-ink-200 p-6 space-y-4">
-            <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500 border-b border-ink-100 pb-2">Usage Restrictions</h3>
-
-            <div>
-              <label className="block text-xs font-bold text-ink-500  mb-1">Minimum Order Amount</label>
-              <input type="number" placeholder="e.g. 50" value={f.min_order_value} onChange={e => setF({ ...f, min_order_value: e.target.value })} className="w-full border border-ink-200 px-3 py-2 outline-none focus:border-obsidian" />
+          {/* Usage Restrictions & Validity */}
+          <div className="bg-gray-50 dark:bg-zinc-950/70 border border-gray-200 dark:border-zinc-800 rounded-xl p-4 space-y-4">
+            <h3 className="font-semibold text-xs tracking-wider uppercase text-gray-500 dark:text-zinc-400 border-b border-gray-200 dark:border-zinc-800 pb-2">
+              Restrictions & Validity
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-zinc-300 mb-1">Minimum Order Amount (Rs)</label>
+                <input
+                  type="number"
+                  placeholder="e.g. 5000"
+                  value={f.min_order_value}
+                  onChange={e => setF({ ...f, min_order_value: e.target.value })}
+                  className="w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg px-3.5 py-2 text-xs font-mono text-gray-900 dark:text-white outline-none focus:ring-1 focus:ring-obsidian dark:focus:ring-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-zinc-300 mb-1">Total Usage Limit (Blank = ∞)</label>
+                <input
+                  type="number"
+                  placeholder="e.g. 100"
+                  value={f.max_uses}
+                  onChange={e => setF({ ...f, max_uses: e.target.value })}
+                  className="w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg px-3.5 py-2 text-xs font-mono text-gray-900 dark:text-white outline-none focus:ring-1 focus:ring-obsidian dark:focus:ring-white"
+                />
+              </div>
             </div>
-
             <div>
-              <label className="block text-xs font-bold text-ink-500  mb-1">Total Usage Limit (Leave blank for unlimited)</label>
-              <input type="number" placeholder="e.g. 1000" value={f.max_uses} onChange={e => setF({ ...f, max_uses: e.target.value })} className="w-full border border-ink-200 px-3 py-2 outline-none focus:border-obsidian" />
+              <label className="block text-xs font-semibold text-gray-700 dark:text-zinc-300 mb-1">Expiry Date & Time (Optional)</label>
+              <input
+                type="datetime-local"
+                value={f.expires_at}
+                onChange={e => setF({ ...f, expires_at: e.target.value })}
+                className="w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg px-3.5 py-2 text-xs font-mono text-gray-900 dark:text-white outline-none focus:ring-1 focus:ring-obsidian dark:focus:ring-white"
+              />
             </div>
           </div>
-
-          <div className="bg-white border border-ink-200 p-6 space-y-4">
-            <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500 border-b border-ink-100 pb-2">Validity</h3>
-            <div>
-              <label className="block text-xs font-bold text-ink-500  mb-1">Expiry Date & Time (Leave blank to never expire)</label>
-              <input type="datetime-local" value={f.expires_at} onChange={e => setF({ ...f, expires_at: e.target.value })} className="w-full border border-ink-200 px-3 py-2 outline-none focus:border-obsidian" />
-            </div>
-          </div>
-
-          <div className="bg-ink-100 p-4 text-xs text-ink-500 border border-ink-200">
-            <strong>Note:</strong> Advanced rules (Category exclusions, user grouping) are managed at the Promotion level, not Coupon level, per architectural design.
-          </div>
-
         </div>
 
-        <div className="bg-ink-50 border-t border-ink-200 p-6 flex justify-end gap-3 sticky bottom-0">
-          <button onClick={onClose} className="px-6 py-2 border border-ink-200 text-ink-600 text-sm font-bold  hover:bg-ink-100 transition-colors">Cancel</button>
-          <button onClick={save} disabled={saving} className="px-6 py-2 bg-obsidian text-white text-sm font-bold  hover:bg-fire transition-colors disabled:opacity-70 disabled:cursor-wait flex items-center gap-2">
-            {saving ? <Loader2 size={16} className="animate-spin" /> : null} Create Coupon
+        {/* Modal Footer */}
+        <div className="bg-gray-50 dark:bg-zinc-800/60 border-t border-gray-200 dark:border-zinc-800 p-4 flex justify-end gap-2.5">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 border border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-300 text-xs font-semibold rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={save}
+            disabled={saving}
+            className="px-5 py-2 bg-obsidian dark:bg-white text-white dark:text-black text-xs font-semibold rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors disabled:opacity-50 flex items-center gap-2 shadow-sm"
+          >
+            {saving ? <Loader2 size={14} className="animate-spin" /> : null}
+            <span>Create Coupon</span>
           </button>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }
 
-function CouponDetailsDrawer({ coupon, onClose }) {
+function CouponDetailsDrawer({ coupon, onClose, isDark }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -5596,69 +5690,79 @@ function CouponDetailsDrawer({ coupon, onClose }) {
   }, [coupon.id]);
 
   if (!data && loading) return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-obsidian/30 backdrop-blur-sm" onClick={onClose}>
-      <div className="w-8 h-8 border-4 border-obsidian border-t-transparent rounded-full animate-spin"></div>
+    <div className={`${isDark ? 'dark' : ''} fixed inset-0 z-50 flex items-center justify-center bg-black/60`} onClick={onClose}>
+      <div className="w-8 h-8 border-4 border-obsidian dark:border-white border-t-transparent rounded-full animate-spin"></div>
     </div>
   );
   if (!data) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-obsidian/30 backdrop-blur-sm" onClick={onClose}>
-      <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "tween", duration: 0.2 }}
-        className="w-full max-w-2xl bg-ink-50 h-full overflow-y-auto flex flex-col shadow-2xl border-l border-ink-200" onClick={e => e.stopPropagation()}>
-
-        <div className="bg-white border-b border-ink-200 p-6 flex justify-between items-start sticky top-0 z-10">
+    <div className={`${isDark ? 'dark' : ''} fixed inset-0 z-50 flex justify-end bg-black/60 animate-in fade-in duration-150`} onClick={onClose}>
+      <motion.div
+        initial={{ x: "100%" }}
+        animate={{ x: 0 }}
+        exit={{ x: "100%" }}
+        transition={{ type: "tween", duration: 0.2 }}
+        className="w-full max-w-2xl bg-white dark:bg-zinc-900 h-full overflow-y-auto flex flex-col shadow-2xl border-l border-gray-200 dark:border-zinc-800 text-gray-900 dark:text-zinc-100"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 p-6 flex justify-between items-start sticky top-0 z-10">
           <div>
-            <h2 className="font-mono font-bold text-3xl  flex items-center gap-3">
+            <h2 className="font-mono font-bold text-2xl text-gray-900 dark:text-white flex items-center gap-3">
               {data.code}
-              {data.status === 'active' && <span className="text-xs font-bold  px-2 py-1 bg-green-100 text-green-700 flex items-center w-fit gap-1 align-middle tracking-wider"><div className="w-2 h-2 rounded-full bg-green-600"></div> Active</span>}
-              {data.status === 'disabled' && <span className="text-xs font-bold  px-2 py-1 bg-ink-200 text-ink-600 flex items-center w-fit gap-1 align-middle tracking-wider"><div className="w-2 h-2 rounded-full bg-ink-500"></div> Disabled</span>}
-              {data.status === 'expired' && <span className="text-xs font-bold  px-2 py-1 bg-red-100 text-red-700 flex items-center w-fit gap-1 align-middle tracking-wider"><div className="w-2 h-2 rounded-full bg-red-600"></div> Expired</span>}
+              {data.status === 'active' && <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">Active</span>}
+              {data.status === 'disabled' && <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">Disabled</span>}
+              {data.status === 'expired' && <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-400 border border-rose-200 dark:border-rose-800">Expired</span>}
             </h2>
-            <p className="text-sm text-ink-500 font-bold mt-1 bg-ink-100 w-fit px-2 py-0.5 rounded">{data.type === 'percentage' ? `${data.value}% OFF` : `${fmt(data.value)} OFF`}</p>
+            <p className="text-xs text-gray-500 dark:text-zinc-400 font-semibold mt-1 bg-gray-100 dark:bg-zinc-800 w-fit px-2 py-0.5 rounded">
+              {data.type === 'percentage' ? `${data.value}% OFF` : `${fmt(data.value)} OFF`}
+            </p>
           </div>
-          <button onClick={onClose} className="p-2 text-ink-400 hover:text-fire"><X size={20} /></button>
+          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors">
+            <X size={20} />
+          </button>
         </div>
 
-        <div className="p-6 space-y-6 flex-1">
+        <div className="p-6 space-y-6 flex-1 text-xs">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white border border-ink-200 p-4 text-center">
-              <span className="block text-[10px] font-bold text-ink-400  mb-1">Redemptions</span>
-              <span className="font-mono text-xl font-bold">{data.used_count}</span>
+            <div className="bg-gray-50 dark:bg-zinc-950/60 border border-gray-200 dark:border-zinc-800 p-4 rounded-xl text-center">
+              <span className="block text-[10px] font-semibold text-gray-400 dark:text-zinc-500 uppercase mb-1">Redemptions</span>
+              <span className="font-mono text-xl font-bold text-gray-900 dark:text-white">{data.used_count}</span>
             </div>
-            <div className="bg-white border border-ink-200 p-4 text-center">
-              <span className="block text-[10px] font-bold text-ink-400  mb-1">Usage Limit</span>
-              <span className="font-mono text-xl font-bold">{data.max_uses || '∞'}</span>
+            <div className="bg-gray-50 dark:bg-zinc-950/60 border border-gray-200 dark:border-zinc-800 p-4 rounded-xl text-center">
+              <span className="block text-[10px] font-semibold text-gray-400 dark:text-zinc-500 uppercase mb-1">Usage Limit</span>
+              <span className="font-mono text-xl font-bold text-gray-900 dark:text-white">{data.max_uses || '∞'}</span>
             </div>
-            <div className="bg-white border border-ink-200 p-4 text-center">
-              <span className="block text-[10px] font-bold text-ink-400  mb-1">Discount Given</span>
+            <div className="bg-gray-50 dark:bg-zinc-950/60 border border-gray-200 dark:border-zinc-800 p-4 rounded-xl text-center">
+              <span className="block text-[10px] font-semibold text-gray-400 dark:text-zinc-500 uppercase mb-1">Discount Given</span>
               <span className="font-mono text-xl font-bold text-fire">{fmt(data.total_discount)}</span>
             </div>
-            <div className="bg-white border border-ink-200 p-4 text-center">
-              <span className="block text-[10px] font-bold text-ink-400  mb-1">Revenue Generated</span>
-              <span className="font-mono text-xl font-bold text-green-700">{fmt(data.revenue_generated)}</span>
+            <div className="bg-gray-50 dark:bg-zinc-950/60 border border-gray-200 dark:border-zinc-800 p-4 rounded-xl text-center">
+              <span className="block text-[10px] font-semibold text-gray-400 dark:text-zinc-500 uppercase mb-1">Revenue Generated</span>
+              <span className="font-mono text-xl font-bold text-emerald-600 dark:text-emerald-400">{fmt(data.revenue_generated)}</span>
             </div>
           </div>
 
-          <div className="bg-white border border-ink-200 p-6 space-y-4">
-            <h3 className="font-display font-semibold  text-sm tracking-wider text-ink-500 border-b border-ink-100 pb-2">Recent Usage</h3>
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-5 space-y-4">
+            <h3 className="font-semibold text-xs tracking-wider uppercase text-gray-500 dark:text-zinc-400 border-b border-gray-100 dark:border-zinc-800 pb-2">Recent Usage</h3>
             {data.recent_usage?.length > 0 ? (
-              <table className="w-full text-sm text-left">
-                <thead className="bg-ink-50 text-[10px]  text-ink-500"><tr><th className="p-2">Customer</th><th className="p-2">Order</th><th className="p-2 text-right">Discount</th><th className="p-2">Date</th></tr></thead>
-                <tbody>
+              <table className="w-full text-xs text-left">
+                <thead className="bg-gray-50 dark:bg-zinc-800/50 text-[10px] uppercase text-gray-500 dark:text-zinc-400">
+                  <tr><th className="p-2">Customer</th><th className="p-2">Order</th><th className="p-2 text-right">Discount</th><th className="p-2">Date</th></tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-zinc-800/60">
                   {data.recent_usage.map(o => (
-                    <tr key={o.id} className="border-b border-ink-100 last:border-0">
-                      <td className="p-2 font-bold">{o.customer_name}</td>
-                      <td className="p-2 font-mono">{o.order_number}</td>
+                    <tr key={o.id} className="hover:bg-gray-50/50 dark:hover:bg-zinc-800/40">
+                      <td className="p-2 font-semibold text-gray-900 dark:text-white">{o.customer_name}</td>
+                      <td className="p-2 font-mono text-gray-700 dark:text-zinc-300">{o.order_number}</td>
                       <td className="p-2 text-right font-mono font-bold text-fire">-{fmt(o.discount_amount)}</td>
-                      <td className="p-2 text-ink-500 text-xs">{new Date(o.created_at).toLocaleDateString()}</td>
+                      <td className="p-2 text-gray-500 dark:text-zinc-400 text-[11px] font-mono">{new Date(o.created_at).toLocaleDateString()}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            ) : <p className="text-sm text-ink-400">No usage yet.</p>}
+            ) : <p className="text-xs text-gray-400 dark:text-zinc-500">No usage recorded yet.</p>}
           </div>
-
         </div>
       </motion.div>
     </div>
@@ -6149,7 +6253,7 @@ function Reviews({ isDark }) {
       {/* Review Details Drawer */}
       {viewReview && (
         <div className={`${isDark ? 'dark' : ''} fixed inset-0 z-50 flex justify-end animate-in fade-in duration-150`}>
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => { setViewReview(null); setReplyText(""); }}></div>
+          <div className="absolute inset-0 bg-black/60" onClick={() => { setViewReview(null); setReplyText(""); }}></div>
           <div className="relative w-full max-w-md bg-white dark:bg-zinc-900 h-full shadow-2xl flex flex-col border-l border-gray-200 dark:border-zinc-800 animate-in slide-in-from-right duration-200 text-gray-900 dark:text-zinc-100">
             {/* Drawer Header */}
             <div className="p-5 border-b border-gray-200 dark:border-zinc-800 flex justify-between items-center bg-gray-50/70 dark:bg-zinc-850 dark:bg-zinc-800/60">
@@ -6517,14 +6621,14 @@ function ReturnDetailsDrawer({ returnId, onClose, onUpdate }) {
   };
 
   if (!data && loading) return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-obsidian/30 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
       <div className="w-8 h-8 border-4 border-obsidian border-t-transparent rounded-full animate-spin"></div>
     </div>
   );
   if (!data) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-obsidian/30 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex justify-end bg-black/60" onClick={onClose}>
       <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "tween", duration: 0.2 }}
         className="w-full max-w-2xl bg-ink-50 h-full overflow-y-auto flex flex-col shadow-2xl border-l border-ink-200" onClick={e => e.stopPropagation()}>
 
@@ -6862,14 +6966,14 @@ function RefundDetailsDrawer({ refundId, onClose, onUpdate }) {
   };
 
   if (!data && loading) return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-obsidian/30 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
       <div className="w-8 h-8 border-4 border-obsidian border-t-transparent rounded-full animate-spin"></div>
     </div>
   );
   if (!data) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-obsidian/30 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex justify-end bg-black/60" onClick={onClose}>
       <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "tween", duration: 0.2 }}
         className="w-full max-w-2xl bg-ink-50 h-full overflow-y-auto flex flex-col shadow-2xl border-l border-ink-200" onClick={e => e.stopPropagation()}>
 
@@ -8456,7 +8560,7 @@ function AuditLogs({ isDark }) {
       {/* Detail Inspector Modal */}
       {selectedLog && (
         <div
-          className={`${isDark ? 'dark' : ''} fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-150`}
+          className={`${isDark ? 'dark' : ''} fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 animate-in fade-in duration-150`}
           onClick={() => setSelectedLog(null)}
         >
           <div
@@ -8651,7 +8755,7 @@ function PosSystem() {
 function AnalyticsChartTooltip({ active, payload, label }) {
   if (!active || !payload || !payload.length) return null;
   return (
-    <div className="bg-zinc-950/95 dark:bg-zinc-900/95 backdrop-blur-md border border-zinc-800 text-white rounded-xl p-3.5 shadow-2xl text-xs space-y-2 min-w-[210px] pointer-events-none animate-in fade-in zoom-in-95 duration-100">
+    <div className="bg-zinc-950 dark:bg-zinc-900 border border-zinc-800 text-white rounded-xl p-3.5 shadow-2xl text-xs space-y-2 min-w-[210px] pointer-events-none animate-in fade-in zoom-in-95 duration-100">
       <div className="flex items-center justify-between border-b border-zinc-800/80 pb-1.5 mb-1">
         <span className="font-mono text-[11px] text-zinc-400 font-bold">{label}</span>
         <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Metrics</span>
@@ -9294,96 +9398,6 @@ function ProfitabilityAnalytics() {
               </div>
               <div className="flex items-center justify-between text-[10px] text-gray-400 font-mono">
                 <span>Returns / Cancellations:</span>
-                <span className="text-rose-500 font-bold">{returnRate}%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      {/* Two-Column Lower Grid: Regional Demand & Top Products Unit Economics */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-
-        {/* Left Column (5 cols): Geographic Breakdown (Top Cities & Provinces) */}
-        <div className="lg:col-span-5 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b border-gray-100 dark:border-zinc-800 pb-3">
-            <h3 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-2">
-              <MapPin size={15} className="text-fire" />
-              Geographic Order Volume & Cities
-            </h3>
-            <span className="text-[10px] text-gray-400">Delivery destinations</span>
-          </div>
-
-          <div className="space-y-3">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">Top Demand Cities</span>
-            {cities.length === 0 ? (
-              <p className="text-xs text-gray-400 py-4 text-center">No city data available</p>
-            ) : (
-              cities.map(c => (
-                <div key={c.city} className="flex items-center justify-between text-xs p-2 rounded-xl bg-gray-50 dark:bg-zinc-800/40">
-                  <div className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-fire" />
-                    <span className="font-bold text-gray-800 dark:text-zinc-200">{c.city}</span>
-                  </div>
-                  <span className="font-mono font-bold text-gray-900 dark:text-zinc-100">{fmt(c.revenue)}</span>
-                </div>
-              ))
-            )}
-
-            {provinces.length > 0 && (
-              <div className="pt-3 border-t border-gray-100 dark:border-zinc-800 space-y-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">Provinces</span>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  {provinces.map(p => (
-                    <div key={p.province} className="p-2 bg-gray-50 dark:bg-zinc-800/40 rounded-xl">
-                      <span className="text-[10px] text-gray-400 block">{p.province}</span>
-                      <span className="font-mono font-bold text-gray-900 dark:text-zinc-100">{fmt(p.revenue)}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Right Column (7 cols): Top Sneaker Unit Economics Table */}
-        <div className="lg:col-span-7 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b border-gray-100 dark:border-zinc-800 pb-3">
-            <div>
-              <h3 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-2">
-                <ShoppingBag size={15} className="text-fire" />
-                Top Performing Sneaker Drops & Unit Margins
-              </h3>
-              <p className="text-[10px] text-gray-400 mt-0.5">Ranked by gross sales volume and net profitability</p>
-            </div>
-            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300">
-              Top 10
-            </span>
-          </div>
-
-          <div className="overflow-x-auto">
-            {topProducts.length === 0 ? (
-              <p className="text-xs text-gray-400 py-8 text-center">No product orders recorded in this interval</p>
-            ) : (
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b border-gray-100 dark:border-zinc-800 text-[10px] font-bold uppercase text-gray-400 tracking-wider">
-                    <th className="pb-2.5">Sneaker Silhouette</th>
-                    <th className="pb-2.5 text-center">Sold</th>
-                    <th className="pb-2.5 text-right">Revenue</th>
-                    <th className="pb-2.5 text-right">Net Profit</th>
-                    <th className="pb-2.5 text-right">Margin</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50 dark:divide-zinc-800/60 font-mono">
-                  {topProducts.map((p, idx) => (
-                    <tr key={p.id || idx} className="hover:bg-gray-50/60 dark:hover:bg-zinc-800/30 transition-colors">
-                      <td className="py-2.5 pr-2 font-sans">
-                        <div className="flex items-center gap-2.5">
-                          {p.image ? (
-                            <img src={p.image} alt="" className="w-8 h-8 rounded-lg object-cover bg-gray-100 shrink-0" />
-                          ) : (
                             <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-zinc-800 flex items-center justify-center shrink-0">
                               <Box size={14} className="text-gray-400" />
                             </div>
@@ -9600,7 +9614,7 @@ function BundleForm({ bundle, allProducts, onClose, onSaved }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-obsidian/40 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
       <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white shadow-2xl" onClick={e => e.stopPropagation()}>
         <div className="p-6 border-b border-ink-200 flex justify-between items-center sticky top-0 bg-white z-10">
           <h2 className="font-display font-semibold text-xl">{isEdit ? 'Edit Bundle' : 'Create Bundle'}</h2>

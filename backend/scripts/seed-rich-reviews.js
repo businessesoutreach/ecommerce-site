@@ -246,3 +246,4 @@ async function seedReviews() {
 seedReviews()
     .catch(console.error)
     .finally(() => prisma.$disconnect());
+
