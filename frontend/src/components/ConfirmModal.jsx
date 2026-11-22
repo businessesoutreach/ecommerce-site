@@ -12,11 +12,14 @@ export default function ConfirmModal({
   loading = false,
   onConfirm,
   onCancel,
+  onClose,
 }) {
+  const handleClose = onCancel || onClose || (() => {});
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape" && isOpen && !loading) {
-        onCancel();
+        handleClose();
       }
     };
     if (isOpen) {
@@ -27,7 +30,7 @@ export default function ConfirmModal({
       document.body.style.overflow = "unset";
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen, loading, onCancel]);
+  }, [isOpen, loading, handleClose]);
 
   if (!isOpen) return null;
 
@@ -41,7 +44,7 @@ export default function ConfirmModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={loading ? undefined : onCancel}
+          onClick={loading ? undefined : handleClose}
           className="fixed inset-0 bg-black/60 transition-opacity"
         />
 
@@ -73,8 +76,8 @@ export default function ConfirmModal({
 
             <button
               type="button"
-              onClick={loading ? undefined : onCancel}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-zinc-300 p-1 rounded-lg transition-colors"
+              onClick={loading ? undefined : handleClose}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-zinc-300 p-1 rounded-lg transition-colors cursor-pointer"
             >
               <X size={16} />
             </button>
@@ -84,8 +87,8 @@ export default function ConfirmModal({
             <button
               type="button"
               disabled={loading}
-              onClick={onCancel}
-              className="px-4 py-2 text-xs font-bold text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-xl transition-colors disabled:opacity-50"
+              onClick={handleClose}
+              className="px-4 py-2 text-xs font-bold text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
             >
               {cancelText}
             </button>

@@ -483,6 +483,7 @@ export default function TestimonialsCMS({ isDark }) {
         variant={confirmModal.variant}
         loading={confirmModal.loading}
         onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal({ isOpen: false })}
         onClose={() => setConfirmModal({ isOpen: false })}
       />
     </div>
