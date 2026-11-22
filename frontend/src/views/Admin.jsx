@@ -510,7 +510,7 @@ export default function Admin() {
       items: [
         ["cms", "Hero & CMS", ImageIcon],
         ["coupons", "Coupons", Ticket],
-        ["bundles", "Bundles", Tag],
+        // ["bundles", "Bundles", Tag],
         ["reviews", "Reviews", Star],
       ]
     },
