@@ -49,9 +49,9 @@ export default function Home({ initialData }) {
 
   const { data: homeData, isLoading: loading } = useSWR('home-data', fetcher, { 
     fallbackData: initialData,
-    revalidateOnMount: false,
-    revalidateOnFocus: false,
-    dedupingInterval: 60000
+    revalidateOnMount: true,
+    revalidateOnFocus: true,
+    dedupingInterval: 5000
   });
 
   const slides = homeData?.slides || [];
@@ -104,8 +104,11 @@ export default function Home({ initialData }) {
           </section>
         );
 
-      case 'flash_sale':
+      case 'flash_sale': {
         if (!flashActive || !data.flash?.length || !flashEnd || new Date(flashEnd) < new Date()) return null;
+        const limit = Number(section.settings?.limit) || 4;
+        const title = section.settings?.title || "Flash Drop";
+        const items = (data.flash || []).slice(0, limit);
         return (
           <section key={section.id} className="bg-obsidian text-white py-16">
             <div className="max-w-[1400px] mx-auto px-5 sm:px-8">
@@ -115,14 +118,14 @@ export default function Home({ initialData }) {
                     <Flame size={18} className="fill-fire text-fire" />
                     <span className="font-mono text-[11px]  tracking-[0.2em] text-fire font-bold">Limited time</span>
                   </div>
-                  <h2 className="font-display tracking-tight leading-none">Flash Drop</h2>
+                  <h2 className="font-display tracking-tight leading-none">{title}</h2>
                   <p className="text-white/60 mt-2">Prices reset when the clock hits zero. Cop before it's gone.</p>
                 </div>
                 {flashEnd && <Countdown endsAt={flashEnd} />}
               </div>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 <div className="contents">
-                  {data.flash.slice(0, 4).map((p, i) => (
+                  {items.map((p, i) => (
                     <div key={p.id} className="bg-white rounded-none p-2"><ProductCard product={p} index={i} /></div>
                   ))}
                 </div>
@@ -130,52 +133,65 @@ export default function Home({ initialData }) {
             </div>
           </section>
         );
+      }
 
-      case 'new_arrivals':
+      case 'new_arrivals': {
+        const limit = Number(section.settings?.limit) || 8;
+        const title = section.settings?.title || "New Arrivals";
+        const items = (data.nw || []).slice(0, limit);
         return (
           <section key={section.id} className="max-w-[1400px] mx-auto px-5 sm:px-8 py-16">
             <ScrollReveal>
               <SectionHeader
                 eyebrow="Fresh heat"
-                title="New Arrivals"
+                title={title}
                 tagline="The latest silhouettes landing in Pakistan first."
                 action={<Link to="/new-arrivals" className="hidden sm:inline-flex items-center gap-2 font-display text-sm tracking-wide hover:text-fire transition-colors">View All <ArrowRight size={16} /></Link>}
               />
             </ScrollReveal>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              {loading ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />) : data.nw?.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+              {loading ? Array.from({ length: limit }).map((_, i) => <ProductCardSkeleton key={i} />) : items.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
             </div>
           </section>
         );
+      }
 
-      case 'best_sellers':
+      case 'best_sellers': {
+        const limit = Number(section.settings?.limit) || 4;
+        const title = section.settings?.title || "Best Sellers";
+        const items = (data.best || []).slice(0, limit);
         return (
           <section key={section.id} className="max-w-[1400px] mx-auto px-5 sm:px-8 py-16">
             <ScrollReveal>
-              <SectionHeader eyebrow="Most wanted" title="Best Sellers" tagline="Culture-approved. Cart-tested. Community-loved." action={<Link to="/shop" className="hidden sm:inline-flex items-center gap-2 font-display text-sm tracking-wide hover:text-fire transition-colors">View All <ArrowRight size={16} /></Link>} />
+              <SectionHeader eyebrow="Most wanted" title={title} tagline="Culture-approved. Cart-tested. Community-loved." action={<Link to="/shop" className="hidden sm:inline-flex items-center gap-2 font-display text-sm tracking-wide hover:text-fire transition-colors">View All <ArrowRight size={16} /></Link>} />
             </ScrollReveal>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              {loading ? Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />) : data.best?.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+              {loading ? Array.from({ length: limit }).map((_, i) => <ProductCardSkeleton key={i} />) : items.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
             </div>
           </section>
         );
+      }
 
-      case 'trending':
+      case 'trending': {
         if (!data.feat?.length) return null;
+        const limit = Number(section.settings?.limit) || 4;
+        const title = section.settings?.title || "Featured Heat";
+        const items = (data.feat || []).slice(0, limit);
         return (
           <section key={section.id} className="bg-ink-100 border-y border-ink-200 py-16">
             <div className="max-w-[1400px] mx-auto px-5 sm:px-8">
               <ScrollReveal>
-                <SectionHeader eyebrow="Editor's Choice" title="Featured Heat" tagline="Handpicked sneakers that define the current meta." />
+                <SectionHeader eyebrow="Editor's Choice" title={title} tagline="Handpicked sneakers that define the current meta." />
               </ScrollReveal>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-8">
-                {data.feat.slice(0, 4).map((p, i) => (
+                {items.map((p, i) => (
                   <div key={p.id} className="bg-white p-2 rounded-none shadow-sm"><ProductCard product={p} index={i} /></div>
                 ))}
               </div>
             </div>
           </section>
         );
+      }
 
       case 'testimonials':
         return <ReviewsSection key={section.id} />;

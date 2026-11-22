@@ -34,25 +34,25 @@ router.get('/homepage', async (req, res) => {
             prisma.product.findMany({
                 where: { status: 'active', is_new_arrival: true },
                 orderBy: { sort_order: 'asc' },
-                take: 8,
+                take: 16,
                 include: { sizes: true }
             }),
             prisma.product.findMany({
                 where: { status: 'active', is_flash_sale: true },
                 orderBy: { sort_order: 'asc' },
-                take: 8,
+                take: 16,
                 include: { sizes: true }
             }),
             prisma.product.findMany({
                 where: { status: 'active', is_best_seller: true },
                 orderBy: { sort_order: 'asc' },
-                take: 4,
+                take: 16,
                 include: { sizes: true }
             }),
             prisma.product.findMany({
                 where: { status: 'active', is_featured: true },
                 orderBy: { sort_order: 'asc' },
-                take: 8,
+                take: 16,
                 include: { sizes: true }
             }),
             prisma.settings.findUnique({
