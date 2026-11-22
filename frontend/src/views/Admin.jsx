@@ -5250,51 +5250,55 @@ function ProductDetailPage({ productId, initialProduct, isNew = false, onBack, o
               </div>
             </div>
 
-            {/* Sizing Matrix Grid - Spacious, High Visibility & No Overflow */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
+            {/* Sizing Matrix Grid - Extra Wide, Spacious & Fully Visible */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-3.5">
               {sizes.map((s, idx) => {
                 const stockVal = Number(s.stock) || 0;
                 return (
                   <div
                     key={s.id || idx}
-                    className={`p-3 rounded-xl border text-center transition-all ${stockVal === 0
+                    className={`p-3.5 rounded-2xl border transition-all ${stockVal === 0
                       ? 'bg-rose-50/40 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50'
                       : stockVal <= 3
                         ? 'bg-amber-50/40 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50'
                         : 'bg-gray-50/80 dark:bg-zinc-800/50 border-gray-200 dark:border-zinc-700 shadow-2xs'
                       }`}
                   >
-                    <div className="flex items-center justify-between px-1">
-                      <span className="font-mono font-black text-sm text-gray-900 dark:text-zinc-100">
+                    <div className="flex items-center justify-between px-0.5 mb-1">
+                      <span className="font-mono font-black text-base text-gray-900 dark:text-zinc-100">
                         EU {s.size}
                       </span>
-                      <span className={`text-[10px] font-bold uppercase tracking-wider ${stockVal === 0 ? 'text-rose-600 dark:text-rose-400' : stockVal <= 3 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'
+                      <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${stockVal === 0 ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400' : stockVal <= 3 ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                         }`}>
                         {stockVal === 0 ? 'Sold Out' : stockVal <= 3 ? 'Low Stock' : 'In Stock'}
                       </span>
                     </div>
 
-                    {/* Integrated High-Visibility Stepper */}
-                    <div className="mt-2.5 flex items-center justify-between p-1 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl w-full shadow-2xs">
+                    {/* Stepper with Extra Wide Input & Zero Arrow Clutter */}
+                    <div className="mt-2.5 flex items-center justify-between gap-2">
                       <button
                         type="button"
                         onClick={() => updateSizeStock(idx, -1)}
-                        className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-900 dark:text-zinc-100 font-black text-base flex items-center justify-center shrink-0 cursor-pointer transition-colors active:scale-95"
+                        className="w-9 h-9 rounded-xl bg-white dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 border border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-zinc-100 font-black text-lg flex items-center justify-center shrink-0 cursor-pointer shadow-xs active:scale-95 transition-all"
                         title="Decrease stock"
                       >
-                        -
+                        −
                       </button>
-                      <input
-                        type="number"
-                        min="0"
-                        value={s.stock}
-                        onChange={(e) => setDirectSizeStock(idx, e.target.value)}
-                        className="w-full flex-1 min-w-0 text-center font-mono font-black text-sm text-gray-900 dark:text-zinc-100 bg-transparent border-0 focus:outline-none p-0"
-                      />
+
+                      <div className="flex-1 min-w-0">
+                        <input
+                          type="number"
+                          min="0"
+                          value={s.stock}
+                          onChange={(e) => setDirectSizeStock(idx, e.target.value)}
+                          className="w-full h-9 text-center font-mono font-black text-base text-gray-900 dark:text-zinc-100 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl focus:outline-none focus:border-fire shadow-2xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                      </div>
+
                       <button
                         type="button"
                         onClick={() => updateSizeStock(idx, 1)}
-                        className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-900 dark:text-zinc-100 font-black text-base flex items-center justify-center shrink-0 cursor-pointer transition-colors active:scale-95"
+                        className="w-9 h-9 rounded-xl bg-white dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 border border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-zinc-100 font-black text-lg flex items-center justify-center shrink-0 cursor-pointer shadow-xs active:scale-95 transition-all"
                         title="Increase stock"
                       >
                         +
