@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { motion } from "framer-motion";
-import { Calendar, CreditCard, Wallet, Home, Megaphone, Tag, Layers, Zap, FileText, Search, LayoutDashboard, Package, ShoppingCart, Ticket, Star, Users, LogOut, TrendingUp, AlertTriangle, Plus, Trash2, X, RotateCcw, DollarSign, Image as ImageIcon, Upload, MessageCircle, Search as SearchIcon, Filter, MoreVertical, Eye, Download, Printer, CheckCircle, Check, Truck, MapPin, Edit, Copy, Activity, Loader2, HelpCircle, ExternalLink, Clock, ArrowLeft, ArrowUpRight, ArrowDownRight, RefreshCw, ShoppingBag, Box, ChevronRight, ChevronDown, Sun, Moon, Bell, Shield, Percent, Flame, Settings as SettingsIcon } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Calendar, CreditCard, Wallet, Home, Megaphone, Tag, Layers, Zap, FileText, Search, LayoutDashboard, Package, ShoppingCart, Ticket, Star, Users, LogOut, TrendingUp, AlertTriangle, Plus, Trash2, X, RotateCcw, DollarSign, Image as ImageIcon, Upload, MessageCircle, Search as SearchIcon, Filter, MoreVertical, Eye, Download, Printer, CheckCircle, Check, Truck, MapPin, Edit, Copy, Activity, Loader2, HelpCircle, ExternalLink, Clock, ArrowLeft, ArrowUpRight, ArrowDownRight, RefreshCw, ShoppingBag, Box, ChevronRight, ChevronDown, Sun, Moon, Bell, Shield, Percent, Flame, Settings as SettingsIcon, Menu, Grid } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell } from "recharts";
 import { http, fmt, imgUrl, waLink } from "../lib/api";
 import { PROVINCES, PROVINCE_CITIES } from "../components/LocationDropdowns";
@@ -423,6 +423,7 @@ export default function Admin() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get("tab") || "overview";
   const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
 
   // Global Ctrl+K / Cmd+K listener to open search modal
   useEffect(() => {
@@ -532,31 +533,22 @@ export default function Admin() {
 
   return (
     <div className={`min-h-screen flex ${isDark ? 'dark bg-zinc-950 text-zinc-100' : 'bg-gray-50 text-gray-900'} transition-colors duration-200`} data-testid="admin-dashboard">
-      <aside className="w-16 lg:w-60 bg-white dark:bg-zinc-900 border-r border-gray-200 dark:border-zinc-800 h-screen sticky top-0 flex flex-col shrink-0 z-20 transition-colors">
-        {/* Streamlined compact sidebar header to avoid excessive vertical padding */}
-        <div className="h-14 px-3.5 lg:px-4 border-b border-gray-200 dark:border-zinc-800 shrink-0 flex items-center justify-between">
+      <aside className="hidden lg:flex lg:w-60 bg-white dark:bg-zinc-900 border-r border-gray-200 dark:border-zinc-800 h-screen sticky top-0 flex-col shrink-0 z-20 transition-colors">
+        {/* Streamlined compact sidebar header */}
+        <div className="h-14 px-4 border-b border-gray-200 dark:border-zinc-800 shrink-0 flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="hidden lg:flex items-center">
-              {settings?.logo_url ? (
-                <img
-                  src={isDark && settings.logo_url === '/images/logo.svg' ? '/images/logo-dark.svg' : settings.logo_url}
-                  alt={settings.store_name || "SOLEKICKS"}
-                  className="h-6 w-auto max-w-[140px] object-contain"
-                />
-              ) : (
-                <span className="font-display font-bold text-base text-gray-900 dark:text-white tracking-tight">
-                  {settings?.store_name || "SOLEKICKS"}<span className="text-fire">.</span>
-                </span>
-              )}
-            </div>
-            <div className="lg:hidden flex items-center justify-center w-full">
-              {settings?.favicon_url ? (
-                <img src={settings.favicon_url} alt="Logo" className="w-6 h-6 object-contain" />
-              ) : (
-                <span className="font-display font-black text-fire text-base">S.</span>
-              )}
-            </div>
-            <span className="hidden lg:inline text-[9px] font-mono font-bold bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 px-1.5 py-0.5 rounded border border-gray-200 dark:border-zinc-700 shadow-2xs shrink-0">
+            {settings?.logo_url ? (
+              <img
+                src={isDark && settings.logo_url === '/images/logo.svg' ? '/images/logo-dark.svg' : settings.logo_url}
+                alt={settings.store_name || "SOLEKICKS"}
+                className="h-6 w-auto max-w-[140px] object-contain"
+              />
+            ) : (
+              <span className="font-display font-bold text-base text-gray-900 dark:text-white tracking-tight">
+                {settings?.store_name || "SOLEKICKS"}<span className="text-fire">.</span>
+              </span>
+            )}
+            <span className="text-[9px] font-mono font-bold bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 px-1.5 py-0.5 rounded border border-gray-200 dark:border-zinc-700 shadow-2xs shrink-0">
               ADMIN
             </span>
           </div>
@@ -657,9 +649,60 @@ export default function Admin() {
         </div>
       </aside>
 
-      {/* Main Content Area with Enterprise Sticky Top Navigation Bar */}
+      {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
-        <header className="h-14 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 sticky top-0 z-30 px-4 lg:px-8 flex items-center justify-between shrink-0 transition-colors">
+        {/* Mobile App Header (lg:hidden) */}
+        <header className="lg:hidden h-14 bg-white/95 dark:bg-zinc-900/95 border-b border-gray-200 dark:border-zinc-800 sticky top-0 z-30 px-3.5 flex items-center justify-between shrink-0 backdrop-blur-md transition-colors">
+          <div className="flex items-center gap-2 min-w-0">
+            {settings?.logo_url ? (
+              <img
+                src={isDark && settings.logo_url === '/images/logo.svg' ? '/images/logo-dark.svg' : settings.logo_url}
+                alt={settings.store_name || "SOLEKICKS"}
+                className="h-5 sm:h-6 w-auto max-w-[110px] object-contain"
+              />
+            ) : (
+              <span className="font-display font-bold text-sm text-gray-900 dark:text-white tracking-tight">
+                {settings?.store_name || "SOLEKICKS"}<span className="text-fire">.</span>
+              </span>
+            )}
+            <span className="text-[9px] font-mono font-bold bg-fire/10 text-fire px-1.5 py-0.5 rounded border border-fire/20 uppercase truncate max-w-[110px]">
+              {tab.replace(/cms_/g, '').replace(/_/g, ' ')}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setSearchModalOpen(true)}
+              className="p-2 rounded-xl text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+              title="Search SoleKicks (Ctrl+K)"
+            >
+              <Search size={16} />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsDark(!isDark)}
+              className="p-2 rounded-xl text-gray-600 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {isDark ? <Sun size={16} className="text-amber-400" /> : <Moon size={16} className="text-gray-700 dark:text-zinc-300" />}
+            </button>
+
+            <a
+              href="/"
+              target="_blank"
+              rel="noreferrer"
+              className="p-2 rounded-xl text-gray-500 dark:text-zinc-400 hover:text-fire hover:bg-fire/10 transition-colors cursor-pointer"
+              title="View Online Store"
+            >
+              <ExternalLink size={16} />
+            </a>
+          </div>
+        </header>
+
+        {/* Desktop Sticky Top Navigation Bar (hidden lg:flex) */}
+        <header className="hidden lg:flex h-14 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 sticky top-0 z-30 px-8 items-center justify-between shrink-0 transition-colors">
           {/* Left: Breadcrumbs & Module Title */}
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold text-gray-400 dark:text-zinc-500">Admin</span>
@@ -710,7 +753,7 @@ export default function Admin() {
           activeTab={tab}
         />
 
-        <main className="p-4 lg:p-8 flex-1 min-w-0">
+        <main className="p-3.5 sm:p-5 lg:p-8 flex-1 min-w-0 pb-28 lg:pb-8">
           {tab === "overview" && <Overview setTab={setTab} isDark={isDark} />}
           {tab === "orders" && <Orders />}
           {tab === "cod" && <Orders initialCodStatus="pending" />}
@@ -738,6 +781,155 @@ export default function Admin() {
           {tab === "audit_logs" && <AuditLogs isDark={isDark} />}
           {tab === "settings" && <SettingsManager isDark={isDark} user={user} />}
         </main>
+
+        {/* Native Mobile App Fixed Bottom Tabs (lg:hidden) */}
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-zinc-900/95 border-t border-gray-200 dark:border-zinc-800 backdrop-blur-md px-1.5 py-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-lg">
+          <div className="flex items-center justify-around">
+            {[
+              { id: "overview", label: "Dashboard", icon: LayoutDashboard },
+              { id: "orders", label: "Orders", icon: ShoppingCart },
+              { id: "products", label: "Products", icon: Package },
+              { id: "profitability", label: "Analytics", icon: TrendingUp },
+              { id: "more", label: "More", icon: Layers, isMore: true },
+            ].map((item) => {
+              const Icon = item.icon;
+              const isMoreActive = item.isMore && !["overview", "orders", "products", "profitability"].includes(tab);
+              const isActive = tab === item.id || isMoreActive;
+
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => {
+                    if (item.isMore) {
+                      setMobileMoreOpen(true);
+                    } else {
+                      setTab(item.id);
+                    }
+                  }}
+                  className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all cursor-pointer relative ${
+                    isActive
+                      ? "text-fire font-bold"
+                      : "text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 font-medium"
+                  }`}
+                >
+                  <div className="relative">
+                    <Icon size={20} className={`transition-transform ${isActive ? "scale-110" : ""}`} />
+                    {isActive && (
+                      <span className="absolute -top-1 -right-1 w-1.5 h-1.5 bg-fire rounded-full animate-pulse" />
+                    )}
+                  </div>
+                  <span className="text-[10px] tracking-tight mt-1 leading-none">
+                    {item.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </nav>
+
+        {/* Mobile Slide-Up More Menu Sheet */}
+        <AnimatePresence>
+          {mobileMoreOpen && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setMobileMoreOpen(false)}
+                className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 lg:hidden"
+              />
+              <motion.div
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "100%" }}
+                transition={{ type: "spring", damping: 28, stiffness: 280 }}
+                className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-zinc-900 rounded-t-3xl border-t border-gray-200 dark:border-zinc-800 shadow-2xl max-h-[85vh] flex flex-col lg:hidden overflow-hidden"
+              >
+                {/* Drag Handle & Sheet Header */}
+                <div className="pt-3 pb-3 px-5 flex flex-col items-center border-b border-gray-100 dark:border-zinc-800 shrink-0">
+                  <div className="w-12 h-1 bg-gray-300 dark:bg-zinc-700 rounded-full mb-3" />
+                  <div className="w-full flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-fire/10 text-fire flex items-center justify-center font-bold text-xs uppercase">
+                        {user?.name?.[0] || 'A'}
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-gray-900 dark:text-white">{user?.name || 'Administrator'}</p>
+                        <p className="text-[10px] text-gray-400 capitalize">{user?.role || 'admin'} · {settings?.store_name || 'SOLEKICKS'}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setMobileMoreOpen(false)}
+                      className="p-1.5 rounded-full text-gray-400 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                      aria-label="Close menu"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Categorized Modules List */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                  {filteredSections.map(sec => (
+                    <div key={sec.category} className="space-y-1.5">
+                      <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-gray-400 dark:text-zinc-500 px-1">
+                        {sec.category}
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {sec.items.map(([k, l, I]) => {
+                          const isActive = tab === k || (k === 'cms' && isCmsTab);
+                          return (
+                            <button
+                              key={k}
+                              onClick={() => {
+                                setTab(k === 'cms' ? 'cms_homepage' : k);
+                                setMobileMoreOpen(false);
+                              }}
+                              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all text-left cursor-pointer ${
+                                isActive
+                                  ? 'bg-fire text-white shadow-xs'
+                                  : 'bg-gray-50 dark:bg-zinc-800/70 text-gray-700 dark:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800 border border-gray-100 dark:border-zinc-800/80'
+                              }`}
+                            >
+                              <I size={16} className={isActive ? 'text-white' : 'text-fire shrink-0'} />
+                              <span className="truncate">{l}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Actions & Logout */}
+                  <div className="pt-3 border-t border-gray-100 dark:border-zinc-800 space-y-2">
+                    <a
+                      href="/"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-gray-100 dark:bg-zinc-800 rounded-xl text-xs font-bold text-gray-700 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
+                    >
+                      <ExternalLink size={14} />
+                      <span>View Online Store</span>
+                    </a>
+
+                    <button
+                      onClick={() => {
+                        setMobileMoreOpen(false);
+                        logout();
+                        navigate('/');
+                      }}
+                      className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-bold hover:bg-rose-100 dark:hover:bg-rose-950/60 transition-colors cursor-pointer"
+                    >
+                      <LogOut size={14} />
+                      <span>Logout of Admin</span>
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
@@ -1849,7 +2041,8 @@ function Orders({ initialCodStatus }) {
             <Loader2 size={18} className="animate-spin text-fire" /> Loading orders drop...
           </div>
         ) : (
-          <table className="w-full text-left border-collapse text-xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs min-w-[760px]">
             <thead>
               <tr className="border-b border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/80 text-gray-600 dark:text-zinc-300 font-bold uppercase tracking-wider text-[11px]">
                 <th className="p-3.5 w-10"><input type="checkbox" checked={selected.length === data.orders.length && data.orders.length > 0} onChange={selectAll} className="accent-black rounded" /></th>
@@ -1957,8 +2150,9 @@ function Orders({ initialCodStatus }) {
               ))}
             </tbody>
           </table>
-        )}
-      </div>
+        </div>
+      )}
+    </div>
 
       {/* Pagination Bar */}
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 bg-white dark:bg-zinc-900 p-4 border border-gray-200 dark:border-zinc-800 rounded-xl shadow-sm">
