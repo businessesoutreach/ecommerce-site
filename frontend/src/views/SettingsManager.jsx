@@ -46,7 +46,6 @@ export default function SettingsManager({ isDark, user }) {
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingFavicon, setUploadingFavicon] = useState(false);
-  const [logoPreviewBg, setLogoPreviewBg] = useState('light'); // 'light' | 'dark' | 'brand'
 
   const logoInputRef = useRef(null);
   const faviconInputRef = useRef(null);
@@ -306,369 +305,325 @@ export default function SettingsManager({ isDark, user }) {
         <motion.div
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          className="grid grid-cols-1 lg:grid-cols-12 gap-6"
+          className="max-w-4xl space-y-6"
         >
-          {/* Left Column: Form controls (7 cols) */}
-          <div className="lg:col-span-7 space-y-6">
-            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-xs space-y-5">
-              <h3 className="font-display font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
-                <Store size={18} className="text-fire" />
-                Store Identity
-              </h3>
+          {/* Store Identity & Branding Card */}
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-xs space-y-5">
+            <h3 className="font-display font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
+              <Store size={18} className="text-fire" />
+              Store Identity & Branding
+            </h3>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5">
-                    Store Brand Name
-                  </label>
-                  <input
-                    type="text"
-                    value={form.store_name}
-                    onChange={(e) => setForm({ ...form, store_name: e.target.value })}
-                    placeholder="e.g. SOLEKICKS"
-                    className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white focus:outline-none focus:border-fire transition-colors"
-                  />
-                  <p className="text-[11px] text-gray-400 mt-1">Displayed in header, checkout, invoices, and emails.</p>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5">
-                    Store Tagline / Slogan
-                  </label>
-                  <input
-                    type="text"
-                    value={form.store_tagline}
-                    onChange={(e) => setForm({ ...form, store_tagline: e.target.value })}
-                    placeholder="e.g. Premium Sneakers & Streetwear"
-                    className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white focus:outline-none focus:border-fire transition-colors"
-                  />
-                  <p className="text-[11px] text-gray-400 mt-1">Short subtitle for SEO and footer branding.</p>
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5">
+                  Store Brand Name
+                </label>
+                <input
+                  type="text"
+                  value={form.store_name}
+                  onChange={(e) => setForm({ ...form, store_name: e.target.value })}
+                  placeholder="e.g. SOLEKICKS"
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white focus:outline-none focus:border-fire transition-colors"
+                />
+                <p className="text-[11px] text-gray-400 mt-1">Displayed in header, checkout, invoices, and emails.</p>
               </div>
 
-              {/* Logo File Upload & URL */}
-              <div className="space-y-3 pt-3 border-t border-gray-100 dark:border-zinc-800">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-gray-700 dark:text-zinc-300 flex items-center gap-1.5">
-                    <ImageIcon size={14} className="text-fire" />
-                    Store Logo (Upload File or Enter URL)
-                  </label>
-                  {form.logo_url && (
-                    <button
-                      type="button"
-                      onClick={() => setForm({ ...form, logo_url: '' })}
-                      className="text-[11px] text-rose-500 hover:text-rose-600 flex items-center gap-1 cursor-pointer font-bold"
-                    >
-                      <Trash2 size={12} /> Clear Logo
-                    </button>
-                  )}
-                </div>
-
-                <div className="flex flex-col sm:flex-row items-stretch gap-2.5">
-                  <input
-                    type="file"
-                    ref={logoInputRef}
-                    accept="image/*"
-                    onChange={handleUploadLogo}
-                    className="hidden"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => logoInputRef.current?.click()}
-                    disabled={uploadingLogo}
-                    className="px-4 py-2.5 bg-gray-900 hover:bg-black dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer shrink-0 disabled:opacity-60"
-                  >
-                    {uploadingLogo ? (
-                      <>
-                        <RefreshCw size={14} className="animate-spin text-fire" />
-                        <span>Uploading...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Upload size={14} />
-                        <span>Upload Logo</span>
-                      </>
-                    )}
-                  </button>
-
-                  <input
-                    type="text"
-                    value={form.logo_url}
-                    onChange={(e) => setForm({ ...form, logo_url: e.target.value })}
-                    placeholder="Or paste direct image URL (SVG, PNG, WebP)..."
-                    className="flex-1 px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white font-mono focus:outline-none focus:border-fire transition-colors"
-                  />
-                </div>
-                <p className="text-[11px] text-gray-400">
-                  Upload an SVG or high-res PNG with transparent background. Height ~40-50px is ideal.
-                </p>
-              </div>
-
-              {/* Favicon File Upload & URL */}
-              <div className="space-y-3 pt-3 border-t border-gray-100 dark:border-zinc-800">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-gray-700 dark:text-zinc-300 flex items-center gap-1.5">
-                    <Sparkles size={14} className="text-fire" />
-                    Favicon Icon (Upload File or Enter URL)
-                  </label>
-                  {form.favicon_url && (
-                    <button
-                      type="button"
-                      onClick={() => setForm({ ...form, favicon_url: '' })}
-                      className="text-[11px] text-rose-500 hover:text-rose-600 flex items-center gap-1 cursor-pointer font-bold"
-                    >
-                      <Trash2 size={12} /> Clear Favicon
-                    </button>
-                  )}
-                </div>
-
-                <div className="flex flex-col sm:flex-row items-stretch gap-2.5">
-                  <input
-                    type="file"
-                    ref={faviconInputRef}
-                    accept="image/*,.ico"
-                    onChange={handleUploadFavicon}
-                    className="hidden"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => faviconInputRef.current?.click()}
-                    disabled={uploadingFavicon}
-                    className="px-4 py-2.5 bg-gray-900 hover:bg-black dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer shrink-0 disabled:opacity-60"
-                  >
-                    {uploadingFavicon ? (
-                      <>
-                        <RefreshCw size={14} className="animate-spin text-fire" />
-                        <span>Uploading...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Upload size={14} />
-                        <span>Upload Favicon</span>
-                      </>
-                    )}
-                  </button>
-
-                  <input
-                    type="text"
-                    value={form.favicon_url}
-                    onChange={(e) => setForm({ ...form, favicon_url: e.target.value })}
-                    placeholder="Or paste direct favicon URL (.svg, .ico, .png)..."
-                    className="flex-1 px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white font-mono focus:outline-none focus:border-fire transition-colors"
-                  />
-                </div>
-                <p className="text-[11px] text-gray-400">
-                  Square 32x32px or 64x64px image displayed on browser tabs.
-                </p>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5">
+                  Store Tagline / Slogan
+                </label>
+                <input
+                  type="text"
+                  value={form.store_tagline}
+                  onChange={(e) => setForm({ ...form, store_tagline: e.target.value })}
+                  placeholder="e.g. Premium Sneakers & Streetwear"
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white focus:outline-none focus:border-fire transition-colors"
+                />
+                <p className="text-[11px] text-gray-400 mt-1">Short subtitle for SEO and footer branding.</p>
               </div>
             </div>
 
-            {/* Contact Information */}
-            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-xs space-y-4">
-              <h3 className="font-display font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
-                <Mail size={18} className="text-fire" />
-                Customer Support & Contact Info
-              </h3>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5 flex items-center gap-1.5">
-                    <Mail size={13} className="text-gray-400" />
-                    Support Email
-                  </label>
-                  <input
-                    type="email"
-                    value={form.contact_email}
-                    onChange={(e) => setForm({ ...form, contact_email: e.target.value })}
-                    placeholder="support@solekicks.pk"
-                    className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white focus:outline-none focus:border-fire transition-colors"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5 flex items-center gap-1.5">
-                    <Phone size={13} className="text-gray-400" />
-                    Support Phone
-                  </label>
-                  <input
-                    type="text"
-                    value={form.contact_phone}
-                    onChange={(e) => setForm({ ...form, contact_phone: e.target.value })}
-                    placeholder="+92 300 8472910"
-                    className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white focus:outline-none focus:border-fire transition-colors"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5 flex items-center gap-1.5">
-                    <MessageSquare size={13} className="text-emerald-500" />
-                    WhatsApp Business Number
-                  </label>
-                  <input
-                    type="text"
-                    value={form.whatsapp_number}
-                    onChange={(e) => setForm({ ...form, whatsapp_number: e.target.value })}
-                    placeholder="923008472910 (with country code)"
-                    className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white focus:outline-none focus:border-fire transition-colors"
-                  />
-                  <p className="text-[11px] text-gray-400 mt-1">Powers the floating WhatsApp chat button & direct customer queries.</p>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5 flex items-center gap-1.5">
-                    <MapPin size={13} className="text-gray-400" />
-                    Physical Store Address
-                  </label>
-                  <input
-                    type="text"
-                    value={form.store_address}
-                    onChange={(e) => setForm({ ...form, store_address: e.target.value })}
-                    placeholder="Shop 14-A, Block H, Gulberg III, Lahore, Pakistan"
-                    className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white focus:outline-none focus:border-fire transition-colors"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column: Pure Asset Preview (5 cols) */}
-          <div className="lg:col-span-5 space-y-6">
-            {/* Logo Pure Preview Card */}
-            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-xs space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-zinc-800">
-                <div className="flex items-center gap-2">
-                  <ImageIcon size={16} className="text-fire" />
-                  <h3 className="font-display font-bold text-xs uppercase tracking-wider text-gray-900 dark:text-white">
-                    Logo Preview
-                  </h3>
-                </div>
-
-                {/* Background switchers to check contrast */}
-                <div className="flex items-center gap-1 bg-gray-100 dark:bg-zinc-800 p-1 rounded-lg">
+            {/* Store Logo Section */}
+            <div className="space-y-3 pt-4 border-t border-gray-100 dark:border-zinc-800">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-gray-700 dark:text-zinc-300 flex items-center gap-1.5">
+                  <ImageIcon size={14} className="text-fire" />
+                  Store Logo
+                </label>
+                {form.logo_url && (
                   <button
                     type="button"
-                    onClick={() => setLogoPreviewBg('light')}
-                    title="Preview on Light background"
-                    className={`px-2.5 py-1 text-[11px] font-bold rounded-md cursor-pointer transition-colors ${
-                      logoPreviewBg === 'light' ? 'bg-white text-gray-900 shadow-xs' : 'text-gray-500 hover:text-gray-800 dark:text-zinc-400'
-                    }`}
+                    onClick={() => setForm({ ...form, logo_url: '' })}
+                    className="text-[11px] text-rose-500 hover:text-rose-600 flex items-center gap-1 cursor-pointer font-bold"
                   >
-                    Light
+                    <Trash2 size={12} /> Clear Logo
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setLogoPreviewBg('dark')}
-                    title="Preview on Dark background"
-                    className={`px-2.5 py-1 text-[11px] font-bold rounded-md cursor-pointer transition-colors ${
-                      logoPreviewBg === 'dark' ? 'bg-zinc-900 text-white shadow-xs' : 'text-gray-500 hover:text-gray-800 dark:text-zinc-400'
-                    }`}
-                  >
-                    Dark
-                  </button>
-                </div>
-              </div>
-
-              {/* Dedicated Clean Logo Box (High Contrast, Clearly Visible) */}
-              <div
-                className={`relative min-h-[170px] p-8 rounded-xl border flex items-center justify-center transition-colors overflow-hidden ${
-                  logoPreviewBg === 'light'
-                    ? 'bg-white border-gray-200 shadow-xs'
-                    : 'bg-zinc-950 border-zinc-800'
-                }`}
-              >
-                {form.logo_url ? (
-                  <img
-                    key={form.logo_url}
-                    src={form.logo_url}
-                    alt={form.store_name || "Logo"}
-                    className={`h-12 sm:h-14 w-auto max-w-[280px] object-contain transition-all ${
-                      logoPreviewBg === 'dark' ? 'brightness-0 invert' : ''
-                    }`}
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                    }}
-                  />
-                ) : (
-                  <div className="text-center space-y-1">
-                    <span className="font-display font-bold text-xl tracking-tight text-gray-900 dark:text-white">
-                      {form.store_name || 'SOLEKICKS'}
-                    </span>
-                    <p className="text-[10px] font-mono text-gray-400 block">Default Text Branding Active</p>
-                  </div>
                 )}
               </div>
 
-              {/* Asset Details */}
-              <div className="pt-2 text-[11px] text-gray-500 dark:text-zinc-400 flex items-center justify-between">
-                <span>Active Logo URL:</span>
-                <span className="font-mono font-bold text-gray-800 dark:text-zinc-200 truncate max-w-[220px]">
-                  {form.logo_url || 'Default Text (No File)'}
-                </span>
+              <div className="flex flex-col sm:flex-row items-stretch gap-2.5">
+                <input
+                  type="file"
+                  ref={logoInputRef}
+                  accept="image/*"
+                  onChange={handleUploadLogo}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => logoInputRef.current?.click()}
+                  disabled={uploadingLogo}
+                  className="px-4 py-2.5 bg-gray-900 hover:bg-black dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer shrink-0 disabled:opacity-60"
+                >
+                  {uploadingLogo ? (
+                    <>
+                      <RefreshCw size={14} className="animate-spin text-fire" />
+                      <span>Uploading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={14} />
+                      <span>{form.logo_url ? 'Replace Logo' : 'Upload Logo'}</span>
+                    </>
+                  )}
+                </button>
+
+                <input
+                  type="text"
+                  value={form.logo_url}
+                  onChange={(e) => setForm({ ...form, logo_url: e.target.value })}
+                  placeholder="Or paste direct image URL (SVG, PNG, WebP)..."
+                  className="flex-1 px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white font-mono focus:outline-none focus:border-fire transition-colors"
+                />
               </div>
+
+              <p className="text-[11px] text-gray-400">
+                Upload an SVG, PNG, or WebP with transparent background (ideal height ~40–50px).
+              </p>
+
+              {/* Directly below input: Live Logo Preview Box */}
+              {form.logo_url ? (
+                <div className="mt-2.5 p-3.5 bg-gray-50 dark:bg-zinc-800/60 rounded-xl border border-gray-200 dark:border-zinc-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="h-14 px-4 bg-white rounded-lg border border-gray-200 flex items-center justify-center shrink-0 shadow-2xs">
+                      <img
+                        key={form.logo_url}
+                        src={form.logo_url}
+                        alt="Logo Preview"
+                        className="h-9 w-auto max-w-[180px] object-contain"
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-gray-900 dark:text-white">Active Logo Preview</span>
+                        <span className="text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 font-bold px-1.5 py-0.5 rounded">
+                          Live
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-gray-500 dark:text-zinc-400 font-mono truncate max-w-[280px] sm:max-w-[360px] mt-0.5">
+                        {form.logo_url}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                    <button
+                      type="button"
+                      onClick={() => logoInputRef.current?.click()}
+                      className="px-3 py-1.5 text-xs font-bold text-gray-700 dark:text-zinc-200 hover:text-black dark:hover:text-white bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg shadow-2xs hover:border-gray-300 transition-colors cursor-pointer"
+                    >
+                      Change
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, logo_url: '' })}
+                      className="px-3 py-1.5 text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 dark:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-900/50 text-xs text-amber-800 dark:text-amber-300">
+                  No logo uploaded. Active header branding will display text: <strong>{form.store_name || 'SOLEKICKS'}</strong>
+                </div>
+              )}
             </div>
 
-            {/* Favicon Dedicated Preview Card */}
-            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-xs space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-zinc-800">
-                <div className="flex items-center gap-2">
-                  <Sparkles size={16} className="text-fire" />
-                  <h3 className="font-display font-bold text-xs uppercase tracking-wider text-gray-900 dark:text-white">
-                    Favicon Preview
-                  </h3>
-                </div>
-                <span className="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded">
-                  Tab Icon
-                </span>
+            {/* Store Favicon Section */}
+            <div className="space-y-3 pt-4 border-t border-gray-100 dark:border-zinc-800">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-gray-700 dark:text-zinc-300 flex items-center gap-1.5">
+                  <Sparkles size={14} className="text-fire" />
+                  Store Favicon (Browser Tab Icon)
+                </label>
+                {form.favicon_url && (
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, favicon_url: '' })}
+                    className="text-[11px] text-rose-500 hover:text-rose-600 flex items-center gap-1 cursor-pointer font-bold"
+                  >
+                    <Trash2 size={12} /> Clear Favicon
+                  </button>
+                )}
               </div>
 
-              {/* Magnified Favicon Display */}
-              <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-zinc-800/60 rounded-xl border border-gray-200 dark:border-zinc-700">
-                <div className="w-16 h-16 rounded-xl bg-white border border-gray-200 shadow-xs flex items-center justify-center p-2.5 shrink-0">
-                  {form.favicon_url ? (
-                    <img
-                      src={form.favicon_url}
-                      alt="Favicon Large"
-                      className="w-10 h-10 object-contain"
-                      onError={(e) => { e.target.style.display = 'none'; }}
-                    />
+              <div className="flex flex-col sm:flex-row items-stretch gap-2.5">
+                <input
+                  type="file"
+                  ref={faviconInputRef}
+                  accept="image/*,.ico"
+                  onChange={handleUploadFavicon}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => faviconInputRef.current?.click()}
+                  disabled={uploadingFavicon}
+                  className="px-4 py-2.5 bg-gray-900 hover:bg-black dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer shrink-0 disabled:opacity-60"
+                >
+                  {uploadingFavicon ? (
+                    <>
+                      <RefreshCw size={14} className="animate-spin text-fire" />
+                      <span>Uploading...</span>
+                    </>
                   ) : (
-                    <Sparkles size={24} className="text-fire" />
+                    <>
+                      <Upload size={14} />
+                      <span>{form.favicon_url ? 'Replace Favicon' : 'Upload Favicon'}</span>
+                    </>
                   )}
-                </div>
-                <div className="space-y-1 min-w-0">
-                  <p className="text-xs font-bold text-gray-900 dark:text-white">High-Resolution Icon (64×64)</p>
-                  <p className="text-[11px] text-gray-500 dark:text-zinc-400 font-mono truncate">
-                    {form.favicon_url || 'No Favicon Loaded'}
-                  </p>
-                  <p className="text-[10px] text-gray-400">Renders on bookmarks & browser tabs</p>
-                </div>
+                </button>
+
+                <input
+                  type="text"
+                  value={form.favicon_url}
+                  onChange={(e) => setForm({ ...form, favicon_url: e.target.value })}
+                  placeholder="Or paste direct favicon URL (.svg, .ico, .png)..."
+                  className="flex-1 px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white font-mono focus:outline-none focus:border-fire transition-colors"
+                />
               </div>
 
-              {/* Simulated Browser Chrome Tab */}
-              <div className="bg-gray-100 dark:bg-zinc-800 rounded-xl p-2.5 space-y-2 border border-gray-200 dark:border-zinc-700">
-                {/* Tab */}
-                <div className="w-fit max-w-[240px] bg-white dark:bg-zinc-900 px-3 py-1.5 rounded-t-lg border-t-2 border-t-fire border-x border-gray-200 dark:border-zinc-700 flex items-center gap-2 shadow-2xs">
-                  {form.favicon_url ? (
-                    <img
-                      src={form.favicon_url}
-                      alt="Favicon"
-                      className="w-4 h-4 object-contain shrink-0"
-                      onError={(e) => { e.target.style.display = 'none'; }}
-                    />
-                  ) : (
-                    <div className="w-3.5 h-3.5 rounded-full bg-fire shrink-0" />
-                  )}
-                  <span className="text-xs font-bold text-gray-800 dark:text-zinc-200 truncate">
-                    {form.store_name || 'SOLEKICKS'} · Sneaker Drop
-                  </span>
-                  <span className="text-[11px] text-gray-400 ml-auto shrink-0">✕</span>
-                </div>
+              <p className="text-[11px] text-gray-400">
+                Square 32×32px or 64×64px image (.svg, .ico, or .png) shown in browser tabs.
+              </p>
 
-                {/* URL Bar */}
-                <div className="bg-white dark:bg-zinc-900 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-700 flex items-center gap-2 text-[11px] font-mono text-gray-500 dark:text-zinc-400">
-                  <span className="text-emerald-500 font-bold">https://</span>
-                  <span className="text-gray-800 dark:text-zinc-200">{form.store_name?.toLowerCase().replace(/\s+/g, '') || 'solekicks'}.com</span>
+              {/* Directly below input: Live Favicon Preview Box */}
+              {form.favicon_url ? (
+                <div className="mt-2.5 p-3.5 bg-gray-50 dark:bg-zinc-800/60 rounded-xl border border-gray-200 dark:border-zinc-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="w-12 h-12 bg-white rounded-lg border border-gray-200 flex items-center justify-center shrink-0 shadow-2xs">
+                      <img
+                        key={form.favicon_url}
+                        src={form.favicon_url}
+                        alt="Favicon Preview"
+                        className="w-7 h-7 object-contain"
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-gray-900 dark:text-white">Active Tab Favicon</span>
+                        <span className="text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 font-bold px-1.5 py-0.5 rounded">
+                          Tab Icon
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-gray-500 dark:text-zinc-400 font-mono truncate max-w-[280px] sm:max-w-[360px] mt-0.5">
+                        {form.favicon_url}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                    <button
+                      type="button"
+                      onClick={() => faviconInputRef.current?.click()}
+                      className="px-3 py-1.5 text-xs font-bold text-gray-700 dark:text-zinc-200 hover:text-black dark:hover:text-white bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg shadow-2xs hover:border-gray-300 transition-colors cursor-pointer"
+                    >
+                      Change
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, favicon_url: '' })}
+                      className="px-3 py-1.5 text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 dark:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
+              ) : (
+                <div className="mt-2 p-3 bg-gray-100 dark:bg-zinc-800/40 rounded-xl text-xs text-gray-500 dark:text-zinc-400">
+                  No custom favicon set. Using default site favicon.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Customer Support & Contact Info */}
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-xs space-y-4">
+            <h3 className="font-display font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
+              <Mail size={18} className="text-fire" />
+              Customer Support & Contact Info
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5 flex items-center gap-1.5">
+                  <Mail size={13} className="text-gray-400" />
+                  Support Email
+                </label>
+                <input
+                  type="email"
+                  value={form.contact_email}
+                  onChange={(e) => setForm({ ...form, contact_email: e.target.value })}
+                  placeholder="support@solekicks.pk"
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white focus:outline-none focus:border-fire transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5 flex items-center gap-1.5">
+                  <Phone size={13} className="text-gray-400" />
+                  Support Phone
+                </label>
+                <input
+                  type="text"
+                  value={form.contact_phone}
+                  onChange={(e) => setForm({ ...form, contact_phone: e.target.value })}
+                  placeholder="+92 300 8472910"
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white focus:outline-none focus:border-fire transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5 flex items-center gap-1.5">
+                  <MessageSquare size={13} className="text-emerald-500" />
+                  WhatsApp Business Number
+                </label>
+                <input
+                  type="text"
+                  value={form.whatsapp_number}
+                  onChange={(e) => setForm({ ...form, whatsapp_number: e.target.value })}
+                  placeholder="923008472910 (with country code)"
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white focus:outline-none focus:border-fire transition-colors"
+                />
+                <p className="text-[11px] text-gray-400 mt-1">Powers the floating WhatsApp chat button & direct customer queries.</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5 flex items-center gap-1.5">
+                  <MapPin size={13} className="text-gray-400" />
+                  Physical Store Address
+                </label>
+                <input
+                  type="text"
+                  value={form.store_address}
+                  onChange={(e) => setForm({ ...form, store_address: e.target.value })}
+                  placeholder="Shop 14-A, Block H, Gulberg III, Lahore, Pakistan"
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white focus:outline-none focus:border-fire transition-colors"
+                />
               </div>
             </div>
           </div>
