@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Calendar, CreditCard, Wallet, Home, Megaphone, Tag, Layers, Zap, FileText, Search, LayoutDashboard, Package, ShoppingCart, Ticket, Star, Users, LogOut, TrendingUp, AlertTriangle, Plus, Trash2, X, RotateCcw, DollarSign, Image as ImageIcon, Upload, MessageCircle, Search as SearchIcon, Filter, MoreVertical, Eye, Download, Printer, CheckCircle, Check, Truck, MapPin, Edit, Copy, Activity, Loader2, HelpCircle, ExternalLink, Clock, ArrowLeft, ArrowUpRight, ArrowDownRight, RefreshCw, ShoppingBag, Box, ChevronRight, ChevronDown, Sun, Moon, Bell, Shield, Percent, Flame } from "lucide-react";
+import { Calendar, CreditCard, Wallet, Home, Megaphone, Tag, Layers, Zap, FileText, Search, LayoutDashboard, Package, ShoppingCart, Ticket, Star, Users, LogOut, TrendingUp, AlertTriangle, Plus, Trash2, X, RotateCcw, DollarSign, Image as ImageIcon, Upload, MessageCircle, Search as SearchIcon, Filter, MoreVertical, Eye, Download, Printer, CheckCircle, Check, Truck, MapPin, Edit, Copy, Activity, Loader2, HelpCircle, ExternalLink, Clock, ArrowLeft, ArrowUpRight, ArrowDownRight, RefreshCw, ShoppingBag, Box, ChevronRight, ChevronDown, Sun, Moon, Bell, Shield, Percent, Flame, Settings as SettingsIcon } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell } from "recharts";
 import { http, fmt, imgUrl, waLink } from "../lib/api";
 import { PROVINCES, PROVINCE_CITIES } from "../components/LocationDropdowns";
@@ -16,6 +16,7 @@ import BrandsCMS from './cms/BrandsCMS';
 import ProductSectionsCMS from './cms/ProductSectionsCMS';
 import TestimonialsCMS from './cms/TestimonialsCMS';
 import FlashSaleManager from './FlashSaleManager';
+import SettingsManager from './SettingsManager';
 import ConfirmModal from '../components/ConfirmModal';
 
 function TableActionDropdown({ isOpen, onToggle, onClose, children, menuWidth = "w-48" }) {
@@ -476,7 +477,7 @@ export default function Admin() {
   useEffect(() => {
     if (!user) navigate("/login");
     else if (user.role !== "admin" && user.role !== "staff") { toast.error("Admin access only"); navigate("/"); }
-    else if (user.role === "staff" && (["overview", "refunds", "coupons", "audit_logs"].includes(tab) || isCmsTab)) setTab("orders");
+    else if (user.role === "staff" && (["overview", "refunds", "coupons", "audit_logs", "settings"].includes(tab) || isCmsTab)) setTab("orders");
   }, [user, tab]);
 
   if (!user || (user.role !== "admin" && user.role !== "staff")) return null;
@@ -515,6 +516,7 @@ export default function Admin() {
     {
       category: "System",
       items: [
+        ["settings", "Settings", SettingsIcon],
         ["audit_logs", "Audit Logs", FileText],
       ]
     }
@@ -524,7 +526,7 @@ export default function Admin() {
     ...sec,
     items: sec.items.filter(([k]) => {
       if (user.role === 'admin') return true;
-      return !['overview', 'refunds', 'coupons', 'cms', 'audit_logs', 'profitability'].includes(k);
+      return !['overview', 'refunds', 'coupons', 'cms', 'audit_logs', 'profitability', 'settings'].includes(k);
     })
   })).filter(sec => sec.items.length > 0);
 
@@ -718,6 +720,7 @@ export default function Admin() {
 
           {tab === "profitability" && <ProfitabilityAnalytics />}
           {tab === "audit_logs" && <AuditLogs isDark={isDark} />}
+          {tab === "settings" && <SettingsManager isDark={isDark} user={user} />}
         </main>
       </div>
     </div>

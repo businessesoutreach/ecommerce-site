@@ -1,19 +1,30 @@
 const { Safepay } = require('@sfpy/node-sdk');
 const crypto = require('crypto');
+const prisma = require('../db');
 
-const SAFEPAY_CONFIG = {
+const DEFAULT_SAFEPAY_CONFIG = {
     apiKey: process.env.SAFEPAY_API_KEY || 'sec_1e86f0ae-5242-40ad-a888-6cdf18b022b6',
     v1Secret: process.env.SAFEPAY_SECRET || '8bd1d74c497526dc06cba27380f1b4b0c0919cba7c27c5eadec0dcd923a0f973',
     webhookSecret: process.env.SAFEPAY_WEBHOOK_SECRET || process.env.SAFEPAY_SECRET || '8bd1d74c497526dc06cba27380f1b4b0c0919cba7c27c5eadec0dcd923a0f973',
     environment: process.env.SAFEPAY_ENVIRONMENT || 'sandbox'
 };
 
-const safepayClient = new Safepay({
-    environment: SAFEPAY_CONFIG.environment,
-    apiKey: SAFEPAY_CONFIG.apiKey,
-    v1Secret: SAFEPAY_CONFIG.v1Secret,
-    webhookSecret: SAFEPAY_CONFIG.webhookSecret
-});
+function getSafepayClient(settings) {
+    const env = settings?.safepay_environment || DEFAULT_SAFEPAY_CONFIG.environment;
+    const apiKey = settings?.safepay_api_key || DEFAULT_SAFEPAY_CONFIG.apiKey;
+    const v1Secret = settings?.safepay_v1_secret || DEFAULT_SAFEPAY_CONFIG.v1Secret;
+    const webhookSecret = settings?.safepay_webhook_secret || DEFAULT_SAFEPAY_CONFIG.webhookSecret;
+
+    return new Safepay({
+        environment: env,
+        apiKey: apiKey,
+        v1Secret: v1Secret,
+        webhookSecret: webhookSecret
+    });
+}
+
+const safepayClient = getSafepayClient();
+const SAFEPAY_CONFIG = DEFAULT_SAFEPAY_CONFIG;
 
 /**
  * Creates a Safepay payment tracker token and hosted checkout URL.
@@ -21,14 +32,21 @@ const safepayClient = new Safepay({
  *
  * @param {object} order - Order record from database
  * @param {string} originUrl - Frontend base URL (e.g. https://sneak-pk.vercel.app or http://localhost:5173)
- * @returns {Promise<{token: string, checkoutUrl: string}>}
+ * @returns {Promise<{token: string, checkoutUrl: string, amountInPkr: number, isAdvance: boolean}>}
  */
 async function createPaymentSession(order, originUrl) {
-    // Amount in PKR standard currency units
-    const amountInPkr = Math.round(Number(order.total));
+    const settings = await prisma.settings.findUnique({ where: { id: 'singleton' } });
+    const client = getSafepayClient(settings);
+
+    // If order has advance required on COD, charge only the advance amount!
+    let amountInPkr = Math.round(Number(order.total));
+    const isAdvance = Boolean(order.advance_required && order.advance_amount > 0 && (order.advance_paid || 0) < order.advance_amount);
+    if (isAdvance) {
+        amountInPkr = Math.round(Number(order.advance_amount));
+    }
 
     // Step 1: Create tracker token
-    const trackerResponse = await safepayClient.payments.create({
+    const trackerResponse = await client.payments.create({
         amount: amountInPkr,
         currency: 'PKR'
     });
@@ -42,7 +60,7 @@ async function createPaymentSession(order, originUrl) {
     const redirectUrl = `${originUrl}/order-confirmation/${order.order_number}?safepay=success&tracker=${token}`;
     const cancelUrl = `${originUrl}/checkout?safepay=cancelled`;
 
-    const checkoutUrl = safepayClient.checkout.create({
+    const checkoutUrl = client.checkout.create({
         token: token,
         orderId: order.order_number,
         cancelUrl: cancelUrl,
@@ -53,7 +71,9 @@ async function createPaymentSession(order, originUrl) {
 
     return {
         token,
-        checkoutUrl
+        checkoutUrl,
+        amountInPkr,
+        isAdvance
     };
 }
 

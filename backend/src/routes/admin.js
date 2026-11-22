@@ -1913,18 +1913,27 @@ router.delete('/hero-slides/:id', async (req, res) => {
     }
 });
 
-router.patch('/settings', async (req, res) => {
+router.get('/settings', async (req, res) => {
     try {
-        const doc = { ...req.body };
-        delete doc.id;
-        await prisma.settings.upsert({
-            where: { id: 'singleton' },
-            update: doc,
-            create: { id: 'singleton', ...doc }
-        });
-        
-        const s = await prisma.settings.findUnique({ where: { id: 'singleton' } });
-        await logAdminAction(req.user, 'UPDATE_SETTINGS', 'settings', 'singleton', { keys_updated: Object.keys(doc) });
+        let s = await prisma.settings.findUnique({ where: { id: 'singleton' } });
+        if (!s) {
+            s = await prisma.settings.create({
+                data: {
+                    id: 'singleton',
+                    store_name: 'SoleKicks',
+                    store_tagline: 'Premium Sneakers & Streetwear',
+                    cod_enabled: true,
+                    safepay_enabled: true,
+                    safepay_environment: 'sandbox',
+                    advance_payment_threshold: 10000,
+                    advance_payment_percent: 15,
+                    advance_payment_type: 'percentage',
+                    advance_payment_fixed: 1500,
+                    free_shipping_min_amt: 5000,
+                    flat_shipping_fee: 250
+                }
+            });
+        }
         res.json({ success: true, data: s });
     } catch (err) {
         res.status(500).json({ detail: err.message });
@@ -2400,11 +2409,28 @@ router.patch('/settings', async (req, res) => {
         if (doc.flash_sale_end_time) {
             doc.flash_sale_end_time = new Date(doc.flash_sale_end_time);
         }
+        
+        // Coerce numeric fields if present
+        ['free_shipping_min_amt', 'flat_shipping_fee', 'advance_payment_threshold', 'advance_payment_percent', 'advance_payment_fixed'].forEach(key => {
+            if (doc[key] !== undefined && doc[key] !== null) {
+                doc[key] = doc[key] === '' ? null : Number(doc[key]);
+            }
+        });
+
+        // Coerce boolean fields if present
+        ['announcement_active', 'flash_sale_active', 'cod_enabled', 'card_enabled', 'wallet_enabled', 'safepay_enabled'].forEach(key => {
+            if (doc[key] !== undefined && doc[key] !== null) {
+                doc[key] = Boolean(doc[key]);
+            }
+        });
+
         const s = await prisma.settings.upsert({
             where: { id: 'singleton' },
             update: doc,
             create: { id: 'singleton', ...doc }
         });
+        
+        await logAdminAction(req.user, 'UPDATE_SETTINGS', 'settings', 'singleton', { keys_updated: Object.keys(doc) });
         memoryCache.flush();
         res.json({ success: true, data: s });
     } catch (err) {

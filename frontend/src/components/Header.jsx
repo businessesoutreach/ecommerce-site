@@ -79,7 +79,7 @@ function SearchOverlay({ open, onClose }) {
 }
 
 export default function Header() {
-  const { cart, wishlist, setCartOpen, cartBump, user, categories: storeCats } = useStore();
+  const { cart, wishlist, setCartOpen, cartBump, user, categories: storeCats, settings } = useStore();
   const [scrolled, setScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -125,8 +125,14 @@ export default function Header() {
               </button>
 
               <Link to="/" className="font-display tracking-tighter flex items-center text-base sm:text-xl shrink-0" data-testid="logo">
-                SOLEKICKS<span className="text-fire text-lg sm:text-2xl leading-none">.</span>
-                <span className="hidden sm:inline text-[10px] font-mono tracking-[0.25em] self-start mt-1 ml-0.5">PK</span>
+                {settings?.logo_url ? (
+                  <img src={settings.logo_url} alt={settings.store_name || "SOLEKICKS"} className="h-7 sm:h-8 w-auto max-w-[140px] sm:max-w-[180px] object-contain" />
+                ) : (
+                  <>
+                    {(settings?.store_name || "SOLEKICKS")}<span className="text-fire text-lg sm:text-2xl leading-none">.</span>
+                    <span className="hidden sm:inline text-[10px] font-mono tracking-[0.25em] self-start mt-1 ml-0.5">PK</span>
+                  </>
+                )}
               </Link>
             </div>
 

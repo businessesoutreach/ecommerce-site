@@ -62,9 +62,13 @@ export default function Checkout() {
   const creditApplied = useCredit ? Math.min(credit, preCredit) : 0;
   const total = Math.max(0, preCredit - creditApplied);
   const advThreshold = Number(settings?.advance_payment_threshold || 0);
-  const advPercent = Number(settings?.advance_payment_percent || 0);
+  const advType = settings?.advance_payment_type || "percentage";
+  const advPercent = Number(settings?.advance_payment_percent || 15);
+  const advFixed = Number(settings?.advance_payment_fixed || 1500);
   const advanceRequired = payment === "COD" && advThreshold > 0 && subtotal >= advThreshold;
-  const advanceAmount = advanceRequired ? Math.round((subtotal * advPercent) / 100) : 0;
+  const advanceAmount = advanceRequired
+    ? (advType === "fixed" ? Math.min(advFixed, subtotal) : Math.round((subtotal * advPercent) / 100))
+    : 0;
 
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
@@ -97,8 +101,8 @@ export default function Checkout() {
       const { data } = await http.post("/orders", payload);
       const order = data.data;
 
-      // Safepay (Easypaisa, JazzCash, Cards)
-      if (payment === "SAFEPAY") {
+      // Safepay (Full Online Payment OR COD Partial Advance)
+      if (payment === "SAFEPAY" || (payment === "COD" && advanceRequired)) {
         try {
           const { data: spData } = await http.post("/payments/safepay/checkout", {
             order_id: order.id,
@@ -201,18 +205,21 @@ export default function Checkout() {
             <h3 className="font-display tracking-tight text-md mb-4">Payment Method</h3>
             <div className="space-y-3">
               {[
-                { 
+                ...(settings?.safepay_enabled !== false ? [{ 
                   v: "SAFEPAY", 
                   icon: Wallet, 
                   t: "Online Payment (Safepay)", 
-                  // s: "Easypaisa, JazzCash, Debit / Credit Cards (Visa & Mastercard)",
                   s: "Debit / Credit Cards (Visa & Mastercard)",
-                  // badges: ["Easypaisa", "JazzCash", "Cards"]
-                  badges: [/* "Easypaisa", "JazzCash", */ "Cards"]
-                },
-                { v: "COD", icon: Truck, t: "Cash on Delivery", s: "Pay when your kicks arrive — most popular" },
+                  badges: ["Cards"]
+                }] : []),
+                ...(settings?.cod_enabled !== false ? [{
+                  v: "COD", 
+                  icon: Truck, 
+                  t: "Cash on Delivery", 
+                  s: "Pay when your kicks arrive — most popular"
+                }] : []),
               ].map((m) => (
-                <button key={m.v} onClick={() => setPayment(m.v)} data-testid={`checkout-payment-method-${m.v}`} className={`w-full flex items-center gap-4 border-2 rounded-none p-4 text-left transition-colors ${payment === m.v ? "border-obsidian bg-white" : "border-ink-200"}`}>
+                <button key={m.v} type="button" onClick={() => setPayment(m.v)} data-testid={`checkout-payment-method-${m.v}`} className={`w-full flex items-center gap-4 border-2 rounded-none p-4 text-left transition-colors ${payment === m.v ? "border-obsidian bg-white" : "border-ink-200"}`}>
                   <div className={`h-11 w-11 grid place-items-center rounded-none ${payment === m.v ? "bg-fire text-white" : "bg-ink-100"}`} style={payment === m.v && m.color ? { backgroundColor: m.color } : {}}><m.icon size={19} /></div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -230,7 +237,7 @@ export default function Checkout() {
             {advanceRequired && (
               <div data-testid="checkout-advance-notice" className="mt-3 flex gap-3 bg-obsidian text-white p-4 rounded-none">
                 <Info size={18} className="text-fire shrink-0 mt-0.5" />
-                <p className="text-sm leading-relaxed">Orders over <b>{fmt(advThreshold)}</b> require a <b>{advPercent}% advance</b> to confirm. You'll pay <b className="text-fire font-mono">{fmt(advanceAmount)}</b> now, and the remaining <b className="font-mono">{fmt(total - advanceAmount)}</b> as Cash on Delivery.</p>
+                <p className="text-sm leading-relaxed">Orders over <b>{fmt(advThreshold)}</b> require a <b>{advType === "fixed" ? fmt(advFixed) : `${advPercent}%`} advance</b> via Safepay to confirm. You'll pay <b className="text-fire font-mono">{fmt(advanceAmount)}</b> now, and the remaining <b className="font-mono">{fmt(total - advanceAmount)}</b> as Cash on Delivery.</p>
               </div>
             )}
           </div>
@@ -271,7 +278,7 @@ export default function Checkout() {
             {advanceRequired && <div className="flex justify-between text-xs text-ink-500 pt-1"><span>Pay now (advance)</span><span className="font-mono font-bold">{fmt(advanceAmount)}</span></div>}
           </div>
           <button onClick={placeOrder} disabled={placing} data-testid="checkout-submit-order-btn" className="w-full bg-obsidian text-white font-display tracking-wider py-4 rounded-none mt-5 hover:bg-fire transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
-            {placing ? <><Loader2 size={18} className="animate-spin" /> Placing…</> : advanceRequired ? `Pay ${fmt(advanceAmount)} Advance` : `Place Order · ${fmt(total)}`}
+            {placing ? <><Loader2 size={18} className="animate-spin" /> Placing…</> : advanceRequired ? `Pay ${fmt(advanceAmount)} Advance via Safepay` : payment === "SAFEPAY" ? `Pay with Safepay · ${fmt(total)}` : `Place Order · ${fmt(total)}`}
           </button>
         </div>
       </div>

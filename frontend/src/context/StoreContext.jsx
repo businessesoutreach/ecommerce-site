@@ -56,7 +56,19 @@ export function StoreProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    http.get("/settings").then(({ data }) => setSettings(data.data)).catch(() => {});
+    http.get("/settings").then(({ data }) => {
+      const s = data.data;
+      setSettings(s);
+      if (s?.favicon_url && typeof document !== "undefined") {
+        let link = document.querySelector("link[rel*='icon']");
+        if (!link) {
+          link = document.createElement("link");
+          link.rel = "shortcut icon";
+          document.head.appendChild(link);
+        }
+        link.href = s.favicon_url;
+      }
+    }).catch(() => {});
     refreshCategories();
     refreshBrands();
     const h = window.location.hash;

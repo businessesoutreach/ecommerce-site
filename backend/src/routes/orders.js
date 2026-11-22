@@ -106,8 +106,17 @@ router.post('/', getOptionalUser, async (req, res) => {
         const settings = await getSettings();
         const thr = settings.advance_payment_threshold;
         const pct = settings.advance_payment_percent;
-        const advance_required = Boolean(payment_method === 'COD' && thr && pct && subtotal >= thr);
-        const advance_amount = advance_required ? (subtotal * (pct / 100)) : 0.0;
+        const advance_required = Boolean(payment_method === 'COD' && thr && subtotal >= thr);
+        let advance_amount = 0.0;
+        if (advance_required) {
+            if (settings.advance_payment_type === 'fixed' && settings.advance_payment_fixed) {
+                advance_amount = Math.min(Number(settings.advance_payment_fixed), subtotal);
+            } else if (pct) {
+                advance_amount = subtotal * (Number(pct) / 100);
+            } else {
+                advance_amount = subtotal * 0.15;
+            }
+        }
         
         let store_credit_used = 0.0;
         if (req.user && store_credit_amount > 0) {
@@ -125,10 +134,6 @@ router.post('/', getOptionalUser, async (req, res) => {
         let advance_paid = 0.0;
         
         if (payment_method === 'WALLET') payment_status = 'paid';
-        else if (advance_required) {
-            payment_status = 'partially_paid';
-            advance_paid = advance_amount;
-        }
         
         let risk_score = 0.0;
         let risk_flags = [];

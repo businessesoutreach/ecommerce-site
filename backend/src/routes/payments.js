@@ -26,7 +26,7 @@ router.post('/payments/safepay/checkout', async (req, res) => {
             data: {
                 session_id: session.token,
                 order_id: order_id,
-                amount: order.total,
+                amount: session.amountInPkr || order.total,
                 currency: 'PKR',
                 status: 'initiated',
                 payment_status: 'pending'
@@ -76,11 +76,13 @@ router.get('/payments/safepay/status/:tracker', async (req, res) => {
                     sfData.transaction != null
                 );
 
-                if (isPaid && order.payment_status !== 'paid') {
+                if (isPaid && order.payment_status !== 'paid' && !(order.payment_method === 'COD' && order.payment_status === 'partially_paid')) {
+                    const isCodAdvance = Boolean(order.payment_method === 'COD' && order.advance_required);
                     order = await prisma.order.update({
                         where: { id: order.id },
                         data: {
-                            payment_status: 'paid',
+                            payment_status: isCodAdvance ? 'partially_paid' : 'paid',
+                            advance_paid: isCodAdvance ? order.advance_amount : (order.advance_paid || 0),
                             status: 'confirmed'
                         },
                         include: { items: true }
@@ -187,11 +189,13 @@ router.post(['/webhook/safepay', '/payments/safepay/webhook'], async (req, res) 
             eventType === 'refund:created';
 
         if (order) {
-            if (isSuccess && order.payment_status !== 'paid') {
+            if (isSuccess && order.payment_status !== 'paid' && !(order.payment_method === 'COD' && order.payment_status === 'partially_paid')) {
+                const isCodAdvance = Boolean(order.payment_method === 'COD' && order.advance_required);
                 const updatedOrder = await prisma.order.update({
                     where: { id: order.id },
                     data: {
-                        payment_status: 'paid',
+                        payment_status: isCodAdvance ? 'partially_paid' : 'paid',
+                        advance_paid: isCodAdvance ? order.advance_amount : (order.advance_paid || 0),
                         status: 'confirmed'
                     },
                     include: { items: true }

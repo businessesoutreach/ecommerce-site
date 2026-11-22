@@ -256,18 +256,32 @@ model ShippingZone {
 }
 
 model Settings {
-  id                        String  @id @default("singleton")
+  id                        String    @id @default("singleton")
+  store_name                String?   @default("SoleKicks")
+  store_tagline             String?   @default("Premium Sneakers & Streetwear")
+  logo_url                  String?
+  favicon_url               String?
+  contact_email             String?
+  contact_phone             String?
+  store_address             String?
   announcement_text         String?
-  announcement_active       Boolean @default(false)
+  announcement_active       Boolean   @default(false)
   free_shipping_min_amt     Float?
   flat_shipping_fee         Float?
   advance_payment_threshold Float?
   advance_payment_percent   Float?
-  flash_sale_active         Boolean @default(false)
+  advance_payment_type      String    @default("percentage") // "percentage" | "fixed"
+  advance_payment_fixed     Float?
+  flash_sale_active         Boolean   @default(false)
   flash_sale_end_time       DateTime?
-  cod_enabled               Boolean @default(true)
-  card_enabled              Boolean @default(true)
-  wallet_enabled            Boolean @default(true)
+  cod_enabled               Boolean   @default(true)
+  card_enabled              Boolean   @default(true)
+  wallet_enabled            Boolean   @default(true)
+  safepay_enabled           Boolean   @default(true)
+  safepay_environment       String    @default("sandbox") // "sandbox" | "production"
+  safepay_api_key           String?
+  safepay_v1_secret         String?
+  safepay_webhook_secret    String?
   whatsapp_number           String?
   supported_countries       String[]
 }
