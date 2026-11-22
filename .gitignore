@@ -13,3 +13,4 @@ __pycache__/
 cloudflared*
 .playwright-mcp/
 *.png.tmp
+*.sql
