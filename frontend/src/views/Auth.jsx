@@ -99,7 +99,13 @@ export default function Auth({ mode = "login" }) {
   };
 
   const googleLogin = () => {
-    window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(window.location.origin + "/account")}`;
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      toast.info("Google Login: Please set NEXT_PUBLIC_GOOGLE_CLIENT_ID in your environment to activate Google Sign-In with your own account.");
+      return;
+    }
+    const redirectUri = typeof window !== 'undefined' ? `${window.location.origin}/login` : '';
+    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=openid%20email%20profile&prompt=select_account`;
   };
 
   const inp = "w-full border border-ink-200 rounded-none px-4 py-3 outline-none focus:border-obsidian transition-colors bg-white";
@@ -108,7 +114,7 @@ export default function Auth({ mode = "login" }) {
     <div className="min-h-[85vh] grid place-items-center px-4 py-10 bg-ink-100">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-2xl bg-white border border-ink-200 rounded-xl overflow-hidden shadow-xl">
         <div className="p-8 sm:p-14 flex flex-col justify-center">
-          
+
           {view === "forgot" && step === 1 && (
             <button onClick={() => setView("login")} className="flex items-center gap-2 text-ink-500 hover:text-obsidian mb-6 transition-colors w-fit"><ArrowLeft size={16} /> Back to Sign In</button>
           )}
@@ -123,9 +129,9 @@ export default function Auth({ mode = "login" }) {
             {view === "login" ? "Sign In" : view === "register" ? (step === 1 ? "Create Account" : "Verify Email") : (step === 1 ? "Forgot Password" : "Reset Password")}
           </h1>
           <p className="text-ink-500 mt-1.5 mb-6 text-sm">
-            {view === "login" ? "Access your orders, wishlist & store credit." : 
-             view === "register" ? (step === 1 ? "Save your details for a faster checkout next time." : `We've sent a 6-digit code to ${form.email}.`) :
-             (step === 1 ? "Enter your email to receive a password reset code." : `We've sent a 6-digit code to ${form.email}.`)}
+            {view === "login" ? "Access your orders, wishlist & store credit." :
+              view === "register" ? (step === 1 ? "Save your details for a faster checkout next time." : `We've sent a 6-digit code to ${form.email}.`) :
+                (step === 1 ? "Enter your email to receive a password reset code." : `We've sent a 6-digit code to ${form.email}.`)}
           </p>
 
           {view !== "forgot" && step === 1 && (
@@ -168,10 +174,10 @@ export default function Auth({ mode = "login" }) {
 
             <div className="pt-2">
               <button disabled={loading} className="w-full bg-obsidian text-white font-display tracking-wider py-3.5 rounded-none hover:bg-fire transition-colors disabled:opacity-70 disabled:cursor-wait flex items-center justify-center gap-2">
-                {loading ? <><Loader2 size={18} className="animate-spin" /> Please wait…</> : 
-                 view === "login" ? "Sign In" : 
-                 step === 1 ? (view === "register" ? "Verify Email" : "Send Reset Code") : 
-                 (view === "register" ? "Create Account" : "Reset Password")}
+                {loading ? <><Loader2 size={18} className="animate-spin" /> Please wait…</> :
+                  view === "login" ? "Sign In" :
+                    step === 1 ? (view === "register" ? "Verify Email" : "Send Reset Code") :
+                      (view === "register" ? "Create Account" : "Reset Password")}
               </button>
             </div>
           </form>

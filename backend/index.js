@@ -86,7 +86,7 @@ apiRouter.use('/', miscRoutes);
 app.use('/api', apiRouter);
 
 const PORT = process.env.PORT || 8000;
-if (!process.env.VERCEL) {
+if (require.main === module || !process.env.VERCEL) {
     app.listen(PORT, () => {
         console.log(`SOLEKICKS PK API (Node.js) listening on port ${PORT}`);
     });

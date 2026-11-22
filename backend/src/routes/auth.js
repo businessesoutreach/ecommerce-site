@@ -31,25 +31,25 @@ router.post('/send-otp', async (req, res) => {
     try {
         const { email } = req.body;
         const normalizedEmail = email.toLowerCase();
-        
+
         const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
         if (existing) return res.status(400).json({ detail: 'Email already registered' });
-        
+
         const code = generateOTP();
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
-        
+
         await prisma.oTP.deleteMany({ where: { email: normalizedEmail, purpose: 'signup' } });
-        
+
         await prisma.oTP.create({
             data: { email: normalizedEmail, code, purpose: 'signup', expires_at: expiresAt }
         });
-        
+
         const emailResult = await sendEmail(normalizedEmail, 'Your SoleKicks Verification Code', `<p>Your verification code is: <strong>${code}</strong></p><p>This code expires in 10 minutes.</p>`);
-        
+
         if (!emailResult.success) {
             return res.status(500).json({ detail: `Failed to send email: ${emailResult.error}` });
         }
-        
+
         res.json({ success: true, message: 'OTP sent' });
     } catch (err) {
         res.status(500).json({ detail: err.message });
@@ -60,9 +60,9 @@ router.post('/register', async (req, res) => {
     try {
         const { name, email, password, phone, otp } = req.body;
         const normalizedEmail = email.toLowerCase();
-        
+
         if (!otp) return res.status(400).json({ detail: 'OTP is required' });
-        
+
         const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
         if (existing) {
             return res.status(400).json({ detail: 'Email already registered' });
@@ -72,7 +72,7 @@ router.post('/register', async (req, res) => {
             where: { email: normalizedEmail, purpose: 'signup' },
             orderBy: { created_at: 'desc' }
         });
-        
+
         if (!otpRecord || otpRecord.code !== otp) {
             return res.status(400).json({ detail: 'Invalid OTP' });
         }
@@ -82,7 +82,7 @@ router.post('/register', async (req, res) => {
 
         const uid = uuidv4();
         const hashed = await hashPassword(password);
-        
+
         await prisma.user.create({
             data: {
                 id: uid,
@@ -97,7 +97,7 @@ router.post('/register', async (req, res) => {
 
         const token = createAccessToken(uid, normalizedEmail, 'customer');
         setAuthCookie(res, token);
-        
+
         // Clean up OTPs
         await prisma.oTP.deleteMany({ where: { email: normalizedEmail, purpose: 'signup' } });
 
@@ -114,19 +114,19 @@ router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
         const normalizedEmail = email.toLowerCase();
-        
+
         const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
-        
+
         if (!user || !(await verifyPassword(password, user.password_hash))) {
             return res.status(401).json({ detail: 'Invalid email or password' });
         }
         if (user.is_blocked) {
             return res.status(403).json({ detail: 'Account is blocked' });
         }
-        
+
         const token = createAccessToken(user.id, normalizedEmail, user.role);
         setAuthCookie(res, token);
-        
+
         res.json({
             success: true,
             data: { id: user.id, name: user.name, email: normalizedEmail, role: user.role, token }
@@ -140,26 +140,26 @@ router.post('/forgot-password', async (req, res) => {
     try {
         const { email } = req.body;
         const normalizedEmail = email.toLowerCase();
-        
+
         const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
         if (!user) return res.status(404).json({ detail: 'Account not found' });
         if (!user.password_hash) return res.status(400).json({ detail: 'This account uses Google Login.' });
-        
+
         const code = generateOTP();
         const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-        
+
         await prisma.oTP.deleteMany({ where: { email: normalizedEmail, purpose: 'reset_password' } });
-        
+
         await prisma.oTP.create({
             data: { email: normalizedEmail, code, purpose: 'reset_password', expires_at: expiresAt }
         });
-        
+
         const emailResult = await sendEmail(normalizedEmail, 'SoleKicks Password Reset', `<p>Your password reset code is: <strong>${code}</strong></p><p>This code expires in 10 minutes.</p>`);
-        
+
         if (!emailResult.success) {
             return res.status(500).json({ detail: `Failed to send email: ${emailResult.error}` });
         }
-        
+
         res.json({ success: true, message: 'OTP sent' });
     } catch (err) {
         res.status(500).json({ detail: err.message });
@@ -170,23 +170,23 @@ router.post('/reset-password', async (req, res) => {
     try {
         const { email, otp, new_password } = req.body;
         const normalizedEmail = email.toLowerCase();
-        
+
         const otpRecord = await prisma.oTP.findFirst({
             where: { email: normalizedEmail, purpose: 'reset_password' },
             orderBy: { created_at: 'desc' }
         });
-        
+
         if (!otpRecord || otpRecord.code !== otp) return res.status(400).json({ detail: 'Invalid OTP' });
         if (new Date() > otpRecord.expires_at) return res.status(400).json({ detail: 'OTP has expired' });
-        
+
         const hashed = await hashPassword(new_password);
         await prisma.user.update({
             where: { email: normalizedEmail },
             data: { password_hash: hashed }
         });
-        
+
         await prisma.oTP.deleteMany({ where: { email: normalizedEmail, purpose: 'reset_password' } });
-        
+
         res.json({ success: true, message: 'Password updated' });
     } catch (err) {
         res.status(500).json({ detail: err.message });
@@ -201,21 +201,21 @@ router.post('/change-password', getCurrentUser, async (req, res) => {
     try {
         const { current_password, new_password } = req.body;
         const user = await prisma.user.findUnique({ where: { id: req.user.id } });
-        
+
         if (!user.password_hash) {
             return res.status(400).json({ detail: 'You are logged in with Google. Password cannot be changed.' });
         }
-        
+
         if (!(await verifyPassword(current_password, user.password_hash))) {
             return res.status(401).json({ detail: 'Incorrect current password' });
         }
-        
+
         const hashed = await hashPassword(new_password);
         await prisma.user.update({
             where: { id: req.user.id },
             data: { password_hash: hashed }
         });
-        
+
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ detail: err.message });
@@ -229,20 +229,37 @@ router.post('/logout', (req, res) => {
 
 router.post('/google/session', async (req, res) => {
     try {
-        const { session_id } = req.body;
-        if (!session_id) {
-            return res.status(400).json({ detail: 'Missing session_id' });
+        const { credential, id_token, access_token, session_id } = req.body;
+        let email = '';
+        let name = '';
+        let picture = '';
+
+        if (credential || id_token) {
+            // Verify Google ID token directly with Google OAuth2 API
+            const tokenToVerify = credential || id_token;
+            const googleRes = await axios.get(`https://oauth2.googleapis.com/tokeninfo?id_token=${tokenToVerify}`, { timeout: 10000 });
+            const data = googleRes.data;
+            email = (data.email || '').toLowerCase();
+            name = data.name || data.given_name || email;
+            picture = data.picture || null;
+        } else if (access_token) {
+            // Verify Google Access token directly with Google UserInfo API
+            const googleRes = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
+                headers: { Authorization: `Bearer ${access_token}` },
+                timeout: 10000
+            });
+            const data = googleRes.data;
+            email = (data.email || '').toLowerCase();
+            name = data.name || email;
+            picture = data.picture || null;
+        } else if (session_id) {
+            return res.status(400).json({ detail: 'Third-party OAuth proxy is disabled. Please configure your own Google Cloud Client ID.' });
+        } else {
+            return res.status(400).json({ detail: 'Missing Google credentials' });
         }
 
-        const r = await axios.get("https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data", {
-            headers: { "X-Session-ID": session_id },
-            timeout: 30000
-        });
-
-        const d = r.data;
-        const email = (d.email || "").toLowerCase();
         if (!email) {
-            return res.status(401).json({ detail: 'No email from Google' });
+            return res.status(401).json({ detail: 'No email returned from Google' });
         }
 
         let user = await prisma.user.findUnique({ where: { email } });
@@ -251,13 +268,13 @@ router.post('/google/session', async (req, res) => {
             user = await prisma.user.create({
                 data: {
                     id: uid,
-                    name: d.name || email,
+                    name: name || email,
                     email: email,
                     phone: null,
                     password_hash: null,
                     role: 'customer',
                     is_blocked: false,
-                    picture: d.picture
+                    picture: picture
                 }
             });
         }
@@ -267,7 +284,8 @@ router.post('/google/session', async (req, res) => {
         }
 
         const token = createAccessToken(user.id, email, user.role);
-        
+        setAuthCookie(res, token);
+
         res.json({
             success: true,
             data: {
@@ -279,12 +297,11 @@ router.post('/google/session', async (req, res) => {
                 token: token
             }
         });
-
     } catch (err) {
-        if (err.response && err.response.status === 401) {
-            return res.status(401).json({ detail: 'Google authentication failed' });
+        if (err.response && err.response.status === 400) {
+            return res.status(401).json({ detail: 'Invalid Google token' });
         }
-        res.status(500).json({ detail: err.message });
+        res.status(500).json({ detail: err.message || 'Google authentication failed' });
     }
 });
 

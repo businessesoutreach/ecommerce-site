@@ -82,10 +82,18 @@ export function StoreProvider({ children }) {
     }).catch(() => {});
     refreshCategories();
     refreshBrands();
-    const h = window.location.hash;
-    if (h && h.includes("session_id=")) {
-      const sid = h.split("session_id=")[1].split("&")[0];
-      http.post("/auth/google/session", { session_id: sid }).then(({ data }) => {
+    const h = typeof window !== 'undefined' ? window.location.hash : '';
+    if (h && (h.includes("access_token=") || h.includes("id_token=") || h.includes("session_id="))) {
+      const params = new URLSearchParams(h.startsWith("#") ? h.slice(1) : h);
+      const accessToken = params.get("access_token");
+      const idToken = params.get("id_token");
+      const sid = params.get("session_id");
+
+      http.post("/auth/google/session", {
+        access_token: accessToken,
+        id_token: idToken,
+        session_id: sid
+      }).then(({ data }) => {
         const u = data.data;
         localStorage.setItem("jt_token", u.token);
         localStorage.setItem("jt_user", JSON.stringify(u));
@@ -95,7 +103,10 @@ export function StoreProvider({ children }) {
         http.post("/wishlist/merge").catch(() => {});
         loadCart();
         loadWishlist();
-      }).catch(() => {});
+        toast.success(`Signed in as ${u.name || u.email}`);
+      }).catch((err) => {
+        toast.error(err.response?.data?.detail || "Google login failed");
+      });
     } else {
       loadCart();
       loadWishlist();

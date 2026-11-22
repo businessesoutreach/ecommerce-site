@@ -1,22 +1,26 @@
-FROM node:20-slim
+FROM node:22-alpine
 
-# Install OpenSSL for Prisma and curl for health checks
-RUN apt-get update -y && apt-get install -y openssl curl
+# Install OpenSSL for Prisma engine & curl
+RUN apk add --no-cache openssl libc6-compat curl
 
-# Create app directory
 WORKDIR /app
 
-# Install app dependencies
+# Copy package definitions
 COPY package*.json ./
+
+# Install dependencies
+RUN npm ci || npm install
+
+# Copy Prisma schema and generate client
 COPY prisma ./prisma/
-RUN npm ci
+RUN npx prisma generate
 
 # Copy the rest of the application files
 COPY . .
 
-# Expose port (Fly.io usually expects 8080)
-ENV PORT=8080
-EXPOSE 8080
+# Default port (Vercel, Fly.io, Railway, Cloud Run inject $PORT)
+ENV PORT=8000
+EXPOSE 8000
 
 # Start the application
 CMD [ "npm", "start" ]
