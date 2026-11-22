@@ -46,14 +46,14 @@ export default function PhoneInput({ value = "", onChange, placeholder = "3XX XX
   }, []);
 
   return (
-    <div ref={ref} className={`relative flex border border-ink-200 bg-white focus-within:border-obsidian transition-colors ${className}`}>
+    <div ref={ref} className={`relative flex border border-ink-200 bg-white focus-within:border-obsidian transition-colors min-w-0 ${className}`}>
       <button 
         type="button" 
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1 px-3 border-r border-ink-200 bg-ink-50 text-ink-900 text-sm outline-none hover:bg-ink-100 transition-colors"
+        className="flex items-center gap-1 px-3 border-r border-ink-200 bg-ink-50 text-ink-900 text-sm outline-none hover:bg-ink-100 transition-colors shrink-0"
       >
         <span className="font-mono">{dialCode}</span>
-        <ChevronDown size={14} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown size={14} className={`transition-transform shrink-0 ${open ? "rotate-180" : ""}`} />
       </button>
       
       <input 
@@ -63,7 +63,7 @@ export default function PhoneInput({ value = "", onChange, placeholder = "3XX XX
         placeholder={placeholder}
         data-testid={testid}
         maxLength={COUNTRIES.find(c => c.dial === dialCode)?.maxLength || 15}
-        className="w-full px-4 py-3 outline-none bg-transparent text-ink-900"
+        className="flex-1 min-w-0 px-3 sm:px-4 py-3 outline-none bg-transparent text-ink-900"
       />
 
       <AnimatePresence>
@@ -72,7 +72,7 @@ export default function PhoneInput({ value = "", onChange, placeholder = "3XX XX
             initial={{ opacity: 0, y: -5 }} 
             animate={{ opacity: 1, y: 0 }} 
             exit={{ opacity: 0, y: -5 }}
-            className="absolute top-full left-0 mt-1 w-56 bg-white border border-ink-200 shadow-xl z-20"
+            className="absolute top-full left-0 mt-1 w-56 max-w-[calc(100vw-2.5rem)] bg-white border border-ink-200 shadow-xl z-20"
           >
             <div className="max-h-60 overflow-y-auto py-1">
               {COUNTRIES.map(c => (

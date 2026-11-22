@@ -468,6 +468,19 @@ export default function Admin() {
     setSearchParams(next);
   };
 
+  const handleLogout = async () => {
+    try {
+      await http.post("/auth/logout").catch(() => {});
+    } catch (e) {}
+    localStorage.removeItem("jt_token");
+    localStorage.removeItem("jt_user");
+    if (typeof document !== "undefined") {
+      document.cookie = "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+    }
+    logout();
+    window.location.href = "/login";
+  };
+
   const isCmsTab = tab === "cms" || tab.startsWith("cms_");
   const [cmsExpanded, setCmsExpanded] = useState(() => isCmsTab);
 
@@ -476,9 +489,14 @@ export default function Admin() {
   }, [tab]);
 
   useEffect(() => {
-    if (!user) navigate("/login");
-    else if (user.role !== "admin" && user.role !== "staff") { toast.error("Admin access only"); navigate("/"); }
-    else if (user.role === "staff" && (["overview", "refunds", "coupons", "audit_logs", "settings"].includes(tab) || isCmsTab)) setTab("orders");
+    if (!user) {
+      window.location.href = "/login";
+    } else if (user.role !== "admin" && user.role !== "staff") {
+      toast.error("Admin access only");
+      window.location.href = "/";
+    } else if (user.role === "staff" && (["overview", "refunds", "coupons", "audit_logs", "settings"].includes(tab) || isCmsTab)) {
+      setTab("orders");
+    }
   }, [user, tab]);
 
   if (!user || (user.role !== "admin" && user.role !== "staff")) return null;
@@ -640,8 +658,9 @@ export default function Admin() {
 
         <div className="p-2.5 border-t border-gray-200 dark:border-zinc-800 shrink-0">
           <button
-            onClick={() => { logout(); navigate("/"); }}
-            className="w-full flex items-center justify-center lg:justify-start gap-2.5 px-3 py-2 rounded-lg text-gray-500 dark:text-zinc-400 hover:text-fire hover:bg-rose-50 dark:hover:bg-rose-950/30 font-bold text-xs transition-colors"
+            type="button"
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center lg:justify-start gap-2.5 px-3 py-2 rounded-lg text-gray-500 dark:text-zinc-400 hover:text-fire hover:bg-rose-50 dark:hover:bg-rose-950/30 font-bold text-xs transition-colors cursor-pointer"
           >
             <LogOut size={15} />
             <span className="hidden lg:block">Logout</span>
@@ -698,6 +717,15 @@ export default function Admin() {
             >
               <ExternalLink size={16} />
             </a>
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="p-2 rounded-xl text-gray-500 dark:text-zinc-400 hover:text-fire hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+              title="Logout of Admin"
+            >
+              <LogOut size={16} />
+            </button>
           </div>
         </header>
 
@@ -743,6 +771,16 @@ export default function Admin() {
               title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
             >
               {isDark ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} className="text-gray-700 dark:text-zinc-300" />}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-gray-500 dark:text-zinc-400 hover:text-fire hover:bg-rose-50 dark:hover:bg-rose-950/30 border border-gray-200 dark:border-zinc-700 transition-colors cursor-pointer"
+              title="Logout of Admin"
+            >
+              <LogOut size={14} />
+              <span>Logout</span>
             </button>
           </div>
         </header>
@@ -914,10 +952,10 @@ export default function Admin() {
                     </a>
 
                     <button
+                      type="button"
                       onClick={() => {
                         setMobileMoreOpen(false);
-                        logout();
-                        navigate('/');
+                        handleLogout();
                       }}
                       className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-bold hover:bg-rose-100 dark:hover:bg-rose-950/60 transition-colors cursor-pointer"
                     >

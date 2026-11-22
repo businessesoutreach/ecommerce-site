@@ -10,9 +10,9 @@ import { useSearchParams } from "react-router-dom";
 import { CustomDropdown, PROVINCES, PROVINCE_CITIES, ALL_CITIES } from "../components/LocationDropdowns";
 
 const Field = ({ label, k, type = "text", placeholder, testid, required, form, set }) => (
-  <div>
+  <div className="w-full min-w-0">
     <label className="font-display text-xs tracking-wide text-ink-500">{label}{required && " *"}</label>
-    <input type={type} value={form[k] || ""} onChange={set(k)} placeholder={placeholder} data-testid={testid} className="w-full mt-1.5 border border-ink-200 rounded-none px-4 py-3 outline-none focus:border-obsidian bg-white text-ink-900 transition-colors" />
+    <input type={type} value={form[k] || ""} onChange={set(k)} placeholder={placeholder} data-testid={testid} className="w-full mt-1.5 border border-ink-200 rounded-none px-3.5 sm:px-4 py-2.5 sm:py-3 outline-none focus:border-obsidian bg-white text-ink-900 text-sm transition-colors box-border" />
   </div>
 );
 
@@ -135,50 +135,53 @@ export default function Checkout() {
   }
 
   return (
-    <div className="max-w-[1400px] mx-auto px-5 sm:px-8 py-10">
-      <h1 className="font-display tracking-tight mb-8">Checkout</h1>
-      <div className="grid lg:grid-cols-3 gap-10">
-        <form data-testid="checkout-form" onSubmit={(e) => e.preventDefault()} className="lg:col-span-2 space-y-8">
+    <div className="max-w-[1400px] mx-auto px-4 sm:px-8 py-6 sm:py-10 overflow-x-hidden w-full">
+      <h1 className="font-display tracking-tight text-2xl sm:text-3xl mb-6 sm:mb-8 font-black">Checkout</h1>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10 w-full min-w-0">
+        <form data-testid="checkout-form" onSubmit={(e) => e.preventDefault()} className="lg:col-span-2 space-y-6 sm:space-y-8 w-full min-w-0">
           {user && addresses.length > 0 && (
-            <div className="flex gap-2 border-b border-ink-200 pb-4">
-              <button type="button" onClick={() => setAddressMode('saved')} className={`font-display tracking-tight text-xs sm:text-sm px-5 py-3 transition-colors ${addressMode === 'saved' ? 'bg-obsidian text-white' : 'bg-ink-100 text-ink-600 hover:bg-ink-200'}`}>
+            <div className="flex gap-2 border-b border-ink-200 pb-3 overflow-x-auto no-scrollbar">
+              <button type="button" onClick={() => setAddressMode('saved')} className={`font-display tracking-tight text-xs sm:text-sm px-4 sm:px-5 py-2.5 sm:py-3 transition-colors shrink-0 whitespace-nowrap cursor-pointer ${addressMode === 'saved' ? 'bg-obsidian text-white' : 'bg-ink-100 text-ink-600 hover:bg-ink-200'}`}>
                 Saved Addresses
               </button>
-              <button type="button" onClick={() => { setAddressMode('new'); setForm({ ...form, address_l1: "", province: "Sindh", city: "Karachi", postal_code: "" }); }} className={`font-display tracking-tight text-xs sm:text-sm px-5 py-3 transition-colors ${addressMode === 'new' ? 'bg-obsidian text-white' : 'bg-ink-100 text-ink-600 hover:bg-ink-200'}`}>
+              <button type="button" onClick={() => { setAddressMode('new'); setForm({ ...form, address_l1: "", province: "Sindh", city: "Karachi", postal_code: "" }); }} className={`font-display tracking-tight text-xs sm:text-sm px-4 sm:px-5 py-2.5 sm:py-3 transition-colors shrink-0 whitespace-nowrap cursor-pointer ${addressMode === 'new' ? 'bg-obsidian text-white' : 'bg-ink-100 text-ink-600 hover:bg-ink-200'}`}>
                 New Address
               </button>
             </div>
           )}
 
           {addressMode === 'saved' && user && addresses.length > 0 ? (
-            <div data-testid="checkout-saved-addresses">
-              <h3 className="font-display tracking-tight text-lg mb-4">Select Address</h3>
-              <div className="grid sm:grid-cols-2 gap-3">
+            <div data-testid="checkout-saved-addresses" className="w-full min-w-0">
+              <h3 className="font-display tracking-tight text-base sm:text-lg mb-3 sm:mb-4 font-bold">Select Address</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full min-w-0">
                 {addresses.map((a) => {
                   const active = form.address_l1 === a.address_l1 && form.customer_phone === a.phone;
                   return (
-                    <button key={a.id} type="button" onClick={() => applyAddress(a)} data-testid={`checkout-address-${a.id}`} className={`text-left border-2 p-4 transition-colors ${active ? "border-obsidian bg-white shadow-md" : "border-ink-200 hover:border-obsidian bg-white shadow-sm"}`}>
-                      <div className="flex items-center justify-between"><span className="font-display font-semibold text-sm tracking-wider">{a.label || 'Home'}</span>{a.is_default && <span className="text-[10px] font-bold tracking-wider bg-ink-100 px-2 py-0.5 text-ink-800">Default</span>}</div>
-                      <p className="text-ink-500 text-xs mt-2">{a.address_l1}, {a.city}</p>
-                      <p className="text-ink-400 text-xs mt-1 font-mono">{a.phone}</p>
-                      {active && <div className="mt-3 text-xs font-bold text-obsidian  tracking-wide flex items-center gap-1"><Check size={14}/> Selected</div>}
+                    <button key={a.id} type="button" onClick={() => applyAddress(a)} data-testid={`checkout-address-${a.id}`} className={`text-left border-2 p-3 sm:p-4 transition-colors w-full min-w-0 cursor-pointer break-words ${active ? "border-obsidian bg-white shadow-md" : "border-ink-200 hover:border-obsidian bg-white shadow-xs"}`}>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-display font-semibold text-sm tracking-wider truncate">{a.label || 'Home'}</span>
+                        {a.is_default && <span className="text-[10px] font-bold tracking-wider bg-ink-100 px-2 py-0.5 text-ink-800 shrink-0">Default</span>}
+                      </div>
+                      <p className="text-ink-500 text-xs mt-2 break-words">{a.address_l1}, {a.city}</p>
+                      <p className="text-ink-400 text-xs mt-1 font-mono truncate">{a.phone}</p>
+                      {active && <div className="mt-3 text-xs font-bold text-obsidian tracking-wide flex items-center gap-1"><Check size={14} className="shrink-0" /> Selected</div>}
                     </button>
                   );
                 })}
               </div>
             </div>
           ) : (
-            <div>
-              <h3 className="font-display tracking-tight text-md mb-4">Contact & Shipping</h3>
-              <div className="grid sm:grid-cols-2 gap-4">
+            <div className="w-full min-w-0">
+              <h3 className="font-display tracking-tight text-base sm:text-lg mb-3 sm:mb-4 font-bold">Contact & Shipping</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 w-full min-w-0">
                 <Field form={form} set={set} label="Full Name" k="customer_name" placeholder="Ahmed Khan" testid="checkout-fullname-input" required />
-                <div>
+                <div className="w-full min-w-0">
                   <label className="font-display text-xs tracking-wide text-ink-500">Phone *</label>
-                  <PhoneInput value={form.customer_phone} onChange={(val) => setForm(f => ({ ...f, customer_phone: val }))} testid="checkout-phone-input" className="mt-1.5" />
+                  <PhoneInput value={form.customer_phone} onChange={(val) => setForm(f => ({ ...f, customer_phone: val }))} testid="checkout-phone-input" className="mt-1.5 w-full" />
                 </div>
-                <div className="sm:col-span-2"><Field form={form} set={set} label="Email (optional)" k="customer_email" type="email" placeholder="you@email.com" testid="checkout-email-input" /></div>
-                <div className="sm:col-span-2"><Field form={form} set={set} label="Address" k="address_l1" placeholder="House #, Street, Area" testid="checkout-address-input" required /></div>
-                <div>
+                <div className="sm:col-span-2 w-full min-w-0"><Field form={form} set={set} label="Email (optional)" k="customer_email" type="email" placeholder="you@email.com" testid="checkout-email-input" /></div>
+                <div className="sm:col-span-2 w-full min-w-0"><Field form={form} set={set} label="Address" k="address_l1" placeholder="House #, Street, Area" testid="checkout-address-input" required /></div>
+                <div className="w-full min-w-0">
                   <label className="font-display text-xs tracking-wide text-ink-500">Province *</label>
                   <CustomDropdown 
                     value={form.province} 
@@ -187,7 +190,7 @@ export default function Checkout() {
                     placeholder="Select Province"
                   />
                 </div>
-                <div>
+                <div className="w-full min-w-0">
                   <label className="font-display text-xs tracking-wide text-ink-500">City *</label>
                   <CustomDropdown 
                     value={form.city} 
@@ -196,14 +199,16 @@ export default function Checkout() {
                     placeholder="Select City"
                   />
                 </div>
-                <Field form={form} set={set} label="Postal Code" k="postal_code" placeholder="54000" />
+                <div className="w-full min-w-0">
+                  <Field form={form} set={set} label="Postal Code" k="postal_code" placeholder="54000" />
+                </div>
               </div>
             </div>
           )}
 
-          <div>
-            <h3 className="font-display tracking-tight text-md mb-4">Payment Method</h3>
-            <div className="space-y-3">
+          <div className="w-full min-w-0">
+            <h3 className="font-display tracking-tight text-base sm:text-lg mb-3 sm:mb-4 font-bold">Payment Method</h3>
+            <div className="space-y-3 w-full min-w-0">
               {[
                 ...(settings?.safepay_enabled !== false ? [{ 
                   v: "SAFEPAY", 
@@ -219,66 +224,77 @@ export default function Checkout() {
                   s: "Pay when your kicks arrive — most popular"
                 }] : []),
               ].map((m) => (
-                <button key={m.v} type="button" onClick={() => setPayment(m.v)} data-testid={`checkout-payment-method-${m.v}`} className={`w-full flex items-center gap-4 border-2 rounded-none p-4 text-left transition-colors ${payment === m.v ? "border-obsidian bg-white" : "border-ink-200"}`}>
-                  <div className={`h-11 w-11 grid place-items-center rounded-none ${payment === m.v ? "bg-fire text-white" : "bg-ink-100"}`} style={payment === m.v && m.color ? { backgroundColor: m.color } : {}}><m.icon size={19} /></div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-display text-sm tracking-tight">{m.t}</p>
+                <button key={m.v} type="button" onClick={() => setPayment(m.v)} data-testid={`checkout-payment-method-${m.v}`} className={`w-full flex items-center gap-3 sm:gap-4 border-2 rounded-none p-3.5 sm:p-4 text-left transition-colors min-w-0 cursor-pointer ${payment === m.v ? "border-obsidian bg-white" : "border-ink-200"}`}>
+                  <div className={`h-10 w-10 sm:h-11 sm:w-11 grid place-items-center rounded-none shrink-0 ${payment === m.v ? "bg-fire text-white" : "bg-ink-100"}`} style={payment === m.v && m.color ? { backgroundColor: m.color } : {}}>
+                    <m.icon size={19} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                      <p className="font-display text-xs sm:text-sm tracking-tight font-bold">{m.t}</p>
                       {m.badges && m.badges.map(b => (
-                        <span key={b} className="text-[10px] font-mono font-bold bg-ink-100 text-ink-700 px-1.5 py-0.5 rounded-none">{b}</span>
+                        <span key={b} className="text-[10px] font-mono font-bold bg-ink-100 text-ink-700 px-1.5 py-0.5 rounded-none shrink-0">{b}</span>
                       ))}
                     </div>
-                    <p className="text-ink-400 text-xs mt-0.5">{m.s}</p>
+                    <p className="text-ink-400 text-xs mt-0.5 break-words line-clamp-2">{m.s}</p>
                   </div>
-                  {payment === m.v && <Check size={20} className="text-fire" />}
+                  {payment === m.v && <Check size={18} className="text-fire shrink-0" />}
                 </button>
               ))}
             </div>
             {advanceRequired && (
-              <div data-testid="checkout-advance-notice" className="mt-3 flex gap-3 bg-obsidian text-white p-4 rounded-none">
+              <div data-testid="checkout-advance-notice" className="mt-3 flex gap-3 bg-obsidian text-white p-3.5 sm:p-4 rounded-none min-w-0">
                 <Info size={18} className="text-fire shrink-0 mt-0.5" />
-                <p className="text-sm leading-relaxed">Orders over <b>{fmt(advThreshold)}</b> require a <b>{advType === "fixed" ? fmt(advFixed) : `${advPercent}%`} advance</b> via Safepay to confirm. You'll pay <b className="text-fire font-mono">{fmt(advanceAmount)}</b> now, and the remaining <b className="font-mono">{fmt(total - advanceAmount)}</b> as Cash on Delivery.</p>
+                <p className="text-xs sm:text-sm leading-relaxed break-words min-w-0">Orders over <b>{fmt(advThreshold)}</b> require a <b>{advType === "fixed" ? fmt(advFixed) : `${advPercent}%`} advance</b> via Safepay to confirm. You'll pay <b className="text-fire font-mono">{fmt(advanceAmount)}</b> now, and the remaining <b className="font-mono">{fmt(total - advanceAmount)}</b> as Cash on Delivery.</p>
               </div>
             )}
           </div>
         </form>
 
         {/* summary */}
-        <div className="lg:sticky lg:top-28 lg:self-start bg-white rounded-none p-6 border border-ink-200 h-fit">
-          <h3 className="font-display tracking-tight text-lg mb-4">Order Summary</h3>
+        <div className="lg:sticky lg:top-28 lg:self-start bg-white rounded-none p-4 sm:p-6 border border-ink-200 h-fit w-full min-w-0 box-border">
+          <h3 className="font-display tracking-tight text-base sm:text-lg mb-4 font-bold">Order Summary</h3>
           <div className="space-y-3 max-h-56 overflow-y-auto no-scrollbar mb-4">
             {cart.items.map((it) => (
-              <div key={it.id} className="flex gap-3 items-center">
-                <div className="h-14 w-14 rounded-none overflow-hidden bg-ink-100 relative shrink-0"><img src={it.image} alt="" className="h-full w-full object-cover" /><span className="absolute -top-1 -right-1 h-5 w-5 bg-obsidian text-white text-[10px] font-bold rounded-none grid place-items-center">{it.quantity}</span></div>
-                <div className="flex-1 min-w-0"><p className="font-display font-bold text-xs leading-tight line-clamp-1">{it.name}</p><span className="font-mono text-[11px] text-ink-400">EU {it.size}</span></div>
-                <span className="font-mono text-sm font-bold">{fmt(it.line_total)}</span>
+              <div key={it.id} className="flex gap-3 items-center min-w-0">
+                <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-none overflow-hidden bg-ink-100 relative shrink-0">
+                  <img src={it.image} alt="" className="h-full w-full object-cover" />
+                  <span className="absolute -top-1 -right-1 h-5 w-5 bg-obsidian text-white text-[10px] font-bold rounded-none grid place-items-center">{it.quantity}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-display font-bold text-xs leading-tight line-clamp-1">{it.name}</p>
+                  <span className="font-mono text-[11px] text-ink-400">EU {it.size}</span>
+                </div>
+                <span className="font-mono text-xs sm:text-sm font-bold shrink-0">{fmt(it.line_total)}</span>
               </div>
             ))}
           </div>
-          <div className="flex gap-2 mb-4">
-            <div className="flex-1 flex items-center border border-ink-200 rounded-none px-3"><Tag size={15} className="text-ink-400" /><input value={coupon} onChange={(e) => setCoupon(e.target.value.toUpperCase())} placeholder="Promo code" data-testid="checkout-coupon-input" className="flex-1 px-2 py-2.5 outline-none text-sm font-mono " /></div>
-            <button disabled={applyingCoupon} onClick={applyCoupon} data-testid="checkout-apply-coupon-btn" className="bg-obsidian text-white font-bold  text-sm px-4 rounded-none hover:bg-fire transition-colors disabled:opacity-70 disabled:cursor-wait min-w-[75px] grid place-items-center">
+          <div className="flex gap-2 mb-4 w-full min-w-0">
+            <div className="flex-1 min-w-0 flex items-center border border-ink-200 rounded-none px-3 bg-white">
+              <Tag size={15} className="text-ink-400 shrink-0" />
+              <input value={coupon} onChange={(e) => setCoupon(e.target.value.toUpperCase())} placeholder="Promo code" data-testid="checkout-coupon-input" className="flex-1 min-w-0 px-2 py-2 sm:py-2.5 outline-none text-xs sm:text-sm font-mono w-full" />
+            </div>
+            <button disabled={applyingCoupon} onClick={applyCoupon} data-testid="checkout-apply-coupon-btn" className="bg-obsidian text-white font-bold text-xs sm:text-sm px-3 sm:px-4 rounded-none hover:bg-fire transition-colors disabled:opacity-70 disabled:cursor-wait min-w-[70px] sm:min-w-[75px] shrink-0 grid place-items-center cursor-pointer">
               {applyingCoupon ? <Loader2 size={16} className="animate-spin" /> : "Apply"}
             </button>
           </div>
-          {couponMsg && <p className={`text-xs mb-3 ${discount > 0 ? "text-green-600" : "text-fire"}`}>{couponMsg}</p>}
+          {couponMsg && <p className={`text-xs mb-3 break-words ${discount > 0 ? "text-green-600" : "text-fire"}`}>{couponMsg}</p>}
           {user && credit > 0 && (
-            <label data-testid="checkout-store-credit-toggle" className="flex items-center gap-3 border border-ink-200 rounded-none p-3 mb-4 cursor-pointer">
-              <input type="checkbox" checked={useCredit} onChange={(e) => setUseCredit(e.target.checked)} className="accent-fire h-4 w-4" />
-              <Gift size={16} className="text-fire" />
-              <span className="text-sm flex-1">Use store credit <b className="font-mono">({fmt(credit)})</b></span>
+            <label data-testid="checkout-store-credit-toggle" className="flex items-center gap-3 border border-ink-200 rounded-none p-3 mb-4 cursor-pointer min-w-0">
+              <input type="checkbox" checked={useCredit} onChange={(e) => setUseCredit(e.target.checked)} className="accent-fire h-4 w-4 shrink-0" />
+              <Gift size={16} className="text-fire shrink-0" />
+              <span className="text-xs sm:text-sm flex-1 min-w-0 truncate">Use store credit <b className="font-mono">({fmt(credit)})</b></span>
             </label>
           )}
-          <div className="space-y-2 text-sm border-t border-ink-200 pt-4">
+          <div className="space-y-2 text-xs sm:text-sm border-t border-ink-200 pt-4">
             <div className="flex justify-between"><span className="text-ink-500">Subtotal</span><span className="font-mono">{fmt(subtotal)}</span></div>
             {discount > 0 && <div className="flex justify-between text-green-600"><span>Discount</span><span className="font-mono">−{fmt(discount)}</span></div>}
             <div className="flex justify-between"><span className="text-ink-500">Shipping</span><span className="font-mono">{shipping === 0 ? "FREE" : fmt(shipping)}</span></div>
             {creditApplied > 0 && <div className="flex justify-between text-green-600"><span>Store credit</span><span className="font-mono">−{fmt(creditApplied)}</span></div>}
-            <div className="flex justify-between font-display text-lg border-t border-ink-200 pt-2"><span>Total</span><span data-testid="checkout-total-amount" className="font-mono text-fire">{fmt(total)}</span></div>
+            <div className="flex justify-between font-display text-base sm:text-lg border-t border-ink-200 pt-2 font-bold"><span>Total</span><span data-testid="checkout-total-amount" className="font-mono text-fire">{fmt(total)}</span></div>
             {advanceRequired && <div className="flex justify-between text-xs text-ink-500 pt-1"><span>Pay now (advance)</span><span className="font-mono font-bold">{fmt(advanceAmount)}</span></div>}
           </div>
-          <button onClick={placeOrder} disabled={placing} data-testid="checkout-submit-order-btn" className="w-full bg-obsidian text-white font-display tracking-wider py-4 rounded-none mt-5 hover:bg-fire transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
-            {placing ? <><Loader2 size={18} className="animate-spin" /> Placing…</> : advanceRequired ? `Pay ${fmt(advanceAmount)} Advance via Safepay` : payment === "SAFEPAY" ? `Pay with Safepay · ${fmt(total)}` : `Place Order · ${fmt(total)}`}
+          <button onClick={placeOrder} disabled={placing} data-testid="checkout-submit-order-btn" className="w-full bg-obsidian text-white font-display tracking-wider py-3.5 sm:py-4 px-3 rounded-none mt-5 hover:bg-fire transition-colors disabled:opacity-60 flex items-center justify-center gap-2 text-xs sm:text-sm font-bold text-center cursor-pointer">
+            {placing ? <><Loader2 size={18} className="animate-spin shrink-0" /> Placing…</> : advanceRequired ? `Pay ${fmt(advanceAmount)} Advance via Safepay` : payment === "SAFEPAY" ? `Pay with Safepay · ${fmt(total)}` : `Place Order · ${fmt(total)}`}
           </button>
         </div>
       </div>

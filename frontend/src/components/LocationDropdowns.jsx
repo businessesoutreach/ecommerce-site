@@ -30,14 +30,14 @@ export const CustomDropdown = ({ value, onChange, options, placeholder = "Select
   const filtered = options.filter(c => c.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div ref={ref} className="relative mt-1.5">
+    <div ref={ref} className="relative mt-1.5 w-full min-w-0">
       <button 
         type="button" 
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between border border-ink-200 bg-white text-ink-900 px-4 py-2.5 outline-none focus:border-obsidian transition-colors"
+        className="w-full flex items-center justify-between border border-ink-200 bg-white text-ink-900 px-3.5 sm:px-4 py-2.5 outline-none focus:border-obsidian transition-colors text-left min-w-0"
       >
-        <span className="text-sm">{value || placeholder}</span>
-        <ChevronDown size={16} className={`text-ink-400 transition-transform ${open ? "rotate-180" : ""}`} />
+        <span className="text-sm truncate">{value || placeholder}</span>
+        <ChevronDown size={16} className={`text-ink-400 shrink-0 ml-2 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       
       <AnimatePresence>
@@ -46,7 +46,7 @@ export const CustomDropdown = ({ value, onChange, options, placeholder = "Select
             initial={{ opacity: 0, y: -5 }} 
             animate={{ opacity: 1, y: 0 }} 
             exit={{ opacity: 0, y: -5 }}
-            className="absolute z-10 w-full mt-1 bg-white border border-ink-200 shadow-xl"
+            className="absolute z-30 left-0 right-0 w-full mt-1 bg-white border border-ink-200 shadow-xl"
           >
             <div className="flex items-center gap-2 p-2 border-b border-ink-200">
               <Search size={14} className="text-ink-400" />
