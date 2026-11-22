@@ -3,7 +3,7 @@ const path = require('path');
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  output: 'standalone',
+  ...(process.env.DOCKER_BUILD ? { output: 'standalone' } : {}),
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'images.unsplash.com' },
