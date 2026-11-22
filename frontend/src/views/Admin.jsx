@@ -651,8 +651,8 @@ export default function Admin() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
-        {/* Mobile App Header (lg:hidden) */}
-        <header className="lg:hidden h-14 bg-white/95 dark:bg-zinc-900/95 border-b border-gray-200 dark:border-zinc-800 sticky top-0 z-30 px-3.5 flex items-center justify-between shrink-0 backdrop-blur-md transition-colors">
+        {/* Mobile App Header (lg:hidden) - Fixed at top on mobile */}
+        <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-white/95 dark:bg-zinc-900/95 border-b border-gray-200 dark:border-zinc-800 z-30 px-3.5 flex items-center justify-between shrink-0 backdrop-blur-md transition-colors">
           <div className="flex items-center gap-2 min-w-0">
             {settings?.logo_url ? (
               <img
@@ -753,7 +753,7 @@ export default function Admin() {
           activeTab={tab}
         />
 
-        <main className="p-3.5 sm:p-5 lg:p-8 flex-1 min-w-0 pb-28 lg:pb-8">
+        <main className="p-3.5 sm:p-5 lg:p-8 flex-1 min-w-0 pb-28 lg:pb-8 pt-18 lg:pt-8">
           {tab === "overview" && <Overview setTab={setTab} isDark={isDark} />}
           {tab === "orders" && <Orders />}
           {tab === "cod" && <Orders initialCodStatus="pending" />}
@@ -993,9 +993,9 @@ function Overview({ setTab, isDark }) {
       {/* Top Header & Executive Controls */}
       <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-xs flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 transition-colors">
         <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="font-display tracking-tight text-2xl font-black text-gray-900 dark:text-zinc-100">Executive Overview</h1>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+            <h1 className="font-display tracking-tight text-xl sm:text-2xl font-black text-gray-900 dark:text-zinc-100">Executive Overview</h1>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 shrink-0 whitespace-nowrap self-center">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
               Store Operational
             </span>
