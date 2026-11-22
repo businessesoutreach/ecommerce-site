@@ -33,13 +33,14 @@ app.use(helmet({
     contentSecurityPolicy: false // Handled per-page on frontend
 }));
 
-// CORS Configuration - Allow from any origin dynamically (supporting credentials)
-app.use(cors({
+// CORS Configuration - Allow any origin and any requested headers dynamically (including x-guest-id)
+const corsOptions = {
     origin: true,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cookie'],
-}));
+    // allowedHeaders omitted so it automatically reflects any requested headers (e.g. x-guest-id, authorization)
+};
+app.use(cors(corsOptions));
 
 // General API Rate Limiting (600 requests per 15 minutes)
 const generalLimiter = rateLimit({
