@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Settings as SettingsIcon, 
@@ -13,10 +13,8 @@ import {
   Eye, 
   EyeOff, 
   AlertCircle, 
-  ExternalLink, 
   Lock, 
   Image as ImageIcon, 
-  Globe, 
   Phone, 
   Mail, 
   MapPin, 
@@ -24,27 +22,48 @@ import {
   Zap,
   Info,
   DollarSign,
-  Percent
+  Percent,
+  Upload,
+  Trash2,
+  ExternalLink,
+  Sun,
+  Moon,
+  Sparkles
 } from 'lucide-react';
 import { http, fmt } from '../lib/api';
 import { toast } from 'sonner';
+
+async function uploadImageFile(file) {
+  const fd = new FormData();
+  fd.append("file", file);
+  const { data } = await http.post("/admin/upload", fd, { headers: { "Content-Type": "multipart/form-data" } });
+  return data?.data?.url || data?.url;
+}
 
 export default function SettingsManager({ isDark, user }) {
   const [activeTab, setActiveTab] = useState('platform'); // 'platform' | 'payment' | 'shipping' | 'security'
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [copiedWebhook, setCopiedWebhook] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingFavicon, setUploadingFavicon] = useState(false);
+  const [logoPreviewBg, setLogoPreviewBg] = useState('light'); // 'light' | 'dark' | 'brand'
+  const [showAdvancedSafepay, setShowAdvancedSafepay] = useState(false);
+  const [envSafepay, setEnvSafepay] = useState({ configured: false, environment: 'sandbox', key_preview: null });
+
+  const logoInputRef = useRef(null);
+  const faviconInputRef = useRef(null);
 
   // Settings form state
   const [form, setForm] = useState({
-    store_name: 'SoleKicks',
-    store_tagline: 'Premium Sneakers & Streetwear',
-    logo_url: '',
-    favicon_url: '',
-    contact_email: '',
-    contact_phone: '',
-    whatsapp_number: '',
-    store_address: '',
+    store_name: 'SOLEKICKS',
+    store_tagline: 'Pakistan\'s #1 Sneaker & Streetwear Destination',
+    logo_url: '/images/logo.svg',
+    favicon_url: '/favicon.svg',
+    contact_email: 'support@solekicks.pk',
+    contact_phone: '+92 300 8472910',
+    whatsapp_number: '923008472910',
+    store_address: 'Shop 14-A, Block H, Gulberg III, Lahore, Pakistan',
     
     // Shipping
     free_shipping_min_amt: 5000,
@@ -93,15 +112,18 @@ export default function SettingsManager({ isDark, user }) {
       const res = await http.get('/admin/settings');
       if (res.data?.data) {
         const d = res.data.data;
+        if (res.data.env_safepay) {
+          setEnvSafepay(res.data.env_safepay);
+        }
         setForm({
-          store_name: d.store_name || 'SoleKicks',
-          store_tagline: d.store_tagline || 'Premium Sneakers & Streetwear',
-          logo_url: d.logo_url || '',
-          favicon_url: d.favicon_url || '',
-          contact_email: d.contact_email || '',
-          contact_phone: d.contact_phone || '',
-          whatsapp_number: d.whatsapp_number || '',
-          store_address: d.store_address || '',
+          store_name: d.store_name || 'SOLEKICKS',
+          store_tagline: d.store_tagline || 'Pakistan\'s #1 Sneaker & Streetwear Destination',
+          logo_url: d.logo_url || '/images/logo.svg',
+          favicon_url: d.favicon_url || '/favicon.svg',
+          contact_email: d.contact_email || 'support@solekicks.pk',
+          contact_phone: d.contact_phone || '+92 300 8472910',
+          whatsapp_number: d.whatsapp_number || '923008472910',
+          store_address: d.store_address || 'Shop 14-A, Block H, Gulberg III, Lahore, Pakistan',
           free_shipping_min_amt: d.free_shipping_min_amt ?? 5000,
           flat_shipping_fee: d.flat_shipping_fee ?? 250,
           cod_enabled: d.cod_enabled ?? true,
@@ -125,12 +147,44 @@ export default function SettingsManager({ isDark, user }) {
     }
   };
 
+  const handleUploadLogo = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingLogo(true);
+    try {
+      const url = await uploadImageFile(file);
+      setForm(prev => ({ ...prev, logo_url: url }));
+      toast.success('Logo uploaded successfully');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to upload logo');
+    } finally {
+      setUploadingLogo(false);
+      if (logoInputRef.current) logoInputRef.current.value = '';
+    }
+  };
+
+  const handleUploadFavicon = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingFavicon(true);
+    try {
+      const url = await uploadImageFile(file);
+      setForm(prev => ({ ...prev, favicon_url: url }));
+      toast.success('Favicon uploaded successfully');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to upload favicon');
+    } finally {
+      setUploadingFavicon(false);
+      if (faviconInputRef.current) faviconInputRef.current.value = '';
+    }
+  };
+
   const handleSaveSettings = async (e) => {
     if (e) e.preventDefault();
     setSaving(true);
     try {
       const payload = { ...form };
-      const res = await http.patch('/admin/settings', payload);
+      await http.patch('/admin/settings', payload);
       toast.success('Settings saved successfully!');
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to save settings');
@@ -221,7 +275,7 @@ export default function SettingsManager({ isDark, user }) {
                 Store Settings
               </h1>
               <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">
-                Manage platform identity, Safepay PK gateway, COD partial advance thresholds, and admin security.
+                Manage platform branding, logo & favicon assets, Safepay PK gateway, COD partial advance thresholds, and admin security.
               </p>
             </div>
           </div>
@@ -267,10 +321,10 @@ export default function SettingsManager({ isDark, user }) {
         <motion.div
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+          className="grid grid-cols-1 lg:grid-cols-12 gap-6"
         >
-          {/* Left Column: Brand & Logo */}
-          <div className="lg:col-span-2 space-y-6">
+          {/* Left Column: Form controls (7 cols) */}
+          <div className="lg:col-span-7 space-y-6">
             <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-xs space-y-5">
               <h3 className="font-display font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
                 <Store size={18} className="text-fire" />
@@ -286,10 +340,10 @@ export default function SettingsManager({ isDark, user }) {
                     type="text"
                     value={form.store_name}
                     onChange={(e) => setForm({ ...form, store_name: e.target.value })}
-                    placeholder="e.g. SoleKicks"
+                    placeholder="e.g. SOLEKICKS"
                     className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white focus:outline-none focus:border-fire transition-colors"
                   />
-                  <p className="text-[11px] text-gray-400 mt-1">Displayed in the header, invoices, and automated emails.</p>
+                  <p className="text-[11px] text-gray-400 mt-1">Displayed in header, checkout, invoices, and emails.</p>
                 </div>
 
                 <div>
@@ -303,43 +357,123 @@ export default function SettingsManager({ isDark, user }) {
                     placeholder="e.g. Premium Sneakers & Streetwear"
                     className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white focus:outline-none focus:border-fire transition-colors"
                   />
-                  <p className="text-[11px] text-gray-400 mt-1">Short subtitle for search engines and footer branding.</p>
+                  <p className="text-[11px] text-gray-400 mt-1">Short subtitle for SEO and footer branding.</p>
                 </div>
               </div>
 
-              {/* Logo URL */}
-              <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-zinc-800">
-                <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300">
-                  Logo Image URL
-                </label>
-                <div className="flex gap-2">
+              {/* Logo File Upload & URL */}
+              <div className="space-y-3 pt-3 border-t border-gray-100 dark:border-zinc-800">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-gray-700 dark:text-zinc-300 flex items-center gap-1.5">
+                    <ImageIcon size={14} className="text-fire" />
+                    Store Logo (Upload File or Enter URL)
+                  </label>
+                  {form.logo_url && (
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, logo_url: '' })}
+                      className="text-[11px] text-rose-500 hover:text-rose-600 flex items-center gap-1 cursor-pointer font-bold"
+                    >
+                      <Trash2 size={12} /> Clear Logo
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-stretch gap-2.5">
                   <input
-                    type="url"
+                    type="file"
+                    ref={logoInputRef}
+                    accept="image/*"
+                    onChange={handleUploadLogo}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => logoInputRef.current?.click()}
+                    disabled={uploadingLogo}
+                    className="px-4 py-2.5 bg-gray-900 hover:bg-black dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer shrink-0 disabled:opacity-60"
+                  >
+                    {uploadingLogo ? (
+                      <>
+                        <RefreshCw size={14} className="animate-spin text-fire" />
+                        <span>Uploading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload size={14} />
+                        <span>Upload Logo</span>
+                      </>
+                    )}
+                  </button>
+
+                  <input
+                    type="text"
                     value={form.logo_url}
                     onChange={(e) => setForm({ ...form, logo_url: e.target.value })}
-                    placeholder="https://.../logo.png"
-                    className="flex-1 px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white focus:outline-none focus:border-fire transition-colors"
+                    placeholder="Or paste direct image URL (SVG, PNG, WebP)..."
+                    className="flex-1 px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white font-mono focus:outline-none focus:border-fire transition-colors"
                   />
                 </div>
                 <p className="text-[11px] text-gray-400">
-                  Enter a direct URL to your logo (PNG or SVG with transparent background recommended, height ~40px). If empty, text branding will be displayed.
+                  Upload an SVG or high-res PNG with transparent background. Height ~40-50px is ideal.
                 </p>
               </div>
 
-              {/* Favicon URL */}
-              <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-zinc-800">
-                <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300">
-                  Favicon Image URL
-                </label>
-                <input
-                  type="url"
-                  value={form.favicon_url}
-                  onChange={(e) => setForm({ ...form, favicon_url: e.target.value })}
-                  placeholder="https://.../favicon.ico or .png"
-                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white focus:outline-none focus:border-fire transition-colors"
-                />
+              {/* Favicon File Upload & URL */}
+              <div className="space-y-3 pt-3 border-t border-gray-100 dark:border-zinc-800">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-gray-700 dark:text-zinc-300 flex items-center gap-1.5">
+                    <Sparkles size={14} className="text-fire" />
+                    Favicon Icon (Upload File or Enter URL)
+                  </label>
+                  {form.favicon_url && (
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, favicon_url: '' })}
+                      className="text-[11px] text-rose-500 hover:text-rose-600 flex items-center gap-1 cursor-pointer font-bold"
+                    >
+                      <Trash2 size={12} /> Clear Favicon
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-stretch gap-2.5">
+                  <input
+                    type="file"
+                    ref={faviconInputRef}
+                    accept="image/*,.ico"
+                    onChange={handleUploadFavicon}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => faviconInputRef.current?.click()}
+                    disabled={uploadingFavicon}
+                    className="px-4 py-2.5 bg-gray-900 hover:bg-black dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer shrink-0 disabled:opacity-60"
+                  >
+                    {uploadingFavicon ? (
+                      <>
+                        <RefreshCw size={14} className="animate-spin text-fire" />
+                        <span>Uploading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload size={14} />
+                        <span>Upload Favicon</span>
+                      </>
+                    )}
+                  </button>
+
+                  <input
+                    type="text"
+                    value={form.favicon_url}
+                    onChange={(e) => setForm({ ...form, favicon_url: e.target.value })}
+                    placeholder="Or paste direct favicon URL (.svg, .ico, .png)..."
+                    className="flex-1 px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white font-mono focus:outline-none focus:border-fire transition-colors"
+                  />
+                </div>
                 <p className="text-[11px] text-gray-400">
-                  Browser tab icon (32x32px or 64x64px square PNG or ICO).
+                  Square 32x32px or 64x64px image displayed on browser tabs.
                 </p>
               </div>
             </div>
@@ -348,7 +482,7 @@ export default function SettingsManager({ isDark, user }) {
             <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-xs space-y-4">
               <h3 className="font-display font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
                 <Mail size={18} className="text-fire" />
-                Customer Support & Contact
+                Customer Support & Contact Info
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -375,7 +509,7 @@ export default function SettingsManager({ isDark, user }) {
                     type="text"
                     value={form.contact_phone}
                     onChange={(e) => setForm({ ...form, contact_phone: e.target.value })}
-                    placeholder="+92 300 1234567"
+                    placeholder="+92 300 8472910"
                     className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white focus:outline-none focus:border-fire transition-colors"
                   />
                 </div>
@@ -389,10 +523,10 @@ export default function SettingsManager({ isDark, user }) {
                     type="text"
                     value={form.whatsapp_number}
                     onChange={(e) => setForm({ ...form, whatsapp_number: e.target.value })}
-                    placeholder="923001234567 (with country code)"
+                    placeholder="923008472910 (with country code)"
                     className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white focus:outline-none focus:border-fire transition-colors"
                   />
-                  <p className="text-[11px] text-gray-400 mt-1">Powers the floating WhatsApp chat button & order updates.</p>
+                  <p className="text-[11px] text-gray-400 mt-1">Powers the floating WhatsApp chat button & direct customer queries.</p>
                 </div>
 
                 <div>
@@ -404,7 +538,7 @@ export default function SettingsManager({ isDark, user }) {
                     type="text"
                     value={form.store_address}
                     onChange={(e) => setForm({ ...form, store_address: e.target.value })}
-                    placeholder="Shop #12, Sneaker District, Lahore"
+                    placeholder="Shop 14-A, Block H, Gulberg III, Lahore, Pakistan"
                     className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white focus:outline-none focus:border-fire transition-colors"
                   />
                 </div>
@@ -412,57 +546,127 @@ export default function SettingsManager({ isDark, user }) {
             </div>
           </div>
 
-          {/* Right Column: Live Previews */}
-          <div className="space-y-6">
+          {/* Right Column: Pure Asset Preview (5 cols) */}
+          <div className="lg:col-span-5 space-y-6">
+            {/* Logo Pure Preview Card */}
             <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-xs space-y-4">
-              <h3 className="font-display font-bold text-xs uppercase tracking-wider text-gray-400 dark:text-zinc-500">
-                Live Header Preview
-              </h3>
-
-              <div className="p-4 bg-gray-50 dark:bg-zinc-800/60 rounded-xl border border-gray-200 dark:border-zinc-700/80 flex items-center justify-between">
+              <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-zinc-800">
                 <div className="flex items-center gap-2">
-                  {form.logo_url ? (
-                    <img
-                      src={form.logo_url}
-                      alt={form.store_name}
-                      className="h-8 max-w-[140px] object-contain"
-                      onError={(e) => { e.target.style.display = 'none'; }}
-                    />
-                  ) : (
-                    <span className="font-display font-black text-lg tracking-tight text-gray-900 dark:text-white">
-                      {form.store_name || 'SOLEKICKS'}<span className="text-fire">.</span>
-                      <span className="text-[9px] font-mono tracking-widest ml-0.5">PK</span>
-                    </span>
-                  )}
+                  <ImageIcon size={16} className="text-fire" />
+                  <h3 className="font-display font-bold text-xs uppercase tracking-wider text-gray-900 dark:text-white">
+                    Logo Preview
+                  </h3>
                 </div>
-                <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-zinc-400 font-medium">
-                  <span>Shop</span>
-                  <span>Collections</span>
-                  <span className="text-fire font-bold">Drops</span>
+
+                {/* Background switchers to check transparency & contrast */}
+                <div className="flex items-center gap-1 bg-gray-100 dark:bg-zinc-800 p-1 rounded-lg">
+                  <button
+                    type="button"
+                    onClick={() => setLogoPreviewBg('light')}
+                    title="Preview on Light background"
+                    className={`px-2 py-0.5 text-[10px] font-bold rounded cursor-pointer transition-colors ${
+                      logoPreviewBg === 'light' ? 'bg-white text-gray-900 shadow-2xs' : 'text-gray-500 hover:text-gray-800 dark:text-zinc-400'
+                    }`}
+                  >
+                    Light
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLogoPreviewBg('dark')}
+                    title="Preview on Dark background"
+                    className={`px-2 py-0.5 text-[10px] font-bold rounded cursor-pointer transition-colors ${
+                      logoPreviewBg === 'dark' ? 'bg-zinc-900 text-white shadow-2xs' : 'text-gray-500 hover:text-gray-800 dark:text-zinc-400'
+                    }`}
+                  >
+                    Dark
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLogoPreviewBg('brand')}
+                    title="Preview on Brand Dark background"
+                    className={`px-2 py-0.5 text-[10px] font-bold rounded cursor-pointer transition-colors ${
+                      logoPreviewBg === 'brand' ? 'bg-fire text-white shadow-2xs' : 'text-gray-500 hover:text-gray-800 dark:text-zinc-400'
+                    }`}
+                  >
+                    Accent
+                  </button>
                 </div>
               </div>
 
-              {form.favicon_url && (
-                <div className="pt-3 border-t border-gray-100 dark:border-zinc-800 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-zinc-800 p-1 flex items-center justify-center border border-gray-200 dark:border-zinc-700">
-                    <img src={form.favicon_url} alt="Favicon" className="w-5 h-5 object-contain" />
+              {/* Dedicated Logo Box */}
+              <div
+                className={`relative min-h-[160px] p-6 rounded-xl border flex items-center justify-center transition-colors overflow-hidden ${
+                  logoPreviewBg === 'light'
+                    ? 'bg-white border-gray-200 [background-image:linear-gradient(45deg,#f4f4f5_25%,transparent_25%),linear-gradient(-45deg,#f4f4f5_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#f4f4f5_75%),linear-gradient(-45deg,transparent_75%,#f4f4f5_75%)] [background-size:16px_16px] [background-position:0_0,0_8px,8px_-8px,-8px_0]'
+                    : logoPreviewBg === 'dark'
+                    ? 'bg-zinc-950 border-zinc-800 text-white'
+                    : 'bg-fire border-fire text-white'
+                }`}
+              >
+                {form.logo_url ? (
+                  <img
+                    src={form.logo_url}
+                    alt={form.store_name || "Logo"}
+                    className="max-h-16 max-w-full object-contain drop-shadow-sm"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <div className="text-center space-y-1">
+                    <span className="font-display font-black text-2xl tracking-tight text-gray-900 dark:text-white">
+                      {form.store_name || 'SOLEKICKS'}<span className="text-fire">.</span>
+                    </span>
+                    <p className="text-[10px] font-mono text-gray-400 block">Default Text Branding Active</p>
                   </div>
-                  <div>
-                    <p className="text-xs font-bold text-gray-800 dark:text-zinc-200">Favicon Loaded</p>
-                    <p className="text-[10px] text-gray-400 font-mono truncate max-w-[200px]">{form.favicon_url}</p>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
+
+              {/* Asset Details */}
+              <div className="pt-2 text-[11px] text-gray-500 dark:text-zinc-400 flex items-center justify-between">
+                <span>Active Logo URL:</span>
+                <span className="font-mono font-bold text-gray-800 dark:text-zinc-200 truncate max-w-[200px]">
+                  {form.logo_url || 'Default Text (No File)'}
+                </span>
+              </div>
             </div>
 
-            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-2xl p-5">
-              <div className="flex items-start gap-3">
-                <Info size={18} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <h4 className="text-xs font-bold text-amber-900 dark:text-amber-200">Instant Storefront Sync</h4>
-                  <p className="text-[11px] text-amber-800/80 dark:text-amber-300/80 leading-relaxed">
-                    Changes to store name, logo, and contact info update across the customer navigation bar, footer, and checkout pages automatically.
-                  </p>
+            {/* Favicon Browser Tab Mockup */}
+            <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-xs space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-zinc-800">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={16} className="text-fire" />
+                  <h3 className="font-display font-bold text-xs uppercase tracking-wider text-gray-900 dark:text-white">
+                    Browser Tab Preview
+                  </h3>
+                </div>
+                <span className="text-[10px] font-mono text-gray-400">Favicon Mockup</span>
+              </div>
+
+              {/* Simulated Browser Chrome Tab */}
+              <div className="bg-gray-100 dark:bg-zinc-800 rounded-xl p-2.5 space-y-2 border border-gray-200 dark:border-zinc-700">
+                {/* Tab */}
+                <div className="w-fit max-w-[240px] bg-white dark:bg-zinc-900 px-3 py-1.5 rounded-t-lg border-t-2 border-t-fire border-x border-gray-200 dark:border-zinc-700 flex items-center gap-2 shadow-2xs">
+                  {form.favicon_url ? (
+                    <img
+                      src={form.favicon_url}
+                      alt="Favicon"
+                      className="w-4 h-4 object-contain shrink-0"
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+                  ) : (
+                    <div className="w-3.5 h-3.5 rounded-full bg-fire shrink-0" />
+                  )}
+                  <span className="text-xs font-bold text-gray-800 dark:text-zinc-200 truncate">
+                    {form.store_name || 'SOLEKICKS'} · Sneaker Drop
+                  </span>
+                  <span className="text-[11px] text-gray-400 ml-auto shrink-0">✕</span>
+                </div>
+
+                {/* URL Bar */}
+                <div className="bg-white dark:bg-zinc-900 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-700 flex items-center gap-2 text-[11px] font-mono text-gray-500 dark:text-zinc-400">
+                  <span className="text-emerald-500 font-bold">https://</span>
+                  <span className="text-gray-800 dark:text-zinc-200">solekicks.pk</span>
                 </div>
               </div>
             </div>
@@ -477,7 +681,156 @@ export default function SettingsManager({ isDark, user }) {
           animate={{ opacity: 1, y: 0 }}
           className="space-y-6"
         >
-          {/* Section A: Cash on Delivery & Partial Advance */}
+          {/* Section A: Safepay PK Integration & Environment */}
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-xs space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100 dark:border-zinc-800">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-blue-500/10 text-blue-500 rounded-xl">
+                  <CreditCard size={20} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-display font-bold text-base text-gray-900 dark:text-white">
+                      Safepay PK Payment Gateway
+                    </h3>
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Loaded from .env
+                    </span>
+                    <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
+                      form.safepay_environment === 'production'
+                        ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-400 border border-purple-300 dark:border-purple-800'
+                        : 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800'
+                    }`}>
+                      {form.safepay_environment.toUpperCase()}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">
+                    Powers Debit/Credit Cards (Visa & Mastercard), JazzCash, and Easypaisa checkout and COD partial advance deposits.
+                  </p>
+                </div>
+              </div>
+
+              {/* Master Safepay Toggle */}
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.safepay_enabled}
+                  onChange={(e) => setForm({ ...form, safepay_enabled: e.target.checked })}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-fire"></div>
+                <span className="ml-3 text-xs font-bold text-gray-800 dark:text-zinc-200">
+                  {form.safepay_enabled ? 'Safepay Active' : 'Safepay Disabled'}
+                </span>
+              </label>
+            </div>
+
+            {form.safepay_enabled ? (
+              <div className="space-y-5">
+                {/* Environment Mode Switcher */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5">
+                    Gateway Environment Mode
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, safepay_environment: 'sandbox' })}
+                      className={`px-4 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                        form.safepay_environment === 'sandbox'
+                          ? 'bg-amber-500 text-white border-amber-500 shadow-xs'
+                          : 'bg-gray-50 dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-300 hover:bg-gray-100'
+                      }`}
+                    >
+                      Sandbox (Test Mode)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, safepay_environment: 'production' })}
+                      className={`px-4 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                        form.safepay_environment === 'production'
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                          : 'bg-gray-50 dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-300 hover:bg-gray-100'
+                      }`}
+                    >
+                      Production (Live Real Money)
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-gray-400 mt-1">
+                    API credentials are automatically loaded from your server environment (`SAFEPAY_API_KEY` & `SAFEPAY_SECRET` in `.env`). No manual typing required.
+                  </p>
+                </div>
+
+                {/* Webhook Endpoint Info Box */}
+                <div className="p-4 bg-gray-50 dark:bg-zinc-800/60 rounded-xl border border-gray-200 dark:border-zinc-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <span className="text-[10px] uppercase font-mono font-bold text-gray-400 dark:text-zinc-500">
+                      Safepay Webhook Listener URL
+                    </span>
+                    <p className="text-xs font-mono font-bold text-gray-800 dark:text-zinc-200 break-all">
+                      {webhookUrl}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={copyWebhook}
+                    className="px-3.5 py-2 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs font-bold text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
+                  >
+                    {copiedWebhook ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                    <span>{copiedWebhook ? 'Copied' : 'Copy URL'}</span>
+                  </button>
+                </div>
+
+                {/* Optional Overrides (Collapsed) */}
+                <div className="pt-2 border-t border-gray-100 dark:border-zinc-800">
+                  <button
+                    type="button"
+                    onClick={() => setShowAdvancedSafepay(!showAdvancedSafepay)}
+                    className="text-xs text-gray-500 hover:text-gray-800 dark:hover:text-zinc-200 flex items-center gap-1.5 font-bold cursor-pointer"
+                  >
+                    <span>{showAdvancedSafepay ? '▾ Hide Advanced Key Overrides' : '▸ Advanced: Override .env API Keys (Optional)'}</span>
+                  </button>
+
+                  {showAdvancedSafepay && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 pt-3 border-t border-dashed border-gray-200 dark:border-zinc-800">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5">
+                          Custom Safepay API Key
+                        </label>
+                        <input
+                          type="text"
+                          value={form.safepay_api_key}
+                          onChange={(e) => setForm({ ...form, safepay_api_key: e.target.value })}
+                          placeholder="Leave empty to use .env key"
+                          className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white font-mono focus:outline-none focus:border-fire transition-colors"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5">
+                          Custom Safepay Secret Key (v1 Secret)
+                        </label>
+                        <input
+                          type="password"
+                          value={form.safepay_v1_secret}
+                          onChange={(e) => setForm({ ...form, safepay_v1_secret: e.target.value })}
+                          placeholder="Leave empty to use .env secret"
+                          className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white font-mono focus:outline-none focus:border-fire transition-colors"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 rounded-xl text-xs text-rose-700 dark:text-rose-300">
+                Safepay is currently disabled. Online card and mobile wallet payments are turned off.
+              </div>
+            )}
+          </div>
+
+          {/* Section B: Cash on Delivery & Partial Advance */}
           <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-xs space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100 dark:border-zinc-800">
               <div className="flex items-center gap-3">
@@ -486,7 +839,7 @@ export default function SettingsManager({ isDark, user }) {
                 </div>
                 <div>
                   <h3 className="font-display font-bold text-base text-gray-900 dark:text-white">
-                    Cash on Delivery (COD) Rules
+                    Cash on Delivery (COD) Rules & Advance Deposit
                   </h3>
                   <p className="text-xs text-gray-500 dark:text-zinc-400">
                     Require partial advance payment via Safepay for high-value orders to prevent fake COD returns.
@@ -532,7 +885,7 @@ export default function SettingsManager({ isDark, user }) {
                       />
                     </div>
                     <p className="text-[11px] text-gray-400 mt-1">
-                      Orders at or above this total will mandate an advance payment before confirmation.
+                      Orders at or above this total mandate an advance payment before confirmation.
                     </p>
                   </div>
 
@@ -668,156 +1021,6 @@ export default function SettingsManager({ isDark, user }) {
             ) : (
               <div className="p-4 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 rounded-xl text-xs text-rose-700 dark:text-rose-300">
                 Cash on Delivery is currently disabled. All checkout customers must pay online via Safepay.
-              </div>
-            )}
-          </div>
-
-          {/* Section B: Safepay PK Integration */}
-          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-xs space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100 dark:border-zinc-800">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-blue-500/10 text-blue-500 rounded-xl">
-                  <CreditCard size={20} />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-display font-bold text-base text-gray-900 dark:text-white">
-                      Safepay PK Payment Gateway
-                    </h3>
-                    <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
-                      form.safepay_environment === 'production'
-                        ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800'
-                        : 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800'
-                    }`}>
-                      {form.safepay_environment.toUpperCase()}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-zinc-400">
-                    Powers Debit/Credit Cards (Visa & Mastercard), JazzCash, and Easypaisa checkout and COD advance deposits.
-                  </p>
-                </div>
-              </div>
-
-              {/* Master Safepay Toggle */}
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={form.safepay_enabled}
-                  onChange={(e) => setForm({ ...form, safepay_enabled: e.target.checked })}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-fire"></div>
-                <span className="ml-3 text-xs font-bold text-gray-800 dark:text-zinc-200">
-                  {form.safepay_enabled ? 'Safepay Active' : 'Safepay Disabled'}
-                </span>
-              </label>
-            </div>
-
-            {form.safepay_enabled && (
-              <div className="space-y-5">
-                {/* Environment Mode */}
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5">
-                    Gateway Environment
-                  </label>
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setForm({ ...form, safepay_environment: 'sandbox' })}
-                      className={`px-4 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
-                        form.safepay_environment === 'sandbox'
-                          ? 'bg-amber-500 text-white border-amber-500 shadow-xs'
-                          : 'bg-gray-50 dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-300 hover:bg-gray-100'
-                      }`}
-                    >
-                      Sandbox (Test Mode)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setForm({ ...form, safepay_environment: 'production' })}
-                      className={`px-4 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
-                        form.safepay_environment === 'production'
-                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
-                          : 'bg-gray-50 dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-300 hover:bg-gray-100'
-                      }`}
-                    >
-                      Production (Live Real Money)
-                    </button>
-                  </div>
-                  <p className="text-[11px] text-gray-400 mt-1">
-                    Keep in Sandbox mode while testing with test cards and mock payments. Switch to Production when launching live.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* API Key */}
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      Safepay API Key
-                    </label>
-                    <input
-                      type="text"
-                      value={form.safepay_api_key}
-                      onChange={(e) => setForm({ ...form, safepay_api_key: e.target.value })}
-                      placeholder="sec_..."
-                      className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white font-mono focus:outline-none focus:border-fire transition-colors"
-                    />
-                    <p className="text-[11px] text-gray-400 mt-1">
-                      Found in your Safepay Merchant Dashboard under Developer Settings.
-                    </p>
-                  </div>
-
-                  {/* Secret Key */}
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5">
-                      Safepay Secret Key (v1 Secret)
-                    </label>
-                    <input
-                      type="password"
-                      value={form.safepay_v1_secret}
-                      onChange={(e) => setForm({ ...form, safepay_v1_secret: e.target.value })}
-                      placeholder="••••••••••••••••••••••••••••••••"
-                      className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white font-mono focus:outline-none focus:border-fire transition-colors"
-                    />
-                    <p className="text-[11px] text-gray-400 mt-1">
-                      Used to encrypt and securely sign checkout session requests.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Webhook Secret */}
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5">
-                    Webhook Shared Secret (Optional)
-                  </label>
-                  <input
-                    type="password"
-                    value={form.safepay_webhook_secret}
-                    onChange={(e) => setForm({ ...form, safepay_webhook_secret: e.target.value })}
-                    placeholder="Shared webhook secret for HMAC verification"
-                    className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white font-mono focus:outline-none focus:border-fire transition-colors"
-                  />
-                </div>
-
-                {/* Webhook Endpoint Info Box */}
-                <div className="p-4 bg-gray-50 dark:bg-zinc-800/60 rounded-xl border border-gray-200 dark:border-zinc-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="space-y-0.5">
-                    <span className="text-[10px] uppercase font-mono font-bold text-gray-400 dark:text-zinc-500">
-                      Webhook Listener Endpoint
-                    </span>
-                    <p className="text-xs font-mono font-bold text-gray-800 dark:text-zinc-200 break-all">
-                      {webhookUrl}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={copyWebhook}
-                    className="px-3.5 py-2 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs font-bold text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
-                  >
-                    {copiedWebhook ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
-                    <span>{copiedWebhook ? 'Copied' : 'Copy URL'}</span>
-                  </button>
-                </div>
               </div>
             )}
           </div>

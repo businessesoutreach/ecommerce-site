@@ -1922,6 +1922,12 @@ router.get('/settings', async (req, res) => {
                     id: 'singleton',
                     store_name: 'SoleKicks',
                     store_tagline: 'Premium Sneakers & Streetwear',
+                    logo_url: '/images/logo.svg',
+                    favicon_url: '/favicon.svg',
+                    contact_email: 'support@solekicks.pk',
+                    contact_phone: '+92 300 8472910',
+                    whatsapp_number: '923008472910',
+                    store_address: 'Shop 14-A, Block H, Gulberg III, Lahore, Pakistan',
                     cod_enabled: true,
                     safepay_enabled: true,
                     safepay_environment: 'sandbox',
@@ -1934,7 +1940,14 @@ router.get('/settings', async (req, res) => {
                 }
             });
         }
-        res.json({ success: true, data: s });
+
+        const envSafepay = {
+            configured: Boolean(process.env.SAFEPAY_API_KEY && process.env.SAFEPAY_SECRET),
+            environment: process.env.SAFEPAY_ENVIRONMENT || 'sandbox',
+            key_preview: process.env.SAFEPAY_API_KEY ? `${process.env.SAFEPAY_API_KEY.slice(0, 10)}••••••••` : null
+        };
+
+        res.json({ success: true, data: s, env_safepay: envSafepay });
     } catch (err) {
         res.status(500).json({ detail: err.message });
     }
