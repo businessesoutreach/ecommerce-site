@@ -188,9 +188,9 @@ function AddressesTab() {
     "w-full border border-ink-200 rounded-none px-4 py-2.5 outline-none focus:border-obsidian bg-white transition-colors text-sm";
 
   return (
-    <div className="grid lg:grid-cols-5 gap-8 items-start" data-testid="account-addresses">
+    <div className="grid lg:grid-cols-5 gap-6 lg:gap-8 items-start min-w-0" data-testid="account-addresses">
       {/* Address List */}
-      <div className="lg:col-span-3 space-y-4">
+      <div className="lg:col-span-3 space-y-4 min-w-0 w-full">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-display tracking-tight text-lg font-bold">Saved Addresses</h3>
           <span className="font-mono text-xs text-ink-400 font-semibold">{items.length} saved</span>
@@ -271,7 +271,7 @@ function AddressesTab() {
       </div>
 
       {/* Address Form (Add or Edit) */}
-      <div className="lg:col-span-2 bg-white border border-ink-200 p-6 shadow-sm sticky top-28">
+      <div className="lg:col-span-2 bg-white border border-ink-200 p-5 sm:p-6 shadow-sm static lg:sticky lg:top-28 min-w-0 w-full">
         <div className="flex items-center justify-between mb-5 pb-3 border-b border-ink-100">
           <h3 className="font-display tracking-tight font-bold text-base flex items-center gap-2">
             {editingId ? <Edit3 size={17} className="text-fire" /> : <Plus size={17} className="text-fire" />}
@@ -431,13 +431,13 @@ function WishlistTab() {
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="font-display tracking-tight text-xl font-bold">
-          Your Rotation Wishlist <span className="text-fire">({wishlist.items.length})</span>
+    <div className="min-w-0">
+      <div className="flex items-center justify-between mb-5 sm:mb-6">
+        <h3 className="font-display tracking-tight text-lg sm:text-xl font-bold truncate">
+          Your Rotation Wishlist <span className="text-fire font-mono">({wishlist.items.length})</span>
         </h3>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
         {wishlist.items.map((p, i) => (
           <ProductCard key={p.id} product={p} index={i} />
         ))}
@@ -716,35 +716,37 @@ function OrderDetailsModal({ order, onClose, onCancelOrder, onReturnOrder }) {
               <span className="text-xs font-mono tracking-widest text-ink-400 uppercase font-bold block mb-4">
                 Delivery Status
               </span>
-              <div className="grid grid-cols-5 gap-1 text-center relative">
-                {STEPS.map((st, i) => {
-                  const isDone = currentStepIdx >= i;
-                  const isCurrent = currentStepIdx === i;
-                  return (
-                    <div key={st} className="flex flex-col items-center">
-                      <div
-                        className={`w-7 h-7 rounded-full flex items-center justify-center font-mono text-xs font-bold transition-all ${
-                          isDone
-                            ? "bg-obsidian text-white"
-                            : "bg-ink-200 text-ink-500"
-                        } ${isCurrent ? "ring-2 ring-fire ring-offset-2" : ""}`}
-                      >
-                        {isDone ? <Check size={14} /> : i + 1}
+              <div className="overflow-x-auto no-scrollbar pb-1">
+                <div className="grid grid-cols-5 gap-1 text-center relative min-w-[280px]">
+                  {STEPS.map((st, i) => {
+                    const isDone = currentStepIdx >= i;
+                    const isCurrent = currentStepIdx === i;
+                    return (
+                      <div key={st} className="flex flex-col items-center">
+                        <div
+                          className={`w-7 h-7 rounded-full flex items-center justify-center font-mono text-xs font-bold transition-all ${
+                            isDone
+                              ? "bg-obsidian text-white"
+                              : "bg-ink-200 text-ink-500"
+                          } ${isCurrent ? "ring-2 ring-fire ring-offset-2" : ""}`}
+                        >
+                          {isDone ? <Check size={14} /> : i + 1}
+                        </div>
+                        <span
+                          className={`text-[10px] font-mono mt-2 uppercase tracking-tight ${
+                            isCurrent
+                              ? "font-bold text-fire"
+                              : isDone
+                              ? "text-obsidian font-semibold"
+                              : "text-ink-400"
+                          }`}
+                        >
+                          {LABELS[st]}
+                        </span>
                       </div>
-                      <span
-                        className={`text-[10px] font-mono mt-2 uppercase tracking-tight ${
-                          isCurrent
-                            ? "font-bold text-fire"
-                            : isDone
-                            ? "text-obsidian font-semibold"
-                            : "text-ink-400"
-                        }`}
-                      >
-                        {LABELS[st]}
-                      </span>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Courier info if dispatched */}
@@ -1004,28 +1006,28 @@ export default function Account() {
   };
 
   return (
-    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-10 min-h-[75vh]">
+    <div className="max-w-[1400px] mx-auto px-3.5 sm:px-6 lg:px-8 py-6 sm:py-10 min-h-[75vh] min-w-0 overflow-x-hidden">
       {/* Header Profile Greeting */}
-      <div className="flex items-center gap-4 mb-8 bg-white border border-ink-200 p-5 sm:p-6 shadow-sm">
+      <div className="flex items-center gap-3.5 sm:gap-4 mb-6 sm:mb-8 bg-white border border-ink-200 p-4 sm:p-6 shadow-sm min-w-0">
         {user.picture ? (
           <img
             src={user.picture}
             alt=""
-            className="h-14 w-14 sm:h-16 sm:w-16 rounded-full object-cover shrink-0 ring-2 ring-obsidian/10"
+            className="h-12 w-12 sm:h-16 sm:w-16 rounded-full object-cover shrink-0 ring-2 ring-obsidian/10"
             referrerPolicy="no-referrer"
           />
         ) : (
-          <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-none bg-obsidian text-white grid place-items-center font-display font-bold text-2xl shrink-0 shadow-sm">
+          <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-none bg-obsidian text-white grid place-items-center font-display font-bold text-xl sm:text-2xl shrink-0 shadow-sm">
             {user.name?.[0]?.toUpperCase() || "U"}
           </div>
         )}
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="font-display tracking-tight text-2xl sm:text-3xl font-extrabold text-obsidian">
+            <h1 className="font-display tracking-tight text-xl sm:text-3xl font-extrabold text-obsidian truncate">
               Hey, {user.name?.split(" ")[0]}
             </h1>
             {credit.balance > 0 && (
-              <span className="font-mono text-[11px] font-bold bg-fire/10 text-fire border border-fire/20 px-2 py-0.5">
+              <span className="font-mono text-[10px] sm:text-[11px] font-bold bg-fire/10 text-fire border border-fire/20 px-2 py-0.5 shrink-0">
                 Credit: {fmt(credit.balance)}
               </span>
             )}
@@ -1034,56 +1036,58 @@ export default function Account() {
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-4 gap-8">
+      <div className="grid lg:grid-cols-4 gap-6 lg:gap-8 items-start min-w-0">
         {/* Sidebar Navigation */}
-        <aside className="lg:col-span-1">
-          <nav className="flex lg:flex-col gap-1 overflow-x-auto no-scrollbar pb-2 lg:pb-0">
-            {[
-              ["orders", "My Orders", Package, orders.length],
-              ["credit", "Store Credit", Gift, credit.balance > 0 ? fmt(credit.balance) : null],
-              ["addresses", "Addresses", MapPin, null],
-              ["wishlist", "Wishlist", Heart, null],
-              ["settings", "Settings", User, null],
-            ].map(([k, l, I, badge]) => (
+        <aside className="lg:col-span-1 min-w-0 w-full overflow-hidden">
+          <div className="overflow-x-auto no-scrollbar pb-1 lg:pb-0 -mx-3.5 px-3.5 sm:mx-0 sm:px-0">
+            <nav className="flex lg:flex-col gap-1.5 min-w-max lg:min-w-0">
+              {[
+                ["orders", "My Orders", Package, orders.length],
+                ["credit", "Store Credit", Gift, credit.balance > 0 ? fmt(credit.balance) : null],
+                ["addresses", "Addresses", MapPin, null],
+                ["wishlist", "Wishlist", Heart, null],
+                ["settings", "Settings", User, null],
+              ].map(([k, l, I, badge]) => (
+                <button
+                  key={k}
+                  onClick={() => setTab(k)}
+                  data-testid={`account-tab-${k}`}
+                  className={`flex items-center justify-between gap-2.5 px-3.5 py-2.5 lg:px-4 lg:py-3 rounded-xl lg:rounded-none font-display text-xs sm:text-sm tracking-tight whitespace-nowrap transition-colors shrink-0 cursor-pointer ${
+                    tab === k
+                      ? "bg-obsidian text-white font-bold shadow-sm"
+                      : "bg-white border border-ink-200 text-ink-700 hover:border-obsidian hover:text-obsidian"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <I size={16} className={tab === k ? "text-fire" : "text-ink-500"} />
+                    <span>{l}</span>
+                  </div>
+                  {badge && (
+                    <span
+                      className={`font-mono text-[10px] sm:text-xs px-1.5 py-0.5 lg:px-2 rounded-md lg:rounded-none font-bold shrink-0 ml-1.5 ${
+                        tab === k ? "bg-white/20 text-white" : "bg-ink-100 text-obsidian"
+                      }`}
+                    >
+                      {badge}
+                    </span>
+                  )}
+                </button>
+              ))}
               <button
-                key={k}
-                onClick={() => setTab(k)}
-                data-testid={`account-tab-${k}`}
-                className={`flex items-center justify-between px-4 py-3 rounded-none font-display text-sm tracking-tight whitespace-nowrap transition-colors ${
-                  tab === k
-                    ? "bg-obsidian text-white font-bold shadow-sm"
-                    : "bg-white border border-ink-200 text-ink-700 hover:border-obsidian hover:text-obsidian"
-                }`}
+                onClick={() => {
+                  logout();
+                  navigate("/");
+                }}
+                className="flex items-center gap-2 px-3.5 py-2.5 lg:px-4 lg:py-3 rounded-xl lg:rounded-none font-display text-xs sm:text-sm tracking-tight text-fire hover:bg-fire/10 bg-white border border-fire/20 transition-colors whitespace-nowrap font-bold shrink-0 lg:mt-1 cursor-pointer"
               >
-                <div className="flex items-center gap-3">
-                  <I size={17} className={tab === k ? "text-fire" : "text-ink-500"} />
-                  <span>{l}</span>
-                </div>
-                {badge && (
-                  <span
-                    className={`font-mono text-xs px-2 py-0.5 rounded-none font-bold ${
-                      tab === k ? "bg-white/20 text-white" : "bg-ink-100 text-obsidian"
-                    }`}
-                  >
-                    {badge}
-                  </span>
-                )}
+                <LogOut size={16} /> <span>Logout</span>
               </button>
-            ))}
-            <button
-              onClick={() => {
-                logout();
-                navigate("/");
-              }}
-              className="flex items-center gap-3 px-4 py-3 rounded-none font-display text-sm tracking-tight text-fire hover:bg-fire/10 bg-white border border-fire/20 transition-colors whitespace-nowrap font-bold mt-1"
-            >
-              <LogOut size={17} /> Logout
-            </button>
-          </nav>
+            </nav>
+          </div>
         </aside>
 
         {/* Tab Body */}
-        <div className="lg:col-span-3">
+        <div className="lg:col-span-3 min-w-0 w-full overflow-hidden">
           {/* ORDERS TAB */}
           {tab === "orders" && (
             <div>
@@ -1163,10 +1167,14 @@ export default function Account() {
                         </div>
 
                         {/* Bottom action row */}
-                        <div className="flex flex-wrap justify-between items-center gap-3 mt-4 pt-4 border-t border-ink-100">
-                          <div className="text-ink-600 text-xs font-mono">
-                            <span className="font-bold text-obsidian">{o.items?.length || 0}</span>{" "}
-                            item(s) · <span className="uppercase">{o.payment_method}</span>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-4 pt-4 border-t border-ink-100">
+                          <div className="flex items-center justify-between sm:justify-start gap-3 text-ink-600 text-xs font-mono">
+                            <span>
+                              <span className="font-bold text-obsidian">{o.items?.length || 0}</span> item(s) · <span className="uppercase">{o.payment_method}</span>
+                            </span>
+                            <span className="sm:hidden font-mono font-extrabold text-fire text-base">
+                              {fmt(o.total)}
+                            </span>
                           </div>
 
                           <div className="flex flex-wrap items-center gap-2">
@@ -1174,7 +1182,7 @@ export default function Account() {
                             {canCancel && (
                               <button
                                 onClick={() => setCancelFor(o)}
-                                className="text-xs font-mono font-bold text-fire hover:bg-fire/10 border border-fire/30 px-3 py-1.5 transition-colors"
+                                className="text-xs font-mono font-bold text-fire hover:bg-fire/10 border border-fire/30 px-3 py-1.5 transition-colors cursor-pointer"
                               >
                                 Cancel
                               </button>
@@ -1195,7 +1203,7 @@ export default function Account() {
                               <button
                                 onClick={() => setReturnFor(o)}
                                 data-testid={`account-return-btn-${o.order_number}`}
-                                className="flex items-center gap-1.5 text-xs font-bold border border-ink-300 px-3 py-1.5 hover:border-obsidian transition-colors text-obsidian"
+                                className="flex items-center gap-1.5 text-xs font-bold border border-ink-300 px-3 py-1.5 hover:border-obsidian transition-colors text-obsidian cursor-pointer"
                               >
                                 <RotateCcw size={12} /> Return
                               </button>
@@ -1204,12 +1212,12 @@ export default function Account() {
                             {/* View Details */}
                             <button
                               onClick={() => setSelectedOrder(o)}
-                              className="flex items-center gap-1.5 text-xs font-bold bg-obsidian text-white px-3.5 py-1.5 hover:bg-fire transition-colors"
+                              className="flex items-center gap-1.5 text-xs font-bold bg-obsidian text-white px-3.5 py-1.5 hover:bg-fire transition-colors cursor-pointer"
                             >
                               <Eye size={13} /> View Details
                             </button>
 
-                            <span className="font-mono font-extrabold text-fire ml-2 text-base">
+                            <span className="hidden sm:inline font-mono font-extrabold text-fire ml-2 text-base shrink-0">
                               {fmt(o.total)}
                             </span>
                           </div>
@@ -1224,9 +1232,9 @@ export default function Account() {
 
           {/* STORE CREDIT TAB */}
           {tab === "credit" && (
-            <div>
+            <div className="min-w-0">
               <div
-                className="bg-obsidian text-white rounded-none p-6 sm:p-8 mb-6 shadow-sm border border-ink-900"
+                className="bg-obsidian text-white rounded-none p-5 sm:p-8 mb-6 shadow-sm border border-ink-900 min-w-0"
                 data-testid="account-store-credit-balance"
               >
                 <div className="flex items-center gap-2 mb-2">
@@ -1235,7 +1243,7 @@ export default function Account() {
                     Store Credit Balance
                   </span>
                 </div>
-                <p className="font-display font-extrabold text-3xl sm:text-4xl font-mono text-white mt-1">
+                <p className="font-display font-extrabold text-2xl sm:text-4xl font-mono text-white mt-1 break-words">
                   {fmt(credit.balance)}
                 </p>
                 <p className="text-white/60 text-xs sm:text-sm mt-3 leading-relaxed max-w-lg">
@@ -1264,13 +1272,13 @@ export default function Account() {
                   {credit.ledger.map((l) => (
                     <div
                       key={l.id}
-                      className="flex justify-between items-center px-4 py-3.5 hover:bg-ink-50 transition-colors"
+                      className="flex justify-between items-center px-3.5 py-3 sm:px-4 sm:py-3.5 hover:bg-ink-50 transition-colors gap-3 min-w-0"
                     >
-                      <div>
-                        <p className="font-display font-bold text-sm text-obsidian capitalize">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-display font-bold text-xs sm:text-sm text-obsidian capitalize truncate">
                           {l.reason.replace(/_/g, " ").toLowerCase()}
                         </p>
-                        <span className="font-mono text-xs text-ink-400">
+                        <span className="font-mono text-[11px] sm:text-xs text-ink-400">
                           {new Date(l.created_at).toLocaleDateString("en-PK", {
                             year: "numeric",
                             month: "short",
@@ -1279,7 +1287,7 @@ export default function Account() {
                         </span>
                       </div>
                       <span
-                        className={`font-mono font-bold text-sm ${
+                        className={`font-mono font-bold text-xs sm:text-sm shrink-0 whitespace-nowrap ${
                           l.amount >= 0 ? "text-emerald-600" : "text-fire"
                         }`}
                       >
