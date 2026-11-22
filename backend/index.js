@@ -33,29 +33,9 @@ app.use(helmet({
     contentSecurityPolicy: false // Handled per-page on frontend
 }));
 
-// CORS Configuration (Strict Whitelist + Localhost + Vercel Previews)
-const allowedOrigins = [
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    'http://localhost:8000',
-    process.env.FRONTEND_URL,
-].filter(Boolean);
-
+// CORS Configuration - Allow from any origin dynamically (supporting credentials)
 app.use(cors({
-    origin: (origin, callback) => {
-        // Allow requests with no origin (e.g. mobile apps, curl, server-to-server webhook callbacks)
-        if (!origin) return callback(null, true);
-        
-        if (
-            allowedOrigins.includes(origin) ||
-            origin.endsWith('.vercel.app') ||
-            origin.endsWith('.solekicks.pk')
-        ) {
-            return callback(null, true);
-        }
-        
-        return callback(new Error(`CORS policy violation: origin ${origin} is not allowed`));
-    },
+    origin: true,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cookie'],
