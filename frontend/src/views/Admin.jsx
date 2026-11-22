@@ -5250,34 +5250,36 @@ function ProductDetailPage({ productId, initialProduct, isNew = false, onBack, o
               </div>
             </div>
 
-            {/* Sizing Matrix Grid - Responsive & Compact (No Overflow) */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-2.5">
+            {/* Sizing Matrix Grid - Spacious, High Visibility & No Overflow */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
               {sizes.map((s, idx) => {
                 const stockVal = Number(s.stock) || 0;
                 return (
                   <div
                     key={s.id || idx}
-                    className={`p-2.5 rounded-xl border text-center transition-all ${stockVal === 0
+                    className={`p-3 rounded-xl border text-center transition-all ${stockVal === 0
                       ? 'bg-rose-50/40 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50'
                       : stockVal <= 3
                         ? 'bg-amber-50/40 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50'
-                        : 'bg-gray-50/80 dark:bg-zinc-800/50 border-gray-200 dark:border-zinc-700'
+                        : 'bg-gray-50/80 dark:bg-zinc-800/50 border-gray-200 dark:border-zinc-700 shadow-2xs'
                       }`}
                   >
-                    <span className="font-mono font-black text-xs text-gray-900 dark:text-zinc-100 block">
-                      EU {s.size}
-                    </span>
-                    <span className={`text-[9px] font-bold uppercase tracking-wider block mt-0.5 ${stockVal === 0 ? 'text-rose-600' : stockVal <= 3 ? 'text-amber-600' : 'text-emerald-600'
-                      }`}>
-                      {stockVal === 0 ? 'Sold Out' : stockVal <= 3 ? 'Low Stock' : 'In Stock'}
-                    </span>
+                    <div className="flex items-center justify-between px-1">
+                      <span className="font-mono font-black text-sm text-gray-900 dark:text-zinc-100">
+                        EU {s.size}
+                      </span>
+                      <span className={`text-[10px] font-bold uppercase tracking-wider ${stockVal === 0 ? 'text-rose-600 dark:text-rose-400' : stockVal <= 3 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'
+                        }`}>
+                        {stockVal === 0 ? 'Sold Out' : stockVal <= 3 ? 'Low Stock' : 'In Stock'}
+                      </span>
+                    </div>
 
-                    {/* Integrated Counter Control - 100% width, never overflows */}
-                    <div className="mt-2 flex items-center justify-between bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg p-0.5 w-full">
+                    {/* Integrated High-Visibility Stepper */}
+                    <div className="mt-2.5 flex items-center justify-between p-1 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl w-full shadow-2xs">
                       <button
                         type="button"
                         onClick={() => updateSizeStock(idx, -1)}
-                        className="w-7 h-7 rounded-md bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-200 font-bold text-xs flex items-center justify-center shrink-0 cursor-pointer transition-colors active:scale-95"
+                        className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-900 dark:text-zinc-100 font-black text-base flex items-center justify-center shrink-0 cursor-pointer transition-colors active:scale-95"
                         title="Decrease stock"
                       >
                         -
@@ -5287,12 +5289,12 @@ function ProductDetailPage({ productId, initialProduct, isNew = false, onBack, o
                         min="0"
                         value={s.stock}
                         onChange={(e) => setDirectSizeStock(idx, e.target.value)}
-                        className="w-full flex-1 min-w-0 text-center font-mono font-bold text-xs bg-transparent border-0 focus:outline-none text-gray-900 dark:text-zinc-100 p-0"
+                        className="w-full flex-1 min-w-0 text-center font-mono font-black text-sm text-gray-900 dark:text-zinc-100 bg-transparent border-0 focus:outline-none p-0"
                       />
                       <button
                         type="button"
                         onClick={() => updateSizeStock(idx, 1)}
-                        className="w-7 h-7 rounded-md bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-200 font-bold text-xs flex items-center justify-center shrink-0 cursor-pointer transition-colors active:scale-95"
+                        className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-900 dark:text-zinc-100 font-black text-base flex items-center justify-center shrink-0 cursor-pointer transition-colors active:scale-95"
                         title="Increase stock"
                       >
                         +
