@@ -1,24 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Settings as SettingsIcon, 
-  Store, 
-  CreditCard, 
-  Truck, 
-  ShieldCheck, 
-  Save, 
-  RefreshCw, 
-  Check, 
-  Copy, 
-  Eye, 
-  EyeOff, 
-  AlertCircle, 
-  Lock, 
-  Image as ImageIcon, 
-  Phone, 
-  Mail, 
-  MapPin, 
-  MessageSquare, 
+import {
+  Settings as SettingsIcon,
+  Store,
+  CreditCard,
+  Truck,
+  ShieldCheck,
+  Save,
+  RefreshCw,
+  Check,
+  Copy,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  Lock,
+  Image as ImageIcon,
+  Phone,
+  Mail,
+  MapPin,
+  MessageSquare,
   Zap,
   Info,
   DollarSign,
@@ -61,25 +61,25 @@ export default function SettingsManager({ isDark, user }) {
     contact_phone: '+92 300 8472910',
     whatsapp_number: '923008472910',
     store_address: 'Shop 14-A, Block H, Gulberg III, Lahore, Pakistan',
-    
+
     // Shipping
     free_shipping_min_amt: 5000,
     flat_shipping_fee: 250,
-    
+
     // COD & Advance
     cod_enabled: true,
     advance_payment_threshold: 10000,
     advance_payment_type: 'percentage', // 'percentage' | 'fixed'
     advance_payment_percent: 15,
     advance_payment_fixed: 1500,
-    
+
     // Safepay PK
     safepay_enabled: true,
     safepay_environment: 'sandbox', // 'sandbox' | 'production'
     safepay_api_key: '',
     safepay_v1_secret: '',
     safepay_webhook_secret: '',
-    
+
     // Announcement
     announcement_active: false,
     announcement_text: ''
@@ -223,8 +223,8 @@ export default function SettingsManager({ isDark, user }) {
   const requiresAdvance = form.cod_enabled && simulatedThreshold > 0 && calcOrderAmount >= simulatedThreshold;
   const simulatedAdvance = requiresAdvance
     ? (form.advance_payment_type === 'fixed'
-        ? Math.min(Number(form.advance_payment_fixed || 0), calcOrderAmount)
-        : Math.round((calcOrderAmount * Number(form.advance_payment_percent || 0)) / 100))
+      ? Math.min(Number(form.advance_payment_fixed || 0), calcOrderAmount)
+      : Math.round((calcOrderAmount * Number(form.advance_payment_percent || 0)) / 100))
     : 0;
   const simulatedBalance = calcOrderAmount - simulatedAdvance;
 
@@ -288,11 +288,10 @@ export default function SettingsManager({ isDark, user }) {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold tracking-tight rounded-t-xl transition-all whitespace-nowrap cursor-pointer ${
-                isActive
+              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold tracking-tight rounded-t-xl transition-all whitespace-nowrap cursor-pointer ${isActive
                   ? 'bg-white dark:bg-zinc-900 text-fire border-t-2 border-t-fire border-x border-gray-200 dark:border-zinc-800 -mb-px'
                   : 'text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-200 hover:bg-gray-100 dark:hover:bg-zinc-800/50'
-              }`}
+                }`}
             >
               <Icon size={16} />
               <span>{tab.label}</span>
@@ -435,9 +434,8 @@ export default function SettingsManager({ isDark, user }) {
                             type="button"
                             onClick={() => setLogoPreviewTheme('light')}
                             title="Preview on white background"
-                            className={`px-1.5 py-0.5 text-[10px] font-bold rounded cursor-pointer transition-colors ${
-                              logoPreviewTheme === 'light' ? 'bg-white text-gray-900 shadow-2xs' : 'text-gray-500 dark:text-zinc-400 hover:text-gray-900'
-                            }`}
+                            className={`px-1.5 py-0.5 text-[10px] font-bold rounded cursor-pointer transition-colors ${logoPreviewTheme === 'light' ? 'bg-white text-gray-900 shadow-2xs' : 'text-gray-500 dark:text-zinc-400 hover:text-gray-900'
+                              }`}
                           >
                             Light
                           </button>
@@ -445,9 +443,8 @@ export default function SettingsManager({ isDark, user }) {
                             type="button"
                             onClick={() => setLogoPreviewTheme('dark')}
                             title="Preview on dark background"
-                            className={`px-1.5 py-0.5 text-[10px] font-bold rounded cursor-pointer transition-colors ${
-                              logoPreviewTheme === 'dark' ? 'bg-zinc-900 text-white shadow-2xs' : 'text-gray-500 dark:text-zinc-400 hover:text-white'
-                            }`}
+                            className={`px-1.5 py-0.5 text-[10px] font-bold rounded cursor-pointer transition-colors ${logoPreviewTheme === 'dark' ? 'bg-zinc-900 text-white shadow-2xs' : 'text-gray-500 dark:text-zinc-400 hover:text-white'
+                              }`}
                           >
                             Dark
                           </button>
@@ -739,11 +736,10 @@ export default function SettingsManager({ isDark, user }) {
                       <button
                         type="button"
                         onClick={() => setForm({ ...form, advance_payment_type: 'percentage' })}
-                        className={`px-3 py-2.5 text-xs font-bold rounded-xl border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                          form.advance_payment_type === 'percentage'
+                        className={`px-3 py-2.5 text-xs font-bold rounded-xl border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${form.advance_payment_type === 'percentage'
                             ? 'bg-fire text-white border-fire shadow-xs'
                             : 'bg-gray-50 dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-300 hover:bg-gray-100'
-                        }`}
+                          }`}
                       >
                         <Percent size={14} />
                         <span>Percentage</span>
@@ -752,11 +748,10 @@ export default function SettingsManager({ isDark, user }) {
                       <button
                         type="button"
                         onClick={() => setForm({ ...form, advance_payment_type: 'fixed' })}
-                        className={`px-3 py-2.5 text-xs font-bold rounded-xl border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                          form.advance_payment_type === 'fixed'
+                        className={`px-3 py-2.5 text-xs font-bold rounded-xl border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${form.advance_payment_type === 'fixed'
                             ? 'bg-fire text-white border-fire shadow-xs'
                             : 'bg-gray-50 dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-300 hover:bg-gray-100'
-                        }`}
+                          }`}
                       >
                         <DollarSign size={14} />
                         <span>Fixed Amount</span>
