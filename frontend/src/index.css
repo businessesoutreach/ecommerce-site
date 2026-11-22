@@ -157,6 +157,18 @@ body {
   background-color: #18181b !important;
 }
 
+/* Preserve crisp white background for asset previews in dark mode */
+.admin-asset-preview-box,
+.dark [data-testid="admin-dashboard"] .admin-asset-preview-box {
+  background-color: #ffffff !important;
+  border-color: #e4e4e7 !important;
+}
+.admin-asset-preview-box.is-dark,
+.dark [data-testid="admin-dashboard"] .admin-asset-preview-box.is-dark {
+  background-color: #09090b !important;
+  border-color: #27272a !important;
+}
+
 .dark [data-testid="admin-dashboard"] .bg-gray-50,
 .dark [data-testid="admin-dashboard"] .bg-gray-50\/90,
 .dark [data-testid="admin-dashboard"] .bg-gray-100,

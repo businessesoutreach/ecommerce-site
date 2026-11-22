@@ -46,6 +46,7 @@ export default function SettingsManager({ isDark, user }) {
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingFavicon, setUploadingFavicon] = useState(false);
+  const [logoPreviewTheme, setLogoPreviewTheme] = useState('light'); // 'light' | 'dark'
 
   const logoInputRef = useRef(null);
   const faviconInputRef = useRef(null);
@@ -406,23 +407,55 @@ export default function SettingsManager({ isDark, user }) {
               {form.logo_url ? (
                 <div className="mt-2.5 p-3.5 bg-gray-50 dark:bg-zinc-800/60 rounded-xl border border-gray-200 dark:border-zinc-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3.5 min-w-0">
-                    <div className="h-14 px-4 bg-white rounded-lg border border-gray-200 flex items-center justify-center shrink-0 shadow-2xs">
+                    <div
+                      style={{
+                        backgroundColor: logoPreviewTheme === 'light' ? '#ffffff' : '#09090b',
+                        borderColor: logoPreviewTheme === 'light' ? '#e4e4e7' : '#27272a'
+                      }}
+                      className={`admin-asset-preview-box ${logoPreviewTheme === 'dark' ? 'is-dark' : ''} h-14 px-4 rounded-lg border flex items-center justify-center shrink-0 shadow-2xs transition-colors`}
+                    >
                       <img
-                        key={form.logo_url}
+                        key={`${form.logo_url}-${logoPreviewTheme}`}
                         src={form.logo_url}
                         alt="Logo Preview"
-                        className="h-9 w-auto max-w-[180px] object-contain"
+                        className={`h-8 sm:h-9 w-auto max-w-[220px] object-contain transition-all ${
+                          logoPreviewTheme === 'dark' ? 'brightness-0 invert' : ''
+                        }`}
                         onError={(e) => { e.target.style.display = 'none'; }}
                       />
                     </div>
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-xs font-bold text-gray-900 dark:text-white">Active Logo Preview</span>
                         <span className="text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 font-bold px-1.5 py-0.5 rounded">
                           Live
                         </span>
+
+                        {/* Light / Dark Canvas Toggle */}
+                        <div className="flex items-center gap-0.5 bg-gray-200 dark:bg-zinc-700/80 p-0.5 rounded-md">
+                          <button
+                            type="button"
+                            onClick={() => setLogoPreviewTheme('light')}
+                            title="Preview on white background"
+                            className={`px-1.5 py-0.5 text-[10px] font-bold rounded cursor-pointer transition-colors ${
+                              logoPreviewTheme === 'light' ? 'bg-white text-gray-900 shadow-2xs' : 'text-gray-500 dark:text-zinc-400 hover:text-gray-900'
+                            }`}
+                          >
+                            Light
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setLogoPreviewTheme('dark')}
+                            title="Preview on dark background"
+                            className={`px-1.5 py-0.5 text-[10px] font-bold rounded cursor-pointer transition-colors ${
+                              logoPreviewTheme === 'dark' ? 'bg-zinc-900 text-white shadow-2xs' : 'text-gray-500 dark:text-zinc-400 hover:text-white'
+                            }`}
+                          >
+                            Dark
+                          </button>
+                        </div>
                       </div>
-                      <p className="text-[11px] text-gray-500 dark:text-zinc-400 font-mono truncate max-w-[280px] sm:max-w-[360px] mt-0.5">
+                      <p className="text-[11px] text-gray-500 dark:text-zinc-400 font-mono truncate max-w-[260px] sm:max-w-[340px] mt-0.5">
                         {form.logo_url}
                       </p>
                     </div>
@@ -514,7 +547,10 @@ export default function SettingsManager({ isDark, user }) {
               {form.favicon_url ? (
                 <div className="mt-2.5 p-3.5 bg-gray-50 dark:bg-zinc-800/60 rounded-xl border border-gray-200 dark:border-zinc-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3.5 min-w-0">
-                    <div className="w-12 h-12 bg-white rounded-lg border border-gray-200 flex items-center justify-center shrink-0 shadow-2xs">
+                    <div
+                      style={{ backgroundColor: '#ffffff', borderColor: '#e4e4e7' }}
+                      className="admin-asset-preview-box w-12 h-12 rounded-lg border flex items-center justify-center shrink-0 shadow-2xs"
+                    >
                       <img
                         key={form.favicon_url}
                         src={form.favicon_url}
