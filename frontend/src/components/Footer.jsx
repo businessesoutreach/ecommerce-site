@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Send, Truck, RefreshCw, ShieldCheck, MessageCircle, Loader2 } from "lucide-react";
 import { http } from "../lib/api";
 import { toast } from "sonner";
+import { useStore } from "../context/StoreContext";
 
 const TRUST = [
   { icon: Truck, title: "Fast Nationwide Dispatch", sub: "COD available · 24-48h metro" },
@@ -30,6 +31,7 @@ export function TrustRibbon() {
 }
 
 export default function Footer() {
+  const { settings } = useStore();
   const [email, setEmail] = useState("");
   const [subscribing, setSubscribing] = useState(false);
   const subscribe = async (e) => {
@@ -50,7 +52,19 @@ export default function Footer() {
       <div className="max-w-[1400px] mx-auto px-5 sm:px-8 py-14">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
           <div>
-            <span className="font-display tracking-tighter">SOLEKICKS<span className="text-fire">.</span></span>
+            <Link to="/" className="inline-block" data-testid="footer-logo">
+              {settings?.logo_url ? (
+                <img
+                  src={settings.logo_url === '/images/logo.svg' ? '/images/logo-dark.svg' : settings.logo_url}
+                  alt={settings.store_name || "SOLEKICKS"}
+                  className="h-7 sm:h-8 w-auto max-w-[180px] object-contain"
+                />
+              ) : (
+                <span className="font-display tracking-tight text-xl font-bold text-white">
+                  {settings?.store_name || "SOLEKICKS"}<span className="text-fire">.</span>
+                </span>
+              )}
+            </Link>
             <p className="text-white/50 text-sm mt-4 leading-relaxed">Pakistan's home for high-heat streetwear silhouettes, retro re-issues & performance runners. Cop with confidence.</p>
           </div>
           {[
@@ -83,7 +97,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="border-t border-white/10 mt-12 pt-6 flex flex-col sm:flex-row justify-between gap-3 text-white/40 text-xs">
-          <span>© {new Date().getFullYear()} SOLEKICKS. All rights reserved.</span>
+          <span>© {new Date().getFullYear()} {settings?.store_name || "SOLEKICKS"}. All rights reserved.</span>
           <div className="flex gap-4">
             <Link to="/privacy-policy" className="hover:text-white">Privacy</Link>
             <Link to="/terms-conditions" className="hover:text-white">Terms</Link>

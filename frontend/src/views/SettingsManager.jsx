@@ -416,11 +416,9 @@ export default function SettingsManager({ isDark, user }) {
                     >
                       <img
                         key={`${form.logo_url}-${logoPreviewTheme}`}
-                        src={form.logo_url}
+                        src={logoPreviewTheme === 'dark' && form.logo_url === '/images/logo.svg' ? '/images/logo-dark.svg' : form.logo_url}
                         alt="Logo Preview"
-                        className={`h-8 sm:h-9 w-auto max-w-[220px] object-contain transition-all ${
-                          logoPreviewTheme === 'dark' ? 'brightness-0 invert' : ''
-                        }`}
+                        className="h-8 sm:h-9 w-auto max-w-[220px] object-contain transition-all"
                         onError={(e) => { e.target.style.display = 'none'; }}
                       />
                     </div>

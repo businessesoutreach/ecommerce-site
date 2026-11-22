@@ -324,8 +324,20 @@ export default function Header() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-obsidian/60 z-[60]" onClick={() => setMenuOpen(false)} />
             <motion.div initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }} transition={{ type: "spring", damping: 30, stiffness: 260 }} className="fixed left-0 top-0 h-full w-[82%] max-w-sm bg-canvas z-[70] p-6 overflow-y-auto">
               <div className="flex justify-between items-center mb-8">
-                <span className="font-display tracking-tighter text-lg font-bold">SOLEKICKS<span className="text-fire">.</span></span>
-                <button onClick={() => setMenuOpen(false)}><X size={22} /></button>
+                <Link to="/" onClick={() => setMenuOpen(false)}>
+                  {settings?.logo_url ? (
+                    <img
+                      src={settings.logo_url}
+                      alt={settings.store_name || "SOLEKICKS"}
+                      className="h-7 w-auto max-w-[140px] object-contain"
+                    />
+                  ) : (
+                    <span className="font-display tracking-tight text-lg font-bold">
+                      {settings?.store_name || "SOLEKICKS"}<span className="text-fire">.</span>
+                    </span>
+                  )}
+                </Link>
+                <button onClick={() => setMenuOpen(false)} aria-label="Close menu"><X size={22} /></button>
               </div>
               <nav className="flex flex-col">
                 <Link to="/shop" onClick={() => setMenuOpen(false)} className="font-display tracking-tight py-3 border-b border-ink-200">

@@ -418,7 +418,7 @@ function AdminSearchModal({ isOpen, onClose, activeTab }) {
 }
 
 export default function Admin() {
-  const { user, logout } = useStore();
+  const { user, logout, settings } = useStore();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get("tab") || "overview";
@@ -535,12 +535,28 @@ export default function Admin() {
       <aside className="w-16 lg:w-60 bg-white dark:bg-zinc-900 border-r border-gray-200 dark:border-zinc-800 h-screen sticky top-0 flex flex-col shrink-0 z-20 transition-colors">
         {/* Streamlined compact sidebar header to avoid excessive vertical padding */}
         <div className="h-14 px-3.5 lg:px-4 border-b border-gray-200 dark:border-zinc-800 shrink-0 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="font-display font-black text-base text-gray-900 dark:text-white tracking-tight hidden lg:block">
-              SOLEKICKS<span className="text-fire">.</span>
-            </span>
-            <span className="lg:hidden font-display font-black text-fire text-center block w-full text-base">S.</span>
-            <span className="hidden lg:inline text-[9px] font-mono font-bold bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 px-1.5 py-0.5 rounded border border-gray-200 dark:border-zinc-700 shadow-2xs">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="hidden lg:flex items-center">
+              {settings?.logo_url ? (
+                <img
+                  src={isDark && settings.logo_url === '/images/logo.svg' ? '/images/logo-dark.svg' : settings.logo_url}
+                  alt={settings.store_name || "SOLEKICKS"}
+                  className="h-6 w-auto max-w-[140px] object-contain"
+                />
+              ) : (
+                <span className="font-display font-bold text-base text-gray-900 dark:text-white tracking-tight">
+                  {settings?.store_name || "SOLEKICKS"}<span className="text-fire">.</span>
+                </span>
+              )}
+            </div>
+            <div className="lg:hidden flex items-center justify-center w-full">
+              {settings?.favicon_url ? (
+                <img src={settings.favicon_url} alt="Logo" className="w-6 h-6 object-contain" />
+              ) : (
+                <span className="font-display font-black text-fire text-base">S.</span>
+              )}
+            </div>
+            <span className="hidden lg:inline text-[9px] font-mono font-bold bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 px-1.5 py-0.5 rounded border border-gray-200 dark:border-zinc-700 shadow-2xs shrink-0">
               ADMIN
             </span>
           </div>
@@ -1548,7 +1564,7 @@ function Orders({ initialCodStatus }) {
       ${selectedOrders.map(o => `
         <div class="slip">
           <div class="header">
-            <div class="logo">SOLEKICKS<span class="dot">.</span></div>
+            <div class="logo">${settings?.logo_url ? `<img src="${settings.logo_url}" style="height:26px;width:auto;vertical-align:middle;" />` : `${settings?.store_name || 'SOLEKICKS'}<span class="dot">.</span>`}</div>
             <div class="order-num">#${o.order_number}</div>
           </div>
           <div style="display:flex; justify-content:space-between;">
