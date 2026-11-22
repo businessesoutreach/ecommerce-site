@@ -713,7 +713,7 @@ export default function Admin() {
             <HomepageCMS setActiveTab={(sub) => setTab(`cms_${sub}`)} setMainTab={setTab} />
           )}
           {tab === "cms_hero" && <HeroSlidesCMS />}
-          {tab === "cms_product_sections" && <ProductSectionsCMS />}
+          {tab === "cms_product_sections" && <ProductSectionsCMS setMainTab={setTab} />}
           {tab === "cms_testimonials" && <TestimonialsCMS isDark={isDark} />}
 
           {tab === "profitability" && <ProfitabilityAnalytics />}

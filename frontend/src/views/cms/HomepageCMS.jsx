@@ -58,6 +58,7 @@ export default function HomepageCMS({ setActiveTab, setMainTab }) {
       'new_arrivals': 'product_sections',
       'best_sellers': 'product_sections',
       'trending': 'product_sections',
+      'flash_sale': 'product_sections',
       'testimonials': 'testimonials'
     };
     if (map[section.type] && setActiveTab) {

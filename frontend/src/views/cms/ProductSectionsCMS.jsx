@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { http } from '../../lib/api';
 import { toast } from "sonner";
 
-export default function ProductSectionsCMS() {
+export default function ProductSectionsCMS({ setMainTab }) {
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -10,7 +10,7 @@ export default function ProductSectionsCMS() {
     try {
       const res = await http.get('/admin/cms/homepage-sections');
       // Filter only product-related sections
-      const prodSections = res.data.data.filter(s => ['new_arrivals', 'best_sellers', 'trending'].includes(s.type));
+      const prodSections = res.data.data.filter(s => ['new_arrivals', 'best_sellers', 'trending', 'flash_sale'].includes(s.type));
       setSections(prodSections);
     } catch (err) {
       toast.error('Failed to load sections');
@@ -61,6 +61,7 @@ export default function ProductSectionsCMS() {
                   <p className="text-xs text-ink-500 mt-1">
                     {section.type === 'new_arrivals' ? 'Automatically shows the latest added products.' :
                      section.type === 'best_sellers' ? 'Automatically shows top-selling products based on order history.' :
+                     section.type === 'flash_sale' ? 'Shows promotional flash drop kicks with live countdown timer.' :
                      'Automatically shows trending products based on views/purchases.'}
                   </p>
                 </div>
@@ -71,6 +72,19 @@ export default function ProductSectionsCMS() {
                   {section.is_active ? 'Active' : 'Hidden'}
                 </button>
               </div>
+
+              {section.type === 'flash_sale' && setMainTab && (
+                <div className="bg-purple-50 p-3 border border-purple-200 rounded-none text-xs text-purple-900 flex items-center justify-between mb-2">
+                  <span>Manage campaign dates & kick discounts:</span>
+                  <button
+                    type="button"
+                    onClick={() => setMainTab('flash_sale')}
+                    className="font-bold text-purple-700 underline hover:text-purple-900 ml-2"
+                  >
+                    Open Flash Sale Manager &rarr;
+                  </button>
+                </div>
+              )}
 
               <div className="space-y-4 border-t border-ink-100 pt-4 mt-2">
                 <div>
