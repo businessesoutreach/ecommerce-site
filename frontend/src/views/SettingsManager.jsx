@@ -346,22 +346,12 @@ export default function SettingsManager({ isDark, user }) {
 
             {/* Store Logo Section */}
             <div className="space-y-3 pt-4 border-t border-gray-100 dark:border-zinc-800">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-gray-700 dark:text-zinc-300 flex items-center gap-1.5">
-                  <ImageIcon size={14} className="text-fire" />
-                  Store Logo
-                </label>
-                {form.logo_url && (
-                  <button
-                    type="button"
-                    onClick={() => setForm({ ...form, logo_url: '' })}
-                    className="text-[11px] text-rose-500 hover:text-rose-600 flex items-center gap-1 cursor-pointer font-bold"
-                  >
-                    <Trash2 size={12} /> Clear Logo
-                  </button>
-                )}
-              </div>
+              <label className="text-xs font-bold text-gray-700 dark:text-zinc-300 flex items-center gap-1.5">
+                <ImageIcon size={14} className="text-fire" />
+                Store Logo
+              </label>
 
+              {/* Input Row: Upload/Replace Button + URL Input + Remove */}
               <div className="flex flex-col sm:flex-row items-stretch gap-2.5">
                 <input
                   type="file"
@@ -396,108 +386,80 @@ export default function SettingsManager({ isDark, user }) {
                   placeholder="Or paste direct image URL (SVG, PNG, WebP)..."
                   className="flex-1 px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white font-mono focus:outline-none focus:border-fire transition-colors"
                 />
-              </div>
 
-              <p className="text-[11px] text-gray-400">
-                Upload an SVG, PNG, or WebP with transparent background (ideal height ~40–50px).
-              </p>
-
-              {/* Directly below input: Live Logo Preview Box */}
-              {form.logo_url ? (
-                <div className="mt-2.5 p-3.5 bg-gray-50 dark:bg-zinc-800/60 rounded-xl border border-gray-200 dark:border-zinc-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    <div
-                      style={{
-                        backgroundColor: logoPreviewTheme === 'light' ? '#ffffff' : '#09090b',
-                        borderColor: logoPreviewTheme === 'light' ? '#e4e4e7' : '#27272a'
-                      }}
-                      className={`admin-asset-preview-box ${logoPreviewTheme === 'dark' ? 'is-dark' : ''} h-14 px-4 rounded-lg border flex items-center justify-center shrink-0 shadow-2xs transition-colors`}
-                    >
-                      <img
-                        key={`${form.logo_url}-${logoPreviewTheme}`}
-                        src={logoPreviewTheme === 'dark' && form.logo_url === '/images/logo.svg' ? '/images/logo-dark.svg' : form.logo_url}
-                        alt="Logo Preview"
-                        className="h-8 sm:h-9 w-auto max-w-[220px] object-contain transition-all"
-                        onError={(e) => { e.target.style.display = 'none'; }}
-                      />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-bold text-gray-900 dark:text-white">Active Logo Preview</span>
-                        <span className="text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 font-bold px-1.5 py-0.5 rounded">
-                          Live
-                        </span>
-
-                        {/* Light / Dark Canvas Toggle */}
-                        <div className="flex items-center gap-0.5 bg-gray-200 dark:bg-zinc-700/80 p-0.5 rounded-md">
-                          <button
-                            type="button"
-                            onClick={() => setLogoPreviewTheme('light')}
-                            title="Preview on white background"
-                            className={`px-1.5 py-0.5 text-[10px] font-bold rounded cursor-pointer transition-colors ${logoPreviewTheme === 'light' ? 'bg-white text-gray-900 shadow-2xs' : 'text-gray-500 dark:text-zinc-400 hover:text-gray-900'
-                              }`}
-                          >
-                            Light
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setLogoPreviewTheme('dark')}
-                            title="Preview on dark background"
-                            className={`px-1.5 py-0.5 text-[10px] font-bold rounded cursor-pointer transition-colors ${logoPreviewTheme === 'dark' ? 'bg-zinc-900 text-white shadow-2xs' : 'text-gray-500 dark:text-zinc-400 hover:text-white'
-                              }`}
-                          >
-                            Dark
-                          </button>
-                        </div>
-                      </div>
-                      <p className="text-[11px] text-gray-500 dark:text-zinc-400 font-mono truncate max-w-[260px] sm:max-w-[340px] mt-0.5">
-                        {form.logo_url}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-                    <button
-                      type="button"
-                      onClick={() => logoInputRef.current?.click()}
-                      className="px-3 py-1.5 text-xs font-bold text-gray-700 dark:text-zinc-200 hover:text-black dark:hover:text-white bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg shadow-2xs hover:border-gray-300 transition-colors cursor-pointer"
-                    >
-                      Change
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setForm({ ...form, logo_url: '' })}
-                      className="px-3 py-1.5 text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 dark:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-900/50 text-xs text-amber-800 dark:text-amber-300">
-                  No logo uploaded. Active header branding will display text: <strong>{form.store_name || 'SOLEKICKS'}</strong>
-                </div>
-              )}
-            </div>
-
-            {/* Store Favicon Section */}
-            <div className="space-y-3 pt-4 border-t border-gray-100 dark:border-zinc-800">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-gray-700 dark:text-zinc-300 flex items-center gap-1.5">
-                  <Sparkles size={14} className="text-fire" />
-                  Store Favicon (Browser Tab Icon)
-                </label>
-                {form.favicon_url && (
+                {form.logo_url && (
                   <button
                     type="button"
-                    onClick={() => setForm({ ...form, favicon_url: '' })}
-                    className="text-[11px] text-rose-500 hover:text-rose-600 flex items-center gap-1 cursor-pointer font-bold"
+                    onClick={() => setForm({ ...form, logo_url: '' })}
+                    className="px-3.5 py-2.5 text-xs font-bold text-rose-500 hover:text-rose-600 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/40 rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+                    title="Remove logo"
                   >
-                    <Trash2 size={12} /> Clear Favicon
+                    <Trash2 size={13} />
+                    <span>Remove</span>
                   </button>
                 )}
               </div>
 
+              {/* Simple Live Preview directly below inputs */}
+              {form.logo_url ? (
+                <div className="flex flex-wrap items-center gap-3 pt-1">
+                  <div
+                    style={{
+                      backgroundColor: logoPreviewTheme === 'light' ? '#ffffff' : '#121214',
+                      borderColor: logoPreviewTheme === 'light' ? '#e4e4e7' : '#27272a'
+                    }}
+                    className="h-12 px-4 rounded-xl border flex items-center justify-center shrink-0 shadow-2xs transition-colors"
+                  >
+                    <img
+                      key={`${form.logo_url}-${logoPreviewTheme}`}
+                      src={logoPreviewTheme === 'dark' && form.logo_url === '/images/logo.svg' ? '/images/logo-dark.svg' : form.logo_url}
+                      alt="Logo Preview"
+                      className="h-7 w-auto max-w-[180px] object-contain transition-all"
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-bold text-gray-500 dark:text-zinc-400">Preview Canvas:</span>
+                    <div className="flex items-center gap-0.5 bg-gray-200 dark:bg-zinc-800 p-0.5 rounded-lg border border-gray-300 dark:border-zinc-700">
+                      <button
+                        type="button"
+                        onClick={() => setLogoPreviewTheme('light')}
+                        className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-colors cursor-pointer ${logoPreviewTheme === 'light' ? 'bg-white text-gray-900 shadow-2xs' : 'text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white'
+                          }`}
+                      >
+                        Light
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLogoPreviewTheme('dark')}
+                        className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-colors cursor-pointer ${logoPreviewTheme === 'dark' ? 'bg-zinc-900 text-white shadow-2xs' : 'text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white'
+                          }`}
+                      >
+                        Dark
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                  No custom logo set. Default text <strong>{form.store_name || 'SOLEKICKS'}</strong> will display.
+                </p>
+              )}
+
+              <p className="text-[11px] text-gray-400">
+                Upload an SVG, PNG, or WebP with transparent background (ideal height ~40–50px).
+              </p>
+            </div>
+
+            {/* Store Favicon Section */}
+            <div className="space-y-3 pt-4 border-t border-gray-100 dark:border-zinc-800">
+              <label className="text-xs font-bold text-gray-700 dark:text-zinc-300 flex items-center gap-1.5">
+                <Sparkles size={14} className="text-fire" />
+                Store Favicon (Browser Tab Icon)
+              </label>
+
+              {/* Input Row: Upload/Replace Button + URL Input + Remove */}
               <div className="flex flex-col sm:flex-row items-stretch gap-2.5">
                 <input
                   type="file"
@@ -532,63 +494,45 @@ export default function SettingsManager({ isDark, user }) {
                   placeholder="Or paste direct favicon URL (.svg, .ico, .png)..."
                   className="flex-1 px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white font-mono focus:outline-none focus:border-fire transition-colors"
                 />
+
+                {form.favicon_url && (
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, favicon_url: '' })}
+                    className="px-3.5 py-2.5 text-xs font-bold text-rose-500 hover:text-rose-600 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/40 rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+                    title="Remove favicon"
+                  >
+                    <Trash2 size={13} />
+                    <span>Remove</span>
+                  </button>
+                )}
               </div>
+
+              {/* Simple Live Preview directly below inputs */}
+              {form.favicon_url ? (
+                <div className="flex items-center gap-3 pt-1">
+                  <div className="w-10 h-10 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 flex items-center justify-center shrink-0 shadow-2xs">
+                    <img
+                      key={form.favicon_url}
+                      src={form.favicon_url}
+                      alt="Favicon Preview"
+                      className="w-5 h-5 object-contain"
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+                  </div>
+                  <span className="text-[11px] font-bold text-gray-500 dark:text-zinc-400">
+                    Active tab icon preview
+                  </span>
+                </div>
+              ) : (
+                <p className="text-[11px] text-gray-400">
+                  No custom favicon set. Using default site favicon.
+                </p>
+              )}
 
               <p className="text-[11px] text-gray-400">
                 Square 32×32px or 64×64px image (.svg, .ico, or .png) shown in browser tabs.
               </p>
-
-              {/* Directly below input: Live Favicon Preview Box */}
-              {form.favicon_url ? (
-                <div className="mt-2.5 p-3.5 bg-gray-50 dark:bg-zinc-800/60 rounded-xl border border-gray-200 dark:border-zinc-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    <div
-                      style={{ backgroundColor: '#ffffff', borderColor: '#e4e4e7' }}
-                      className="admin-asset-preview-box w-12 h-12 rounded-lg border flex items-center justify-center shrink-0 shadow-2xs"
-                    >
-                      <img
-                        key={form.favicon_url}
-                        src={form.favicon_url}
-                        alt="Favicon Preview"
-                        className="w-7 h-7 object-contain"
-                        onError={(e) => { e.target.style.display = 'none'; }}
-                      />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-gray-900 dark:text-white">Active Tab Favicon</span>
-                        <span className="text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 font-bold px-1.5 py-0.5 rounded">
-                          Tab Icon
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-gray-500 dark:text-zinc-400 font-mono truncate max-w-[280px] sm:max-w-[360px] mt-0.5">
-                        {form.favicon_url}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-                    <button
-                      type="button"
-                      onClick={() => faviconInputRef.current?.click()}
-                      className="px-3 py-1.5 text-xs font-bold text-gray-700 dark:text-zinc-200 hover:text-black dark:hover:text-white bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg shadow-2xs hover:border-gray-300 transition-colors cursor-pointer"
-                    >
-                      Change
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setForm({ ...form, favicon_url: '' })}
-                      className="px-3 py-1.5 text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 dark:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="mt-2 p-3 bg-gray-100 dark:bg-zinc-800/40 rounded-xl text-xs text-gray-500 dark:text-zinc-400">
-                  No custom favicon set. Using default site favicon.
-                </div>
-              )}
             </div>
           </div>
 

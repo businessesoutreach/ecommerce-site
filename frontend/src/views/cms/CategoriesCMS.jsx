@@ -142,12 +142,14 @@ export default function CategoriesCMS() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="font-display tracking-tight text-2xl font-black text-gray-900 dark:text-zinc-100 flex items-center gap-3">
-            Product Categories & Collections
-            <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-fire/10 text-fire border border-fire/20">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+            <h1 className="font-display tracking-tight text-xl sm:text-2xl font-black text-gray-900 dark:text-zinc-100">
+              Product Categories & Collections
+            </h1>
+            <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-fire/10 text-fire border border-fire/20 shrink-0 self-center">
               {cats.length} Collections
             </span>
-          </h1>
+          </div>
           <p className="text-xs text-gray-500 dark:text-zinc-400 mt-1">
             Configure dynamic product categories, taxonomy hierarchy, storefront hero banners, and SEO metadata.
           </p>

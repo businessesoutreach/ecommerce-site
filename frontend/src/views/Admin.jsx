@@ -1458,16 +1458,16 @@ function Overview({ setTab, isDark }) {
               </button>
             </div>
 
-            <div className="overflow-x-auto mt-4">
-              <table className="w-full text-left text-xs">
+            <div className="overflow-x-auto mt-4 no-scrollbar">
+              <table className="w-full text-left text-xs min-w-[560px] whitespace-nowrap">
                 <thead>
                   <tr className="border-b border-gray-200 dark:border-zinc-800 text-gray-400 dark:text-zinc-500 font-mono text-[10px] uppercase">
-                    <th className="pb-2.5 font-bold">Order</th>
-                    <th className="pb-2.5 font-bold">Customer</th>
-                    <th className="pb-2.5 font-bold">Payment</th>
-                    <th className="pb-2.5 font-bold">Total</th>
-                    <th className="pb-2.5 font-bold">Status</th>
-                    <th className="pb-2.5 font-bold text-right">Action</th>
+                    <th className="pb-2.5 font-bold whitespace-nowrap">Order</th>
+                    <th className="pb-2.5 font-bold whitespace-nowrap">Customer</th>
+                    <th className="pb-2.5 font-bold whitespace-nowrap">Payment</th>
+                    <th className="pb-2.5 font-bold whitespace-nowrap">Total</th>
+                    <th className="pb-2.5 font-bold whitespace-nowrap">Status</th>
+                    <th className="pb-2.5 font-bold text-right whitespace-nowrap">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-zinc-800/80">
@@ -1485,30 +1485,30 @@ function Overview({ setTab, isDark }) {
                         className="hover:bg-gray-50/80 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer group"
                         onClick={() => navigate(`?tab=orders&orderId=${o.order_number}`)}
                       >
-                        <td className="py-3 font-mono font-bold text-gray-900 dark:text-zinc-100 group-hover:text-fire transition-colors">
+                        <td className="py-3 font-mono font-bold text-gray-900 dark:text-zinc-100 group-hover:text-fire transition-colors whitespace-nowrap">
                           #{o.order_number}
                         </td>
-                        <td className="py-3">
-                          <div className="font-bold text-gray-900 dark:text-zinc-100 truncate max-w-[120px]">{o.customer_name}</div>
+                        <td className="py-3 whitespace-nowrap">
+                          <div className="font-bold text-gray-900 dark:text-zinc-100 truncate max-w-[140px]">{o.customer_name}</div>
                           {o.customer_email && (
-                            <div className="text-[10px] text-gray-400 dark:text-zinc-500 truncate max-w-[120px]">{o.customer_email}</div>
+                            <div className="text-[10px] text-gray-400 dark:text-zinc-500 truncate max-w-[140px]">{o.customer_email}</div>
                           )}
                         </td>
-                        <td className="py-3">
+                        <td className="py-3 whitespace-nowrap">
                           <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${o.payment_method === 'COD' ? 'bg-orange-50 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800/60' : 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/60'
                             }`}>
                             {o.payment_method || 'COD'}
                           </span>
                         </td>
-                        <td className="py-3 font-mono font-bold text-gray-900 dark:text-zinc-100">
+                        <td className="py-3 font-mono font-bold text-gray-900 dark:text-zinc-100 whitespace-nowrap">
                           {fmt(o.total)}
                         </td>
-                        <td className="py-3">
+                        <td className="py-3 whitespace-nowrap">
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border capitalize ${statusColor}`}>
                             {o.status.replace(/_/g, ' ')}
                           </span>
                         </td>
-                        <td className="py-3 text-right">
+                        <td className="py-3 text-right whitespace-nowrap">
                           <span className="text-xs font-bold text-gray-400 dark:text-zinc-500 group-hover:text-fire transition-colors inline-flex items-center gap-1">
                             Inspect →
                           </span>
@@ -6001,12 +6001,18 @@ function Coupons({ isDark }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-start">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-display tracking-tight text-2xl font-semibold text-gray-900 dark:text-zinc-100">Coupons</h1>
-          <p className="text-sm text-gray-500 dark:text-zinc-400">Create and manage discount codes</p>
+          <h1 className="font-display tracking-tight text-2xl font-black text-gray-900 dark:text-zinc-100">Coupons & Promo Codes</h1>
+          <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">Create and manage promotional discount codes</p>
         </div>
-        <button onClick={() => setShowCreate(true)} className="bg-obsidian dark:bg-zinc-800 text-white font-bold px-4 py-2 hover:bg-fire dark:hover:bg-fire transition-colors flex items-center gap-2 rounded-lg cursor-pointer shadow-xs"><Plus size={16} /> Create Coupon</button>
+        <button
+          onClick={() => setShowCreate(true)}
+          className="bg-fire hover:bg-fire-hover text-white font-bold text-xs uppercase tracking-wider px-4 py-2.5 transition-all flex items-center justify-center gap-2 rounded-xl cursor-pointer shadow-sm shrink-0 whitespace-nowrap self-start sm:self-auto"
+        >
+          <Plus size={16} />
+          <span>Create Coupon</span>
+        </button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -6613,13 +6619,13 @@ function Reviews({ isDark }) {
             <Star size={24} />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">Customer Reviews & Ratings</h1>
-              <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-300 dark:border-amber-800/60">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-lg sm:text-xl font-bold tracking-tight text-gray-900 dark:text-white">Customer Reviews & Ratings</h1>
+              <span className="px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-300 dark:border-amber-800/60 shrink-0">
                 Verified Feedback
               </span>
             </div>
-            <p className="text-sm text-gray-500 dark:text-zinc-400 mt-1">
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-zinc-400 mt-1">
               Moderate sneaker reviews, approve genuine buyers, respond directly with verified badges, and track customer satisfaction.
             </p>
           </div>
@@ -6627,7 +6633,7 @@ function Reviews({ isDark }) {
 
         <button
           onClick={() => { fetchReviews(); fetchProductRatings(); }}
-          className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 border border-gray-200 dark:border-zinc-700 transition-colors shadow-sm self-start sm:self-auto"
+          className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 border border-gray-200 dark:border-zinc-700 transition-colors shadow-sm self-start sm:self-auto shrink-0"
         >
           <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
           <span>Refresh</span>
@@ -6637,17 +6643,19 @@ function Reviews({ isDark }) {
       {/* KPI Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {statCards.map((s, i) => (
-          <div key={i} className="bg-white dark:bg-zinc-900 p-4 border border-gray-200 dark:border-zinc-800 rounded-xl shadow-sm relative overflow-hidden group hover:border-gray-400 dark:hover:border-zinc-700 transition-colors">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-zinc-400 mb-1.5">{s.label}</div>
+          <div key={i} className="bg-white dark:bg-zinc-900 p-4 border border-gray-200 dark:border-zinc-800 rounded-xl shadow-sm relative overflow-hidden group hover:border-gray-400 dark:hover:border-zinc-700 transition-colors flex flex-col justify-between">
+            <div className="flex items-center justify-between gap-1.5 mb-1.5">
+              <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-zinc-400 truncate">{s.label}</span>
+              {s.alert && (
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-400 border border-amber-300 dark:border-amber-800/60 flex items-center gap-1 shrink-0 whitespace-nowrap">
+                  <AlertTriangle size={10} /> Action Req
+                </span>
+              )}
+            </div>
             <div className="text-2xl lg:text-3xl font-bold font-mono text-gray-900 dark:text-white flex items-baseline gap-2">
               {s.value}
               {s.sub && <span className="text-xs text-gray-400 dark:text-zinc-500 font-normal font-sans">{s.sub}</span>}
             </div>
-            {s.alert && (
-              <div className="absolute top-3.5 right-3.5 px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-400 border border-amber-300 dark:border-amber-800/60 flex items-center gap-1">
-                <AlertTriangle size={11} /> Action Req
-              </div>
-            )}
           </div>
         ))}
       </div>
@@ -9840,34 +9848,36 @@ function ProfitabilityAnalytics() {
         </div>
 
         {/* Global Range Selector & Actions */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Presets */}
-          <div className="flex items-center bg-gray-100 dark:bg-zinc-800/80 p-1 rounded-xl border border-gray-200 dark:border-zinc-700/60 shadow-xs">
-            {RANGE_OPTIONS.map(opt => (
+        <div className="flex flex-wrap items-center gap-2 max-w-full">
+          {/* Presets - Smooth swipeable scroll on small screens */}
+          <div className="max-w-full overflow-x-auto no-scrollbar pb-0.5">
+            <div className="inline-flex items-center bg-gray-100 dark:bg-zinc-800/80 p-1 rounded-xl border border-gray-200 dark:border-zinc-700/60 shadow-xs whitespace-nowrap">
+              {RANGE_OPTIONS.map(opt => (
+                <button
+                  key={opt.id}
+                  onClick={() => {
+                    setShowCustomPicker(false);
+                    setRange(opt.id);
+                  }}
+                  className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${range === opt.id && !showCustomPicker
+                    ? "bg-white dark:bg-zinc-900 text-gray-900 dark:text-zinc-100 shadow-xs font-black"
+                    : "text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-200"
+                    }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
               <button
-                key={opt.id}
-                onClick={() => {
-                  setShowCustomPicker(false);
-                  setRange(opt.id);
-                }}
-                className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${range === opt.id && !showCustomPicker
-                  ? "bg-white dark:bg-zinc-900 text-gray-900 dark:text-zinc-100 shadow-xs font-black"
+                onClick={() => setShowCustomPicker(!showCustomPicker)}
+                className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1 cursor-pointer ${range === "custom" || showCustomPicker
+                  ? "bg-white dark:bg-zinc-900 text-fire font-black shadow-xs"
                   : "text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-200"
                   }`}
               >
-                {opt.label}
+                <Calendar size={13} />
+                <span>Custom</span>
               </button>
-            ))}
-            <button
-              onClick={() => setShowCustomPicker(!showCustomPicker)}
-              className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1 cursor-pointer ${range === "custom" || showCustomPicker
-                ? "bg-white dark:bg-zinc-900 text-fire font-black shadow-xs"
-                : "text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-200"
-                }`}
-            >
-              <Calendar size={13} />
-              <span>Custom</span>
-            </button>
+            </div>
           </div>
 
           {/* Action Buttons */}
@@ -10542,41 +10552,41 @@ function BundlesManager({ isDark }) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-200 dark:border-zinc-800">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="font-display tracking-tight text-2xl font-bold text-zinc-900 dark:text-zinc-100">Product Bundles</h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="font-display tracking-tight text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100">Product Bundles</h1>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 shrink-0">
               {bundles.length} {bundles.length === 1 ? 'bundle' : 'bundles'}
             </span>
           </div>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+          <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
             Group complementary products together at special bundle pricing to boost Average Order Value (AOV).
           </p>
         </div>
         <button
           onClick={handleCreate}
-          className="px-4 py-2 text-sm font-bold bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm"
+          className="px-4 py-2 text-sm font-bold bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm shrink-0 self-start sm:self-auto"
         >
           <Plus size={16} /> Create Bundle
         </button>
       </div>
 
       {/* Stats Summary Strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Total Bundles</p>
-          <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mt-1">{bundles.length}</p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-3 sm:p-4 shadow-sm min-w-0">
+          <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400 truncate">Total Bundles</p>
+          <p className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100 mt-1">{bundles.length}</p>
         </div>
-        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Active Deals</p>
-          <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">{activeCount}</p>
+        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-3 sm:p-4 shadow-sm min-w-0">
+          <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wide text-emerald-600 dark:text-emerald-400 truncate">Active Deals</p>
+          <p className="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">{activeCount}</p>
         </div>
-        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Drafts / Inactive</p>
-          <p className="text-2xl font-bold text-zinc-700 dark:text-zinc-300 mt-1">{inactiveCount}</p>
+        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-3 sm:p-4 shadow-sm min-w-0">
+          <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400 truncate">Drafts / Inactive</p>
+          <p className="text-xl sm:text-2xl font-bold text-zinc-700 dark:text-zinc-300 mt-1">{inactiveCount}</p>
         </div>
-        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Catalog Products</p>
-          <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mt-1">{allProducts.length}</p>
+        <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-3 sm:p-4 shadow-sm min-w-0">
+          <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400 truncate">Catalog Products</p>
+          <p className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100 mt-1">{allProducts.length}</p>
         </div>
       </div>
 
