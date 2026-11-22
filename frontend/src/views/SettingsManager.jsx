@@ -44,12 +44,9 @@ export default function SettingsManager({ isDark, user }) {
   const [activeTab, setActiveTab] = useState('platform'); // 'platform' | 'payment' | 'shipping' | 'security'
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [copiedWebhook, setCopiedWebhook] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingFavicon, setUploadingFavicon] = useState(false);
   const [logoPreviewBg, setLogoPreviewBg] = useState('light'); // 'light' | 'dark' | 'brand'
-  const [showAdvancedSafepay, setShowAdvancedSafepay] = useState(false);
-  const [envSafepay, setEnvSafepay] = useState({ configured: false, environment: 'sandbox', key_preview: null });
 
   const logoInputRef = useRef(null);
   const faviconInputRef = useRef(null);
@@ -234,18 +231,9 @@ export default function SettingsManager({ isDark, user }) {
     : 0;
   const simulatedBalance = calcOrderAmount - simulatedAdvance;
 
-  const webhookUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/api/webhook/safepay`;
-
-  const copyWebhook = () => {
-    navigator.clipboard.writeText(webhookUrl);
-    setCopiedWebhook(true);
-    toast.success('Webhook URL copied to clipboard');
-    setTimeout(() => setCopiedWebhook(false), 2000);
-  };
-
   const tabs = [
     { id: 'platform', label: 'Platform & Branding', icon: Store },
-    { id: 'payment', label: 'Payments & Safepay COD', icon: CreditCard },
+    { id: 'payment', label: 'COD & Advance Deposit', icon: Truck },
     { id: 'shipping', label: 'Shipping & Delivery', icon: Truck },
     { id: 'security', label: 'Security & Password', icon: ShieldCheck },
   ];
@@ -674,163 +662,14 @@ export default function SettingsManager({ isDark, user }) {
         </motion.div>
       )}
 
-      {/* Tab 2: Payments & Safepay COD */}
+      {/* Tab 2: Cash on Delivery & Advance Deposit */}
       {activeTab === 'payment' && (
         <motion.div
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           className="space-y-6"
         >
-          {/* Section A: Safepay PK Integration & Environment */}
-          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-xs space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100 dark:border-zinc-800">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-blue-500/10 text-blue-500 rounded-xl">
-                  <CreditCard size={20} />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-display font-bold text-base text-gray-900 dark:text-white">
-                      Safepay PK Payment Gateway
-                    </h3>
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      Loaded from .env
-                    </span>
-                    <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
-                      form.safepay_environment === 'production'
-                        ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-400 border border-purple-300 dark:border-purple-800'
-                        : 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800'
-                    }`}>
-                      {form.safepay_environment.toUpperCase()}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">
-                    Powers Debit/Credit Cards (Visa & Mastercard), JazzCash, and Easypaisa checkout and COD partial advance deposits.
-                  </p>
-                </div>
-              </div>
-
-              {/* Master Safepay Toggle */}
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={form.safepay_enabled}
-                  onChange={(e) => setForm({ ...form, safepay_enabled: e.target.checked })}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-fire"></div>
-                <span className="ml-3 text-xs font-bold text-gray-800 dark:text-zinc-200">
-                  {form.safepay_enabled ? 'Safepay Active' : 'Safepay Disabled'}
-                </span>
-              </label>
-            </div>
-
-            {form.safepay_enabled ? (
-              <div className="space-y-5">
-                {/* Environment Mode Switcher */}
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5">
-                    Gateway Environment Mode
-                  </label>
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setForm({ ...form, safepay_environment: 'sandbox' })}
-                      className={`px-4 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
-                        form.safepay_environment === 'sandbox'
-                          ? 'bg-amber-500 text-white border-amber-500 shadow-xs'
-                          : 'bg-gray-50 dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-300 hover:bg-gray-100'
-                      }`}
-                    >
-                      Sandbox (Test Mode)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setForm({ ...form, safepay_environment: 'production' })}
-                      className={`px-4 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
-                        form.safepay_environment === 'production'
-                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
-                          : 'bg-gray-50 dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-zinc-300 hover:bg-gray-100'
-                      }`}
-                    >
-                      Production (Live Real Money)
-                    </button>
-                  </div>
-                  <p className="text-[11px] text-gray-400 mt-1">
-                    API credentials are automatically loaded from your server environment (`SAFEPAY_API_KEY` & `SAFEPAY_SECRET` in `.env`). No manual typing required.
-                  </p>
-                </div>
-
-                {/* Webhook Endpoint Info Box */}
-                <div className="p-4 bg-gray-50 dark:bg-zinc-800/60 rounded-xl border border-gray-200 dark:border-zinc-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="space-y-0.5">
-                    <span className="text-[10px] uppercase font-mono font-bold text-gray-400 dark:text-zinc-500">
-                      Safepay Webhook Listener URL
-                    </span>
-                    <p className="text-xs font-mono font-bold text-gray-800 dark:text-zinc-200 break-all">
-                      {webhookUrl}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={copyWebhook}
-                    className="px-3.5 py-2 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs font-bold text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
-                  >
-                    {copiedWebhook ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
-                    <span>{copiedWebhook ? 'Copied' : 'Copy URL'}</span>
-                  </button>
-                </div>
-
-                {/* Optional Overrides (Collapsed) */}
-                <div className="pt-2 border-t border-gray-100 dark:border-zinc-800">
-                  <button
-                    type="button"
-                    onClick={() => setShowAdvancedSafepay(!showAdvancedSafepay)}
-                    className="text-xs text-gray-500 hover:text-gray-800 dark:hover:text-zinc-200 flex items-center gap-1.5 font-bold cursor-pointer"
-                  >
-                    <span>{showAdvancedSafepay ? '▾ Hide Advanced Key Overrides' : '▸ Advanced: Override .env API Keys (Optional)'}</span>
-                  </button>
-
-                  {showAdvancedSafepay && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 pt-3 border-t border-dashed border-gray-200 dark:border-zinc-800">
-                      <div>
-                        <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5">
-                          Custom Safepay API Key
-                        </label>
-                        <input
-                          type="text"
-                          value={form.safepay_api_key}
-                          onChange={(e) => setForm({ ...form, safepay_api_key: e.target.value })}
-                          placeholder="Leave empty to use .env key"
-                          className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white font-mono focus:outline-none focus:border-fire transition-colors"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 mb-1.5">
-                          Custom Safepay Secret Key (v1 Secret)
-                        </label>
-                        <input
-                          type="password"
-                          value={form.safepay_v1_secret}
-                          onChange={(e) => setForm({ ...form, safepay_v1_secret: e.target.value })}
-                          placeholder="Leave empty to use .env secret"
-                          className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-zinc-800/80 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs text-gray-900 dark:text-white font-mono focus:outline-none focus:border-fire transition-colors"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="p-4 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 rounded-xl text-xs text-rose-700 dark:text-rose-300">
-                Safepay is currently disabled. Online card and mobile wallet payments are turned off.
-              </div>
-            )}
-          </div>
-
-          {/* Section B: Cash on Delivery & Partial Advance */}
+          {/* Cash on Delivery & Partial Advance */}
           <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-xs space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100 dark:border-zinc-800">
               <div className="flex items-center gap-3">
