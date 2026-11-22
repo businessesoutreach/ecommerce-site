@@ -578,9 +578,10 @@ export default function SettingsManager({ isDark, user }) {
               >
                 {form.logo_url ? (
                   <img
+                    key={form.logo_url}
                     src={form.logo_url}
                     alt={form.store_name || "Logo"}
-                    className="max-h-16 max-w-full object-contain drop-shadow-sm"
+                    className="max-h-14 max-w-full object-contain drop-shadow-sm"
                     onError={(e) => {
                       e.target.style.display = 'none';
                     }}
@@ -588,7 +589,7 @@ export default function SettingsManager({ isDark, user }) {
                 ) : (
                   <div className="text-center space-y-1">
                     <span className="font-display font-black text-2xl tracking-tight text-gray-900 dark:text-white">
-                      {form.store_name || 'SOLEKICKS'}<span className="text-fire">.</span>
+                      {form.store_name || 'SOLEKICKS'}
                     </span>
                     <p className="text-[10px] font-mono text-gray-400 block">Default Text Branding Active</p>
                   </div>
@@ -639,7 +640,7 @@ export default function SettingsManager({ isDark, user }) {
                 {/* URL Bar */}
                 <div className="bg-white dark:bg-zinc-900 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-700 flex items-center gap-2 text-[11px] font-mono text-gray-500 dark:text-zinc-400">
                   <span className="text-emerald-500 font-bold">https://</span>
-                  <span className="text-gray-800 dark:text-zinc-200">solekicks.pk</span>
+                  <span className="text-gray-800 dark:text-zinc-200">{form.store_name?.toLowerCase().replace(/\s+/g, '') || 'solekicks'}.com</span>
                 </div>
               </div>
             </div>
