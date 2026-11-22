@@ -4943,36 +4943,15 @@ function ProductDetailPage({ productId, initialProduct, isNew = false, onBack, o
           </span>
         </div>
 
-        {/* Action Controls */}
+        {/* Action Controls - Clean & Minimal */}
         <div className="flex items-center gap-2.5 flex-wrap">
-          {/* Status selector */}
-          <div className="flex items-center gap-2 bg-white dark:bg-zinc-800/80 p-1 pl-3 pr-2 rounded-xl border border-gray-200 dark:border-zinc-700 shadow-sm">
-            <span className={`w-2 h-2 rounded-full ${form.status === 'active' ? 'bg-emerald-500' : form.status === 'draft' ? 'bg-amber-500' : 'bg-gray-400'}`}></span>
-            <select
-              value={form.status}
-              onChange={(e) => setForm({ ...form, status: e.target.value })}
-              className="bg-transparent text-xs font-bold uppercase tracking-wider text-gray-900 dark:text-zinc-100 focus:outline-none cursor-pointer"
-            >
-              <option value="active" className="bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100">Active</option>
-              <option value="draft" className="bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100">Draft</option>
-              <option value="archived" className="bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100">Archived</option>
-            </select>
-          </div>
-
           {!isNew && (
             <>
-              <a
-                href={`/product/${form.slug}`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-800 dark:text-zinc-200 font-bold text-xs rounded-xl border border-gray-200 dark:border-zinc-700 shadow-sm transition-colors"
-              >
-                <ExternalLink size={14} /> Storefront
-              </a>
               <button
                 type="button"
                 onClick={handleDuplicate}
                 className="inline-flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-800 dark:text-zinc-200 font-bold text-xs rounded-xl border border-gray-200 dark:border-zinc-700 shadow-sm transition-colors"
+                title="Duplicate product drop"
               >
                 <Copy size={14} /> Duplicate
               </button>
@@ -4980,6 +4959,7 @@ function ProductDetailPage({ productId, initialProduct, isNew = false, onBack, o
                 type="button"
                 onClick={handleDelete}
                 className="inline-flex items-center gap-1.5 px-3 py-2 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 font-bold text-xs rounded-xl border border-rose-200 dark:border-rose-900 shadow-sm transition-colors"
+                title="Delete product"
               >
                 <Trash2 size={14} /> Delete
               </button>
@@ -4988,15 +4968,7 @@ function ProductDetailPage({ productId, initialProduct, isNew = false, onBack, o
 
           <button
             type="button"
-            onClick={() => handleSave('draft')}
-            disabled={saving}
-            className="px-4 py-2 bg-white dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-900 dark:text-zinc-100 font-bold text-xs rounded-xl border border-gray-300 dark:border-zinc-700 shadow-sm transition-colors"
-          >
-            Save Draft
-          </button>
-          <button
-            type="button"
-            onClick={() => handleSave(form.status === 'draft' ? 'active' : form.status)}
+            onClick={() => handleSave(form.status)}
             disabled={saving}
             className="px-5 py-2 bg-fire hover:bg-fire-hover text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-sm hover:shadow-fire/20 transition-all flex items-center gap-2"
           >
@@ -5278,34 +5250,35 @@ function ProductDetailPage({ productId, initialProduct, isNew = false, onBack, o
               </div>
             </div>
 
-            {/* Sizing Matrix Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            {/* Sizing Matrix Grid - Responsive & Spacious */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5 sm:gap-4">
               {sizes.map((s, idx) => {
                 const stockVal = Number(s.stock) || 0;
                 return (
                   <div
                     key={s.id || idx}
-                    className={`p-3 rounded-xl border text-center transition-all ${stockVal === 0
+                    className={`p-3.5 rounded-xl border text-center transition-all ${stockVal === 0
                       ? 'bg-rose-50/40 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50'
                       : stockVal <= 3
                         ? 'bg-amber-50/40 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/50'
-                        : 'bg-gray-50/80 dark:bg-zinc-800/50 border-gray-200 dark:border-zinc-700'
+                        : 'bg-gray-50/80 dark:bg-zinc-800/50 border-gray-200 dark:border-zinc-700 shadow-2xs'
                       }`}
                   >
-                    <span className="font-mono font-black text-xs text-gray-900 dark:text-zinc-100 block">
+                    <span className="font-mono font-black text-sm text-gray-900 dark:text-zinc-100 block">
                       EU {s.size}
                     </span>
-                    <span className={`text-[9px] font-bold uppercase tracking-wider block mt-0.5 ${stockVal === 0 ? 'text-rose-600' : stockVal <= 3 ? 'text-amber-600' : 'text-emerald-600'
+                    <span className={`text-[10px] font-bold uppercase tracking-wider block mt-0.5 ${stockVal === 0 ? 'text-rose-600' : stockVal <= 3 ? 'text-amber-600' : 'text-emerald-600'
                       }`}>
                       {stockVal === 0 ? 'Sold Out' : stockVal <= 3 ? 'Low Stock' : 'In Stock'}
                     </span>
 
-                    {/* Stepper & input */}
-                    <div className="mt-2 flex items-center justify-center gap-1">
+                    {/* Stepper & input with comfortable spacing and responsive sizing */}
+                    <div className="mt-3 flex items-center justify-center gap-2">
                       <button
                         type="button"
                         onClick={() => updateSizeStock(idx, -1)}
-                        className="w-6 h-6 rounded-md bg-white dark:bg-zinc-700 border border-gray-200 dark:border-zinc-600 text-gray-700 dark:text-zinc-200 font-bold text-xs hover:bg-gray-100"
+                        className="w-8 h-8 rounded-lg bg-white dark:bg-zinc-700 border border-gray-300 dark:border-zinc-600 text-gray-700 dark:text-zinc-200 font-bold text-sm hover:bg-gray-100 dark:hover:bg-zinc-600 active:scale-95 transition-all flex items-center justify-center shrink-0 cursor-pointer shadow-2xs"
+                        title="Decrease stock"
                       >
                         -
                       </button>
@@ -5314,12 +5287,13 @@ function ProductDetailPage({ productId, initialProduct, isNew = false, onBack, o
                         min="0"
                         value={s.stock}
                         onChange={(e) => setDirectSizeStock(idx, e.target.value)}
-                        className="w-12 h-6 text-center font-mono font-bold text-xs bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-md focus:outline-none focus:border-fire text-gray-900 dark:text-zinc-100"
+                        className="w-14 sm:w-16 h-8 text-center font-mono font-black text-xs sm:text-sm bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-lg focus:outline-none focus:border-fire text-gray-900 dark:text-zinc-100 shadow-inner"
                       />
                       <button
                         type="button"
                         onClick={() => updateSizeStock(idx, 1)}
-                        className="w-6 h-6 rounded-md bg-white dark:bg-zinc-700 border border-gray-200 dark:border-zinc-600 text-gray-700 dark:text-zinc-200 font-bold text-xs hover:bg-gray-100"
+                        className="w-8 h-8 rounded-lg bg-white dark:bg-zinc-700 border border-gray-300 dark:border-zinc-600 text-gray-700 dark:text-zinc-200 font-bold text-sm hover:bg-gray-100 dark:hover:bg-zinc-600 active:scale-95 transition-all flex items-center justify-center shrink-0 cursor-pointer shadow-2xs"
+                        title="Increase stock"
                       >
                         +
                       </button>
@@ -5349,10 +5323,52 @@ function ProductDetailPage({ productId, initialProduct, isNew = false, onBack, o
 
         </div>
 
-        {/* Right Column (5 cols): Commercial Pricing, Taxonomy & Live Storefront Preview */}
+        {/* Right Column (5 cols): Status, Pricing & Taxonomy */}
         <div className="lg:col-span-5 space-y-6">
 
-          {/* Section 1: Commercial Pricing & Margins */}
+          {/* Section 1: Product Status & Visibility */}
+          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-3">
+            <div className="flex items-center justify-between border-b border-gray-100 dark:border-zinc-800 pb-3">
+              <h2 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 flex items-center gap-2">
+                <CheckCircle size={16} className="text-emerald-500" /> Product Status
+              </h2>
+              <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
+                form.status === 'active' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
+                form.status === 'draft' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' :
+                'bg-gray-200 dark:bg-zinc-800 text-gray-500'
+              }`}>
+                {form.status}
+              </span>
+            </div>
+
+            <p className="text-xs text-gray-500 dark:text-zinc-400">
+              Control the publication state of this sneaker drop.
+            </p>
+
+            <div className="grid grid-cols-3 gap-2 p-1 bg-gray-100 dark:bg-zinc-800/80 rounded-xl border border-gray-200 dark:border-zinc-700">
+              {[
+                { key: 'active', label: 'Active', color: 'bg-emerald-500' },
+                { key: 'draft', label: 'Draft', color: 'bg-amber-500' },
+                { key: 'archived', label: 'Archived', color: 'bg-gray-400' }
+              ].map(st => (
+                <button
+                  key={st.key}
+                  type="button"
+                  onClick={() => setForm({ ...form, status: st.key })}
+                  className={`py-2 px-1 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    form.status === st.key
+                      ? 'bg-white dark:bg-zinc-900 text-gray-900 dark:text-zinc-100 shadow-sm border border-gray-200/80 dark:border-zinc-700'
+                      : 'text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100'
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${st.color}`} />
+                  <span className="capitalize">{st.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Section 2: Commercial Pricing & Margins */}
           <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-4">
             <h2 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 border-b border-gray-100 dark:border-zinc-800 pb-3 flex items-center gap-2">
               <DollarSign size={16} className="text-fire" /> Commercial Pricing & COGS
@@ -5592,62 +5608,6 @@ function ProductDetailPage({ productId, initialProduct, isNew = false, onBack, o
                   </div>
                 </label>
               ))}
-            </div>
-          </div>
-
-          {/* Section 4: Live Storefront Card Preview */}
-          <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-3">
-            <h2 className="font-display font-bold uppercase tracking-wider text-xs text-gray-900 dark:text-zinc-100 border-b border-gray-100 dark:border-zinc-800 pb-3 flex items-center justify-between">
-              <span className="flex items-center gap-2"><Eye size={16} className="text-fire" /> Storefront Card Preview</span>
-              <span className="text-[10px] font-mono text-gray-400">Live Customer View</span>
-            </h2>
-
-            {/* Simulated Sneaker Card */}
-            <div className="w-full max-w-[280px] mx-auto bg-white dark:bg-zinc-800 rounded-2xl overflow-hidden border border-gray-200 dark:border-zinc-700 shadow-lg">
-              <div className="relative aspect-square bg-gray-100 dark:bg-zinc-900 overflow-hidden">
-                <img
-                  src={images[0] || "https://via.placeholder.com/400x400?text=Sneaker"}
-                  alt=""
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute top-2.5 left-2.5 flex flex-col gap-1">
-                  {form.is_new_arrival && (
-                    <span className="px-2 py-0.5 bg-fire text-white text-[9px] font-black uppercase tracking-wider rounded-md">
-                      New
-                    </span>
-                  )}
-                  {discountPct > 0 && (
-                    <span className="px-2 py-0.5 bg-black text-white text-[9px] font-black uppercase tracking-wider rounded-md">
-                      -{discountPct}%
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="p-4 space-y-1.5">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-zinc-400 capitalize">
-                  {form.brand_slug} · {form.category_slug}
-                </span>
-                <p className="font-display font-bold text-xs text-gray-900 dark:text-zinc-100 line-clamp-1">
-                  {form.name || "Untitled Sneaker Drop"}
-                </p>
-                <div className="flex items-baseline gap-2 pt-1">
-                  <span className="font-mono text-sm font-black text-gray-900 dark:text-zinc-100">
-                    {fmt(basePriceNum)}
-                  </span>
-                  {comparePriceNum > basePriceNum && (
-                    <span className="font-mono text-xs text-gray-400 line-through">
-                      {fmt(comparePriceNum)}
-                    </span>
-                  )}
-                </div>
-                <div className="pt-2 border-t border-gray-100 dark:border-zinc-700 flex justify-between items-center text-[10px]">
-                  <span className="font-mono text-gray-500 dark:text-zinc-400">
-                    {totalStock > 0 ? `${totalStock} in stock` : <span className="text-rose-500 font-bold">Sold Out</span>}
-                  </span>
-                  <span className="font-bold text-fire uppercase text-[9px]">View Drop →</span>
-                </div>
-              </div>
             </div>
           </div>
 
