@@ -263,7 +263,7 @@ export default function SettingsManager({ isDark, user }) {
                 Store Settings
               </h1>
               <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">
-                Manage platform branding, logo & favicon assets, Safepay PK gateway, COD partial advance thresholds, and admin security.
+                Manage platform branding, logo & favicon assets, COD partial advance thresholds, and admin security.
               </p>
             </div>
           </div>
@@ -546,14 +546,14 @@ export default function SettingsManager({ isDark, user }) {
                   </h3>
                 </div>
 
-                {/* Background switchers to check transparency & contrast */}
+                {/* Background switchers to check contrast */}
                 <div className="flex items-center gap-1 bg-gray-100 dark:bg-zinc-800 p-1 rounded-lg">
                   <button
                     type="button"
                     onClick={() => setLogoPreviewBg('light')}
                     title="Preview on Light background"
-                    className={`px-2 py-0.5 text-[10px] font-bold rounded cursor-pointer transition-colors ${
-                      logoPreviewBg === 'light' ? 'bg-white text-gray-900 shadow-2xs' : 'text-gray-500 hover:text-gray-800 dark:text-zinc-400'
+                    className={`px-2.5 py-1 text-[11px] font-bold rounded-md cursor-pointer transition-colors ${
+                      logoPreviewBg === 'light' ? 'bg-white text-gray-900 shadow-xs' : 'text-gray-500 hover:text-gray-800 dark:text-zinc-400'
                     }`}
                   >
                     Light
@@ -562,33 +562,21 @@ export default function SettingsManager({ isDark, user }) {
                     type="button"
                     onClick={() => setLogoPreviewBg('dark')}
                     title="Preview on Dark background"
-                    className={`px-2 py-0.5 text-[10px] font-bold rounded cursor-pointer transition-colors ${
-                      logoPreviewBg === 'dark' ? 'bg-zinc-900 text-white shadow-2xs' : 'text-gray-500 hover:text-gray-800 dark:text-zinc-400'
+                    className={`px-2.5 py-1 text-[11px] font-bold rounded-md cursor-pointer transition-colors ${
+                      logoPreviewBg === 'dark' ? 'bg-zinc-900 text-white shadow-xs' : 'text-gray-500 hover:text-gray-800 dark:text-zinc-400'
                     }`}
                   >
                     Dark
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setLogoPreviewBg('brand')}
-                    title="Preview on Brand Dark background"
-                    className={`px-2 py-0.5 text-[10px] font-bold rounded cursor-pointer transition-colors ${
-                      logoPreviewBg === 'brand' ? 'bg-fire text-white shadow-2xs' : 'text-gray-500 hover:text-gray-800 dark:text-zinc-400'
-                    }`}
-                  >
-                    Accent
-                  </button>
                 </div>
               </div>
 
-              {/* Dedicated Logo Box */}
+              {/* Dedicated Clean Logo Box (Solid background, no weird patterns) */}
               <div
                 className={`relative min-h-[160px] p-6 rounded-xl border flex items-center justify-center transition-colors overflow-hidden ${
                   logoPreviewBg === 'light'
-                    ? 'bg-white border-gray-200 [background-image:linear-gradient(45deg,#f4f4f5_25%,transparent_25%),linear-gradient(-45deg,#f4f4f5_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#f4f4f5_75%),linear-gradient(-45deg,transparent_75%,#f4f4f5_75%)] [background-size:16px_16px] [background-position:0_0,0_8px,8px_-8px,-8px_0]'
-                    : logoPreviewBg === 'dark'
-                    ? 'bg-zinc-950 border-zinc-800 text-white'
-                    : 'bg-fire border-fire text-white'
+                    ? 'bg-white border-gray-200 shadow-xs'
+                    : 'bg-zinc-950 border-zinc-800 text-white'
                 }`}
               >
                 {form.logo_url ? (

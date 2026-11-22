@@ -130,7 +130,6 @@ export default function Header() {
                 ) : (
                   <>
                     {(settings?.store_name || "SOLEKICKS")}<span className="text-fire text-lg sm:text-2xl leading-none">.</span>
-                    <span className="hidden sm:inline text-[10px] font-mono tracking-[0.25em] self-start mt-1 ml-0.5">PK</span>
                   </>
                 )}
               </Link>
