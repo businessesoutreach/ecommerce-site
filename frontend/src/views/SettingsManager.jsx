@@ -109,9 +109,6 @@ export default function SettingsManager({ isDark, user }) {
       const res = await http.get('/admin/settings');
       if (res.data?.data) {
         const d = res.data.data;
-        if (res.data.env_safepay) {
-          setEnvSafepay(res.data.env_safepay);
-        }
         setForm({
           store_name: d.store_name || 'SOLEKICKS',
           store_tagline: d.store_tagline || 'Pakistan\'s #1 Sneaker & Streetwear Destination',
