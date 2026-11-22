@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const prisma = require('../db');
 const { getOptionalUser, getCurrentUser } = require('../middleware/auth');
@@ -11,7 +12,7 @@ const router = express.Router();
 
 async function genOrderNumber() {
     for (let i = 0; i < 6; i++) {
-        const num = "PK-SNK-" + Math.floor(10000 + Math.random() * 90000);
+        const num = "PK-SNK-" + crypto.randomInt(10000, 100000);
         const existing = await prisma.order.findUnique({ where: { order_number: num } });
         if (!existing) return num;
     }

@@ -1,7 +1,10 @@
 const jwt = require('jsonwebtoken');
 const prisma = require('../db');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    throw new Error('FATAL SECURITY ERROR: JWT_SECRET environment variable is missing or empty. Please set JWT_SECRET in your .env file.');
+}
 
 function createAccessToken(uid, email, role) {
     const payload = {

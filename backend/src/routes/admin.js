@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const multer = require('multer');
 const csv = require('csv-parser');
 const stream = require('stream');
@@ -1228,9 +1229,9 @@ router.post('/orders', async (req, res) => {
         const discount = Number(discount_amount) || 0;
         const total = Math.max(0, subtotal + fee - discount);
 
-        let orderNumber = `PK-SNK-${Math.floor(10000 + Math.random() * 90000)}`;
+        let orderNumber = `PK-SNK-${crypto.randomInt(10000, 100000)}`;
         while (await prisma.order.findUnique({ where: { order_number: orderNumber } })) {
-            orderNumber = `PK-SNK-${Math.floor(10000 + Math.random() * 90000)}`;
+            orderNumber = `PK-SNK-${crypto.randomInt(10000, 100000)}`;
         }
 
         const formattedAddress = typeof shipping_address === 'object' && shipping_address !== null

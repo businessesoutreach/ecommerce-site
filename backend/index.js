@@ -1,10 +1,17 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
 const dotenv = require('dotenv');
 const path = require('path');
 
 dotenv.config({ path: path.join(__dirname, '.env') });
+
+// Fast-fail if essential security variables are missing
+if (!process.env.JWT_SECRET) {
+    throw new Error('FATAL SECURITY ERROR: JWT_SECRET environment variable is missing.');
+}
 
 const authRoutes = require('./src/routes/auth');
 const catalogRoutes = require('./src/routes/catalog');
@@ -20,12 +27,58 @@ const miscRoutes = require('./src/routes/misc');
 
 const app = express();
 
-app.use(cors({
-    origin: '*',
-    methods: '*',
-    allowedHeaders: '*',
-    credentials: false // matching FastAPI allow_credentials=False but in Node we might need it for cookies? Wait, python had allow_credentials=False, but it uses cookies? That's a contradiction. Python had: allow_credentials=False. Let's match it exactly.
+// Security HTTP Headers with Helmet
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" }, // Allow storefront images & static assets
+    contentSecurityPolicy: false // Handled per-page on frontend
 }));
+
+// CORS Configuration (Strict Whitelist + Localhost + Vercel Previews)
+const allowedOrigins = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:8000',
+    process.env.FRONTEND_URL,
+].filter(Boolean);
+
+app.use(cors({
+    origin: (origin, callback) => {
+        // Allow requests with no origin (e.g. mobile apps, curl, server-to-server webhook callbacks)
+        if (!origin) return callback(null, true);
+        
+        if (
+            allowedOrigins.includes(origin) ||
+            origin.endsWith('.vercel.app') ||
+            origin.endsWith('.solekicks.pk')
+        ) {
+            return callback(null, true);
+        }
+        
+        return callback(new Error(`CORS policy violation: origin ${origin} is not allowed`));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cookie'],
+}));
+
+// General API Rate Limiting (600 requests per 15 minutes)
+const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 600,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { detail: 'Too many requests from this IP, please try again after 15 minutes.' }
+});
+app.use('/api', generalLimiter);
+
+// Strict Rate Limiting for Auth Endpoints (Brute-force protection: 30 requests per 15 minutes)
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 30,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { detail: 'Too many login or OTP attempts from this IP, please try again in 15 minutes.' }
+});
 
 app.use(express.json({
     verify: (req, res, buf) => {
@@ -36,7 +89,7 @@ app.use(cookieParser());
 
 const apiRouter = express.Router();
 
-apiRouter.use('/auth', authRoutes);
+apiRouter.use('/auth', authLimiter, authRoutes);
 apiRouter.use('/', catalogRoutes);
 apiRouter.use('/cart', cartRoutes);
 apiRouter.use('/wishlist', wishlistRoutes);
