@@ -8,7 +8,15 @@ const StoreCtx = createContext(null);
 export const useStore = () => useContext(StoreCtx);
 
 export function StoreProvider({ children }) {
-  const [settings, setSettings] = useState(null);
+  const [settings, setSettings] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem("app_settings");
+        if (cached) return JSON.parse(cached);
+      } catch (e) {}
+    }
+    return { logo_url: "/images/logo.svg", store_name: "SOLEKICKS" };
+  });
   const [user, setUser] = useState(() => {
     if (typeof window !== "undefined") {
       try {
@@ -59,6 +67,9 @@ export function StoreProvider({ children }) {
     http.get("/settings").then(({ data }) => {
       const s = data.data;
       setSettings(s);
+      if (typeof window !== "undefined") {
+        try { localStorage.setItem("app_settings", JSON.stringify(s)); } catch (e) {}
+      }
       if (s?.favicon_url && typeof document !== "undefined") {
         let link = document.querySelector("link[rel*='icon']");
         if (!link) {

@@ -568,12 +568,12 @@ export default function SettingsManager({ isDark, user }) {
                 </div>
               </div>
 
-              {/* Dedicated Clean Logo Box (Solid background, no weird patterns) */}
+              {/* Dedicated Clean Logo Box (High Contrast, Clearly Visible) */}
               <div
-                className={`relative min-h-[160px] p-6 rounded-xl border flex items-center justify-center transition-colors overflow-hidden ${
+                className={`relative min-h-[170px] p-8 rounded-xl border flex items-center justify-center transition-colors overflow-hidden ${
                   logoPreviewBg === 'light'
                     ? 'bg-white border-gray-200 shadow-xs'
-                    : 'bg-zinc-950 border-zinc-800 text-white'
+                    : 'bg-zinc-950 border-zinc-800'
                 }`}
               >
                 {form.logo_url ? (
@@ -581,14 +581,16 @@ export default function SettingsManager({ isDark, user }) {
                     key={form.logo_url}
                     src={form.logo_url}
                     alt={form.store_name || "Logo"}
-                    className="max-h-14 max-w-full object-contain drop-shadow-sm"
+                    className={`h-12 sm:h-14 w-auto max-w-[280px] object-contain transition-all ${
+                      logoPreviewBg === 'dark' ? 'brightness-0 invert' : ''
+                    }`}
                     onError={(e) => {
                       e.target.style.display = 'none';
                     }}
                   />
                 ) : (
                   <div className="text-center space-y-1">
-                    <span className="font-display font-black text-2xl tracking-tight text-gray-900 dark:text-white">
+                    <span className="font-display font-bold text-xl tracking-tight text-gray-900 dark:text-white">
                       {form.store_name || 'SOLEKICKS'}
                     </span>
                     <p className="text-[10px] font-mono text-gray-400 block">Default Text Branding Active</p>
@@ -599,22 +601,47 @@ export default function SettingsManager({ isDark, user }) {
               {/* Asset Details */}
               <div className="pt-2 text-[11px] text-gray-500 dark:text-zinc-400 flex items-center justify-between">
                 <span>Active Logo URL:</span>
-                <span className="font-mono font-bold text-gray-800 dark:text-zinc-200 truncate max-w-[200px]">
+                <span className="font-mono font-bold text-gray-800 dark:text-zinc-200 truncate max-w-[220px]">
                   {form.logo_url || 'Default Text (No File)'}
                 </span>
               </div>
             </div>
 
-            {/* Favicon Browser Tab Mockup */}
+            {/* Favicon Dedicated Preview Card */}
             <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-xs space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-zinc-800">
                 <div className="flex items-center gap-2">
                   <Sparkles size={16} className="text-fire" />
                   <h3 className="font-display font-bold text-xs uppercase tracking-wider text-gray-900 dark:text-white">
-                    Browser Tab Preview
+                    Favicon Preview
                   </h3>
                 </div>
-                <span className="text-[10px] font-mono text-gray-400">Favicon Mockup</span>
+                <span className="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded">
+                  Tab Icon
+                </span>
+              </div>
+
+              {/* Magnified Favicon Display */}
+              <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-zinc-800/60 rounded-xl border border-gray-200 dark:border-zinc-700">
+                <div className="w-16 h-16 rounded-xl bg-white border border-gray-200 shadow-xs flex items-center justify-center p-2.5 shrink-0">
+                  {form.favicon_url ? (
+                    <img
+                      src={form.favicon_url}
+                      alt="Favicon Large"
+                      className="w-10 h-10 object-contain"
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+                  ) : (
+                    <Sparkles size={24} className="text-fire" />
+                  )}
+                </div>
+                <div className="space-y-1 min-w-0">
+                  <p className="text-xs font-bold text-gray-900 dark:text-white">High-Resolution Icon (64×64)</p>
+                  <p className="text-[11px] text-gray-500 dark:text-zinc-400 font-mono truncate">
+                    {form.favicon_url || 'No Favicon Loaded'}
+                  </p>
+                  <p className="text-[10px] text-gray-400">Renders on bookmarks & browser tabs</p>
+                </div>
               </div>
 
               {/* Simulated Browser Chrome Tab */}

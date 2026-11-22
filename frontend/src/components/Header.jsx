@@ -124,12 +124,12 @@ export default function Header() {
                 <Menu size={20} />
               </button>
 
-              <Link to="/" className="font-display tracking-tighter flex items-center text-base sm:text-xl shrink-0" data-testid="logo">
+              <Link to="/" className="font-display font-bold tracking-tight flex items-center text-base sm:text-lg shrink-0" data-testid="logo">
                 {settings?.logo_url ? (
-                  <img src={settings.logo_url} alt={settings.store_name || "SOLEKICKS"} className="h-7 sm:h-8 w-auto max-w-[140px] sm:max-w-[180px] object-contain" />
+                  <img src={settings.logo_url} alt={settings.store_name || "SOLEKICKS"} className="h-7 sm:h-8 w-auto max-w-[150px] sm:max-w-[200px] object-contain" />
                 ) : (
                   <>
-                    {(settings?.store_name || "SOLEKICKS")}<span className="text-fire text-lg sm:text-2xl leading-none">.</span>
+                    {(settings?.store_name || "SOLEKICKS")}<span className="text-fire text-base sm:text-xl leading-none">.</span>
                   </>
                 )}
               </Link>
