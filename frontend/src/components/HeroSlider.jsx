@@ -24,13 +24,13 @@ export default function HeroSlider({ slides = [] }) {
     return () => clearInterval(id);
   }, [paused, next, n]);
 
-  if (!n) return <div className="skeleton w-full h-[70vh]" />;
+  if (!n) return <div className="skeleton w-full h-[calc(100svh-4.5rem)] min-h-[580px] max-h-[920px]" />;
   const s = slides[idx];
   const optimizedHero = optimizeImg(s.image_url, { width: 1400 });
 
   return (
     <section
-      className="relative w-full h-[78vh] min-h-[520px] overflow-hidden bg-obsidian"
+      className="relative w-full h-[calc(100svh-4.5rem)] min-h-[580px] max-h-[920px] overflow-hidden bg-obsidian"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       data-testid="hero-slider"
@@ -47,7 +47,7 @@ export default function HeroSlider({ slides = [] }) {
           <img
             src={optimizedHero}
             alt={s.title}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover object-center"
             loading={idx === 0 ? "eager" : "lazy"}
             fetchPriority={idx === 0 ? "high" : "auto"}
           />
@@ -61,17 +61,17 @@ export default function HeroSlider({ slides = [] }) {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.15 }}
-          className="max-w-2xl"
+          className="max-w-2xl xl:max-w-3xl"
         >
           {s.badge && (
-            <span className="inline-block bg-fire text-white font-mono text-[11px] font-bold  tracking-[0.2em] px-3 py-1.5 rounded-none mb-5">
+            <span className="inline-block bg-fire text-white font-mono text-[11px] font-bold tracking-[0.2em] px-3 py-1.5 rounded-none mb-5">
               {s.badge}
             </span>
           )}
-          <h1 className="font-display text-white text-2xl sm:text-2xl lg:text-6xl font-bold tracking-tight leading-[1.1] drop-shadow-lg capitalize">
+          <h1 className="font-display text-white text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight leading-[1.08] drop-shadow-lg capitalize">
             {s.title ? s.title.toLowerCase() : ""}
           </h1>
-          <p className="text-white/90 mt-5 text-base sm:text-lg max-w-lg leading-relaxed drop-shadow-md font-medium">
+          <p className="text-white/90 mt-5 text-base sm:text-lg lg:text-xl max-w-lg lg:max-w-xl leading-relaxed drop-shadow-md font-medium">
             {s.subtitle}
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-4">
