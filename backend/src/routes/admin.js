@@ -2591,43 +2591,82 @@ router.get('/users', async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 25;
-        const search = req.query.search || '';
+        const search = (req.query.search || '').trim().toLowerCase();
         const status = req.query.status || 'all';
 
-        const skip = (page - 1) * limit;
-
-        const where = {};
-        if (search) {
-            where.OR = [
-                { name: { contains: search, mode: 'insensitive' } },
-                { email: { contains: search, mode: 'insensitive' } },
-                { phone: { contains: search, mode: 'insensitive' } }
-            ];
-        }
-
-        if (status === 'active') where.is_blocked = false;
-        if (status === 'blocked') where.is_blocked = true;
-        
-        where.role = 'customer';
-
-        const [users, totalCount] = await Promise.all([
+        const [registeredUsers, allOrders] = await Promise.all([
             prisma.user.findMany({
-                where,
-                skip,
-                take: limit,
-                orderBy: { created_at: 'desc' },
-                include: {
-                    orders: {
-                        select: { total: true, status: true }
-                    }
-                }
+                where: { role: 'customer' },
+                orderBy: { created_at: 'desc' }
             }),
-            prisma.user.count({ where })
+            prisma.order.findMany({
+                select: {
+                    id: true,
+                    user_id: true,
+                    customer_name: true,
+                    customer_email: true,
+                    customer_phone: true,
+                    total: true,
+                    status: true,
+                    created_at: true
+                },
+                orderBy: { created_at: 'desc' }
+            })
         ]);
 
-        const formattedUsers = users.map(u => {
-            const completedOrders = u.orders.filter(o => o.status !== 'cancelled');
-            const totalSpent = completedOrders.reduce((sum, o) => sum + o.total, 0);
+        // Index registered users by id, lowercase email, and phone
+        const emailToUser = new Map();
+        const phoneToUser = new Map();
+        const idToUser = new Map();
+        const userOrdersMap = new Map();
+
+        for (const u of registeredUsers) {
+            idToUser.set(u.id, u);
+            if (u.email) emailToUser.set(u.email.toLowerCase(), u);
+            if (u.phone) phoneToUser.set(u.phone, u);
+            userOrdersMap.set(u.id, []);
+        }
+
+        // Group guest orders (orders not belonging to any registered customer)
+        const guestMap = new Map();
+
+        for (const o of allOrders) {
+            const matchedUser =
+                (o.user_id && idToUser.get(o.user_id)) ||
+                (o.customer_email && emailToUser.get(o.customer_email.toLowerCase())) ||
+                (o.customer_phone && phoneToUser.get(o.customer_phone));
+
+            if (matchedUser) {
+                userOrdersMap.get(matchedUser.id).push(o);
+            } else {
+                const emailKey = o.customer_email ? o.customer_email.trim().toLowerCase() : '';
+                const phoneKey = o.customer_phone ? o.customer_phone.trim() : '';
+                const key = emailKey || phoneKey || o.customer_name || o.id;
+
+                if (!guestMap.has(key)) {
+                    guestMap.set(key, {
+                        key,
+                        name: o.customer_name || 'Guest Customer',
+                        email: o.customer_email || '',
+                        phone: o.customer_phone || '',
+                        created_at: o.created_at,
+                        orders: []
+                    });
+                }
+                const g = guestMap.get(key);
+                g.orders.push(o);
+                if (new Date(o.created_at) < new Date(g.created_at)) {
+                    g.created_at = o.created_at;
+                }
+                if (!g.name && o.customer_name) g.name = o.customer_name;
+                if (!g.phone && o.customer_phone) g.phone = o.customer_phone;
+            }
+        }
+
+        const formattedRegistered = registeredUsers.map(u => {
+            const orders = userOrdersMap.get(u.id) || [];
+            const completedOrders = orders.filter(o => o.status !== 'cancelled');
+            const totalSpent = completedOrders.reduce((sum, o) => sum + (o.total || 0), 0);
             return {
                 id: u.id,
                 name: u.name,
@@ -2635,36 +2674,71 @@ router.get('/users', async (req, res) => {
                 phone: u.phone,
                 picture: u.picture,
                 is_blocked: u.is_blocked,
+                is_guest: false,
+                account_type: 'registered',
                 created_at: u.created_at,
                 orders_count: completedOrders.length,
                 total_spent: totalSpent
             };
         });
 
-        const allCust = await prisma.user.findMany({ 
-            where: { role: 'customer' },
-            include: { _count: { select: { orders: true } } }
+        const formattedGuests = Array.from(guestMap.values()).map(g => {
+            const completedOrders = g.orders.filter(o => o.status !== 'cancelled');
+            const totalSpent = completedOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+            return {
+                id: `guest-${Buffer.from(g.key).toString('base64url')}`,
+                name: g.name,
+                email: g.email,
+                phone: g.phone,
+                picture: null,
+                is_blocked: false,
+                is_guest: true,
+                account_type: 'guest',
+                created_at: g.created_at,
+                orders_count: completedOrders.length,
+                total_spent: totalSpent
+            };
         });
-        
+
+        const allShoppers = [...formattedRegistered, ...formattedGuests].sort(
+            (a, b) => new Date(b.created_at) - new Date(a.created_at)
+        );
+
+        const filtered = allShoppers.filter(u => {
+            if (status === 'active' && u.is_blocked) return false;
+            if (status === 'blocked' && !u.is_blocked) return false;
+            if (status === 'registered' && u.is_guest) return false;
+            if (status === 'guest' && !u.is_guest) return false;
+            if (search) {
+                const hay = `${u.name || ''} ${u.email || ''} ${u.phone || ''}`.toLowerCase();
+                if (!hay.includes(search)) return false;
+            }
+            return true;
+        });
+
+        const totalCount = filtered.length;
+        const skip = (page - 1) * limit;
+        const paginatedUsers = filtered.slice(skip, skip + limit);
+
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        
+
         const stats = {
-            total: allCust.length,
-            new: allCust.filter(u => new Date(u.created_at) > thirtyDaysAgo).length,
-            active: allCust.filter(u => !u.is_blocked).length,
-            blocked: allCust.filter(u => u.is_blocked).length,
-            repeat: allCust.filter(u => u._count.orders > 1).length
+            total: allShoppers.length,
+            new: allShoppers.filter(u => new Date(u.created_at) > thirtyDaysAgo).length,
+            active: allShoppers.filter(u => !u.is_blocked).length,
+            blocked: allShoppers.filter(u => u.is_blocked).length,
+            repeat: allShoppers.filter(u => u.orders_count > 1).length
         };
-        
+
         const chart = [];
-        for (let i=6; i>=0; i--) {
+        for (let i = 6; i >= 0; i--) {
             const d = new Date();
             d.setDate(d.getDate() - i);
             const dateStr = d.toISOString().split('T')[0];
-            
-            const newUsers = allCust.filter(u => new Date(u.created_at).toISOString().split('T')[0] === dateStr).length;
-            
+
+            const newUsers = allShoppers.filter(u => new Date(u.created_at).toISOString().split('T')[0] === dateStr).length;
+
             chart.push({
                 name: d.toLocaleDateString('en-US', { weekday: 'short' }),
                 date: dateStr,
@@ -2676,7 +2750,7 @@ router.get('/users', async (req, res) => {
         res.json({
             success: true,
             data: {
-                users: formattedUsers,
+                users: paginatedUsers,
                 pagination: {
                     totalCount,
                     totalPages: Math.ceil(totalCount / limit),
@@ -2713,6 +2787,65 @@ router.patch('/users/bulk', async (req, res) => {
 
 router.get('/users/:id', async (req, res) => {
     try {
+        if (req.params.id.startsWith('guest-')) {
+            const key = Buffer.from(req.params.id.slice(6), 'base64url').toString('utf8');
+            const userOrders = await prisma.order.findMany({
+                where: {
+                    OR: [
+                        { customer_email: { equals: key, mode: 'insensitive' } },
+                        { customer_phone: key },
+                        { customer_name: key }
+                    ]
+                },
+                include: {
+                    items: {
+                        include: {
+                            product: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    slug: true,
+                                    images: true,
+                                    category_slug: true,
+                                    brand_slug: true
+                                }
+                            }
+                        }
+                    }
+                },
+                orderBy: { created_at: 'desc' }
+            });
+
+            if (userOrders.length === 0) return res.status(404).json({ detail: "Guest customer not found" });
+
+            const latest = userOrders[0];
+            const earliest = userOrders[userOrders.length - 1];
+            const validOrders = userOrders.filter(o => o.status !== 'cancelled' && o.status !== 'failed');
+            const totalSpent = validOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+            const avgOrder = validOrders.length > 0 ? totalSpent / validOrders.length : 0;
+
+            return res.json({
+                success: true,
+                data: {
+                    id: req.params.id,
+                    name: latest.customer_name || 'Guest Customer',
+                    email: latest.customer_email || '',
+                    phone: latest.customer_phone || '',
+                    picture: null,
+                    is_blocked: false,
+                    is_guest: true,
+                    account_type: 'guest',
+                    created_at: earliest.created_at,
+                    addresses: latest.shipping_address ? [latest.shipping_address] : [],
+                    orders: userOrders,
+                    total_spent: totalSpent,
+                    avg_order: avgOrder,
+                    total_orders: userOrders.length,
+                    completed_orders: userOrders.filter(o => o.status === 'delivered').length
+                }
+            });
+        }
+
         const user = await prisma.user.findUnique({
             where: { id: req.params.id },
             include: {

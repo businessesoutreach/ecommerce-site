@@ -8464,7 +8464,9 @@ function Customers() {
             onChange={(e) => setQuery({ ...query, status: e.target.value, page: 1 })}
             className="px-3.5 py-2 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl text-xs font-bold text-gray-800 dark:text-zinc-200 focus:outline-none focus:border-fire"
           >
-            <option value="all">Status: All Shoppers</option>
+            <option value="all">Filter: All Shoppers</option>
+            <option value="registered">Registered Accounts</option>
+            <option value="guest">Guest Buyers</option>
             <option value="active">Active Only</option>
             <option value="blocked">Blocked Accounts</option>
           </select>
@@ -8509,6 +8511,7 @@ function Customers() {
                     />
                   </th>
                   <th className="p-3.5">Customer</th>
+                  <th className="p-3.5">Type</th>
                   <th className="p-3.5">Contact</th>
                   <th className="p-3.5 text-center">Orders</th>
                   <th className="p-3.5">Lifetime Spent</th>
@@ -8520,7 +8523,7 @@ function Customers() {
               <tbody className="divide-y divide-gray-100 dark:divide-zinc-800/60">
                 {!data.users || data.users.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="p-12 text-center text-gray-400 dark:text-zinc-500 font-mono">
+                    <td colSpan="9" className="p-12 text-center text-gray-400 dark:text-zinc-500 font-mono">
                       No customer accounts found matching current query.
                     </td>
                   </tr>
@@ -8534,9 +8537,10 @@ function Customers() {
                       <td className="p-3.5" onClick={e => e.stopPropagation()}>
                         <input
                           type="checkbox"
+                          disabled={u.is_guest}
                           checked={selected.includes(u.id)}
                           onChange={() => toggleSelect(u.id)}
-                          className="accent-fire rounded cursor-pointer"
+                          className="accent-fire rounded cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                         />
                       </td>
                       <td className="p-3.5">
@@ -8553,10 +8557,21 @@ function Customers() {
                               {u.name}
                             </span>
                             <span className="text-[10px] text-gray-400 dark:text-zinc-500 block truncate font-mono">
-                              ID: {u.id.slice(0, 8)}...
+                              {u.is_guest ? 'Guest Checkout' : `ID: ${u.id.slice(0, 8)}...`}
                             </span>
                           </div>
                         </div>
+                      </td>
+                      <td className="p-3.5">
+                        {u.is_guest ? (
+                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 whitespace-nowrap">
+                            Guest
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 whitespace-nowrap">
+                            Logged In
+                          </span>
+                        )}
                       </td>
                       <td className="p-3.5 text-gray-600 dark:text-zinc-400">
                         <span className="block font-mono text-[11px] truncate max-w-[180px]">{u.email}</span>
@@ -8596,16 +8611,18 @@ function Customers() {
                           >
                             <Eye size={14} className="text-gray-400" /> View Customer Page
                           </button>
-                          <button
-                            onClick={() => {
-                              setActiveMenuId(null);
-                              setSelected([u.id]);
-                              bulkUpdate(u.is_blocked ? 'unblock' : 'block');
-                            }}
-                            className="w-full px-3.5 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 transition-colors cursor-pointer"
-                          >
-                            <Trash2 size={14} /> {u.is_blocked ? 'Unblock Account' : 'Block Customer'}
-                          </button>
+                          {!u.is_guest && (
+                            <button
+                              onClick={() => {
+                                setActiveMenuId(null);
+                                setSelected([u.id]);
+                                bulkUpdate(u.is_blocked ? 'unblock' : 'block');
+                              }}
+                              className="w-full px-3.5 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 transition-colors cursor-pointer"
+                            >
+                              <Trash2 size={14} /> {u.is_blocked ? 'Unblock Account' : 'Block Customer'}
+                            </button>
+                          )}
                         </TableActionDropdown>
                       </td>
                     </tr>
@@ -8790,16 +8807,18 @@ function CustomerDetailPage({ userId, onBack, onUpdate }) {
               <ExternalLink size={14} /> Email
             </a>
           )}
-          <button
-            type="button"
-            onClick={toggleBlockStatus}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-2 font-bold text-xs rounded-xl border shadow-xs transition-colors cursor-pointer ${user.is_blocked
-              ? "bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
-              : "bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900"
-              }`}
-          >
-            <Trash2 size={14} /> {user.is_blocked ? "Unblock Account" : "Block Customer"}
-          </button>
+          {!user.is_guest && (
+            <button
+              type="button"
+              onClick={toggleBlockStatus}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 font-bold text-xs rounded-xl border shadow-xs transition-colors cursor-pointer ${user.is_blocked
+                ? "bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
+                : "bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900"
+                }`}
+            >
+              <Trash2 size={14} /> {user.is_blocked ? "Unblock Account" : "Block Customer"}
+            </button>
+          )}
         </div>
       </div>
 
