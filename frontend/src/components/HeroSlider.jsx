@@ -55,7 +55,7 @@ export default function HeroSlider({ slides = [] }) {
         </motion.div>
       </AnimatePresence>
 
-      <div className="relative z-10 h-full max-w-[1400px] mx-auto px-5 sm:px-8 flex flex-col justify-center">
+      <div className="relative z-10 h-full max-w-[1400px] mx-auto px-5 sm:px-8 pb-12 sm:pb-0 flex flex-col justify-center">
         <motion.div
           key={`c-${idx}`}
           initial={{ opacity: 0, y: 40 }}
@@ -76,10 +76,10 @@ export default function HeroSlider({ slides = [] }) {
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <Link
-              to={s.link_url || "/shop"}
+              to={s.link || s.link_url || "/shop"}
               className="group inline-flex items-center gap-3 bg-fire text-white font-display tracking-wider text-sm px-7 py-4 rounded-none hover:bg-white hover:text-obsidian shadow-lg transition-colors"
             >
-              {s.cta_text || "Shop Now"}
+              {s.button_text || s.cta_text || "Shop Now"}
               <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
             </Link>
             {user ? (

@@ -1883,37 +1883,6 @@ router.patch('/customers/:id/block', async (req, res) => {
     }
 });
 
-router.get('/hero-slides', async (req, res) => {
-    try {
-        const items = await prisma.heroSlide.findMany({ orderBy: { sort_order: 'asc' } });
-        res.json({ success: true, data: items });
-    } catch (err) {
-        res.status(500).json({ detail: err.message });
-    }
-});
-
-router.post('/hero-slides', async (req, res) => {
-    try {
-        const doc = { ...req.body };
-        doc.id = uuidv4();
-        doc.is_active = true;
-        doc.sort_order = doc.sort_order || 0;
-        const h = await prisma.heroSlide.create({ data: doc });
-        res.json({ success: true, data: h });
-    } catch (err) {
-        res.status(500).json({ detail: err.message });
-    }
-});
-
-router.delete('/hero-slides/:id', async (req, res) => {
-    try {
-        await prisma.heroSlide.delete({ where: { id: req.params.id } });
-        res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ detail: err.message });
-    }
-});
-
 router.get('/settings', async (req, res) => {
     try {
         let s = await prisma.settings.findUnique({ where: { id: 'singleton' } });
@@ -2537,6 +2506,21 @@ router.delete('/flash-sale/products/:id', async (req, res) => {
     }
 });
 
+function pickHeroSlideData(body) {
+    const data = {};
+    if (body.title !== undefined) data.title = body.title;
+    if (body.subtitle !== undefined) data.subtitle = body.subtitle;
+    if (body.image_url !== undefined) data.image_url = body.image_url;
+    if (body.mobile_image_url !== undefined) data.mobile_image_url = body.mobile_image_url;
+    if (body.link !== undefined || body.link_url !== undefined) data.link = body.link ?? body.link_url;
+    if (body.button_text !== undefined || body.cta_text !== undefined) data.button_text = body.button_text ?? body.cta_text;
+    if (body.is_active !== undefined) data.is_active = Boolean(body.is_active);
+    if (body.sort_order !== undefined) data.sort_order = Number(body.sort_order);
+    if (body.start_date !== undefined) data.start_date = body.start_date ? new Date(body.start_date) : null;
+    if (body.end_date !== undefined) data.end_date = body.end_date ? new Date(body.end_date) : null;
+    return data;
+}
+
 router.get('/hero-slides', async (req, res) => {
     try {
         const items = await prisma.heroSlide.findMany({ orderBy: { sort_order: 'asc' } });
@@ -2548,9 +2532,32 @@ router.get('/hero-slides', async (req, res) => {
 
 router.post('/hero-slides', async (req, res) => {
     try {
-        const doc = { ...req.body, id: uuidv4() };
+        const doc = { ...pickHeroSlideData(req.body), id: uuidv4() };
         const s = await prisma.heroSlide.create({ data: doc });
+        memoryCache.flush();
         res.json({ success: true, data: s });
+    } catch (err) {
+        res.status(500).json({ detail: err.message });
+    }
+});
+
+router.patch('/hero-slides/reorder', async (req, res) => {
+    try {
+        const { ids } = req.body;
+        if (!Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ detail: 'ids array is required' });
+        }
+        await prisma.$transaction(
+            ids.map((id, idx) =>
+                prisma.heroSlide.update({
+                    where: { id },
+                    data: { sort_order: idx }
+                })
+            )
+        );
+        memoryCache.flush();
+        const items = await prisma.heroSlide.findMany({ orderBy: { sort_order: 'asc' } });
+        res.json({ success: true, data: items });
     } catch (err) {
         res.status(500).json({ detail: err.message });
     }
@@ -2558,9 +2565,9 @@ router.post('/hero-slides', async (req, res) => {
 
 router.patch('/hero-slides/:id', async (req, res) => {
     try {
-        const doc = { ...req.body };
-        delete doc.id;
+        const doc = pickHeroSlideData(req.body);
         const s = await prisma.heroSlide.update({ where: { id: req.params.id }, data: doc });
+        memoryCache.flush();
         res.json({ success: true, data: s });
     } catch (err) {
         res.status(500).json({ detail: err.message });
@@ -2570,6 +2577,7 @@ router.patch('/hero-slides/:id', async (req, res) => {
 router.delete('/hero-slides/:id', async (req, res) => {
     try {
         await prisma.heroSlide.delete({ where: { id: req.params.id } });
+        memoryCache.flush();
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ detail: err.message });
