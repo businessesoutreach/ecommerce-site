@@ -8,7 +8,6 @@ import { optimizeImg } from "../lib/api";
 export default function HeroSlider({ slides = [] }) {
   const { user } = useStore();
   const [idx, setIdx] = useState(0);
-  const [paused, setPaused] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
   const n = slides.length;
 
@@ -19,10 +18,10 @@ export default function HeroSlider({ slides = [] }) {
   const next = useCallback(() => setIdx((i) => (i + 1) % Math.max(1, n)), [n]);
 
   useEffect(() => {
-    if (paused || n <= 1) return;
-    const id = setInterval(next, 5500);
+    if (n <= 1) return;
+    const id = setInterval(next, 5000);
     return () => clearInterval(id);
-  }, [paused, next, n]);
+  }, [next, n, idx]);
 
   if (!n) return <div className="skeleton w-full h-[calc(100svh-4.5rem)] min-h-[580px] max-h-[920px]" />;
   const s = slides[idx];
@@ -31,8 +30,6 @@ export default function HeroSlider({ slides = [] }) {
   return (
     <section
       className="relative w-full h-[calc(100svh-4.5rem)] min-h-[580px] max-h-[920px] overflow-hidden bg-obsidian"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
       data-testid="hero-slider"
     >
       <AnimatePresence mode="sync">
@@ -48,7 +45,7 @@ export default function HeroSlider({ slides = [] }) {
             src={optimizedHero}
             alt={s.title}
             className="h-full w-full object-cover object-center"
-            loading={idx === 0 ? "eager" : "lazy"}
+            loading="eager"
             fetchPriority={idx === 0 ? "high" : "auto"}
           />
           <div className="absolute inset-0 bg-gradient-to-r from-obsidian/90 via-obsidian/50 to-transparent" />
