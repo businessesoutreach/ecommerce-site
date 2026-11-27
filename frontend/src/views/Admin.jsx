@@ -791,7 +791,7 @@ export default function Admin() {
           activeTab={tab}
         />
 
-        <main className="p-3.5 sm:p-5 lg:p-8 flex-1 min-w-0 pb-28 lg:pb-8 pt-20 lg:pt-8">
+        <main className="px-3.5 sm:px-5 lg:px-8 pt-20 lg:pt-8 pb-28 lg:pb-8 flex-1 min-w-0">
           {tab === "overview" && <Overview setTab={setTab} isDark={isDark} />}
           {tab === "orders" && <Orders />}
           {tab === "cod" && <Orders initialCodStatus="pending" />}
